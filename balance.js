@@ -33,8 +33,11 @@ function initial(pool,keys,policy={},difficulty='normal',random=Math.random){
  const state=B.board(E,random,pool),repair=B.ensureWinningMove(E,state,keys,policy);
  return repair.move&&!B.matches(state,policy).length?{state,moves:[repair.move],status:'verified'}:{state:null,moves:null,status:'unverified'};
 }
-function refill(state,ids,pool,keys,policy={},depth=3,random=Math.random,conversion=null){
- let fallback=null;
+function refill(state,ids,pool,keys,policy={},depth=3,random=Math.random,conversion=null,difficulty='normal',chain=0){
+ // Prefer a reachable next attack, not an automatic match. Long chains ease off assistance.
+ const chance=Math.max(.15,({easy:.8,normal:.55,hard:.3}[difficulty]??.55)-Math.min(5,Math.max(0,chain-1))*.06);
+ const targetDepth=depth===1||random()<chance?1:Math.min(2,depth),targetBurst=random()<.2?2:1;
+ let fallback=null,best=null,verified=0;
  for(let i=0;i<48;i++){
   const candidate=clone(state);B.refill(candidate,ids,random,pool);
   if(conversion)for(const s of candidate)if(s.face===conversion[0]&&s.tempOriginal===undefined){s.tempOriginal=s.face;s.face=conversion[1]}
@@ -42,8 +45,15 @@ function refill(state,ids,pool,keys,policy={},depth=3,random=Math.random,convers
   if(B.matches(candidate,policy).length)continue;
   fallback ||= candidate;
   const proof=plan(candidate,keys,policy,depth,1800);
-  if(proof.moves){state.splice(0,state.length,...candidate);return {...proof,status:'verified'}}
+  if(proof.moves){
+   const after=clone(candidate);for(const move of proof.moves)E.move(after,move.face,move.dir);
+   const attacks=B.matches(after,policy).filter(g=>keys.includes(g.element)).length;
+   const score=Math.abs(proof.moves.length-targetDepth)*4+Math.abs(attacks-targetBurst)+(attacks>2?(attacks-2)*3:0);
+   if(!best||score<best.score)best={candidate,proof,score};
+   if(score===0||++verified>=8)break;
+  }
  }
+ if(best){state.splice(0,state.length,...best.candidate);return {...best.proof,status:'verified',targetDepth,targetBurst}}
  if(fallback){state.splice(0,state.length,...fallback);return {moves:null,status:'unverified'}}
  // Preserve non-cleared cells even when existing matches make chain-free refill impossible.
  B.refill(state,ids,random,pool);

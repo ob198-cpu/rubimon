@@ -284,7 +284,7 @@ async function resolveTurn(){
   if(tutorial){byId('tutorialText').textContent=skill?'9体がすべて火属性！ 「サラマンダー・インフェルノ」発動。列攻撃の5倍の威力です。':'3手目で火の精霊が1列そろいました。サラマンダーが攻撃！ 光る列と敵HPに注目してください。'}
   refresh();await pause(tutorial||skill?1800:1100);if(token!==roundToken)return;
   if(tutorial)B.refill(state,ids,Math.random,B.pools.normal);
-  else{const budget=turnMoves>=turnLimit?3:Math.max(1,turnLimit-turnMoves);Q.refill(state,ids,B.pools[difficulty],attackKeys(),attackPolicy(),difficulty==='easy'?1:Math.min(3,budget),Math.random,teamConversion);balanceMetrics.refills++}
+  else{const budget=turnMoves>=turnLimit?3:Math.max(1,turnLimit-turnMoves);Q.refill(state,ids,B.pools[difficulty],attackKeys(),attackPolicy(),difficulty==='easy'?1:Math.min(3,budget),Math.random,teamConversion,difficulty,attackChain);balanceMetrics.refills++}
   applyTemporaryConversion();refresh();if(enemyHp===0)break;
  }
  if(!tutorial&&!total)attackChain=0;
