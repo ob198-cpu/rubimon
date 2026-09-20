@@ -60,7 +60,7 @@ const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
 const cubeOrigin=[300,510],cubeScale=46;
 let arrowHits=[];
 function drawSliceArrows(){
- arrowHits=[];if(tutorial)return;
+ arrowHits=[];if(tutorial||viewTurned())return;
  for(let axis=0;axis<3;axis++)for(let layer=-1;layer<=1;layer++){
  const face=Object.keys(E.slices).find(k=>E.slices[k].axis===axis&&E.slices[k].layer===layer);
  for(const dir of [1,-1]){
@@ -84,6 +84,14 @@ function drawSliceArrows(){
 }
 function arrowAt(e){const r=canvas.getBoundingClientRect(),p=[(e.clientX-r.left)*600/r.width,(e.clientY-r.top)*700/r.height];return arrowHits.find(a=>Math.abs(p[0]-a.p[0])<=17&&Math.abs(p[1]-a.p[1])<=17)}
 const camera=[.57,.48,.67],camRight=[.762,0,-.648],camUp=[-.311,.879,-.366];
+const viewHome={yaw:Math.atan2(.57,.67),pitch:Math.asin(.48)};
+let viewYaw=viewHome.yaw,viewPitch=viewHome.pitch,cubeDrag=null,suppressCubeClick=false;
+function viewTurned(){return Math.abs(viewYaw-viewHome.yaw)+Math.abs(viewPitch-viewHome.pitch)>.015}
+function updateView(){
+ const sy=Math.sin(viewYaw),cy=Math.cos(viewYaw),sp=Math.sin(viewPitch),cp=Math.cos(viewPitch);
+ camera.splice(0,3,sy*cp,sp,cy*cp);camRight.splice(0,3,cy,0,-sy);camUp.splice(0,3,-sy*sp,cp,-cy*sp);
+ byId('viewReset').disabled=!viewTurned();
+}
 const byId=id=>document.getElementById(id);
 const add=(a,b)=>a.map((v,i)=>v+b[i]),scale=(v,k)=>v.map(x=>x*k);
 function cubePoint(v){return [cubeOrigin[0]+E.dot(v,camRight)*cubeScale,cubeOrigin[1]-E.dot(v,camUp)*cubeScale]}
@@ -320,7 +328,8 @@ function pickLayers(e){const r=canvas.getBoundingClientRect(),p=[(e.clientX-r.le
  if(sticker){const faces=Object.keys(E.faces).filter(f=>sticker.p[E.slices[f].axis]===E.slices[f].layer);faces.sort((a,b)=>(sticker.n[E.slices[b].axis]===E.slices[b].layer)-(sticker.n[E.slices[a].axis]===E.slices[a].layer));return faces}
  let near=null,distance=12;for(const ring of ringHits)for(const q of ring.points){const d=Math.hypot(p[0]-q[0],p[1]-q[1]);if(d<distance){near=ring.face;distance=d}}return near?[near]:[];
 }
-canvas.addEventListener('click',e=>{if(tutorial||active||phase!=='ready')return;const arrow=arrowAt(e);if(arrow){selectLayer(arrow.face);previewDir=arrow.dir;userMove(arrow.face,arrow.dir);return}const faces=pickLayers(e);if(faces.length)selectLayer(faces[0],faces)});
+function boardClick(e){if(suppressCubeClick){suppressCubeClick=false;return}if(tutorial||active||phase!=='ready')return;const arrow=arrowAt(e);if(arrow){selectLayer(arrow.face);previewDir=arrow.dir;userMove(arrow.face,arrow.dir);return}const faces=pickLayers(e);if(faces.length)selectLayer(faces[0],faces)}
+canvas.addEventListener('click',boardClick);
 canvas.addEventListener('pointermove',e=>{if(e.pointerType==='touch')return;const arrow=arrowAt(e);if(arrow){hoverLayer=arrow.face;previewDir=arrow.dir;updateGuide();return}previewDir=0;hoverLayer=selectedLayer?null:pickLayers(e)[0]||null;updateGuide()});
 canvas.addEventListener('pointerleave',()=>{hoverLayer=null;previewDir=0;updateGuide()});
 for(const [id,dir] of [['guideCW',1],['guideCCW',-1]]){const b=byId(id);b.onclick=()=>{if(selectedLayer)userMove(selectedLayer,dir)};b.onpointerenter=b.onfocus=()=>{previewDir=dir};b.onpointerleave=b.onblur=()=>{previewDir=0}}
@@ -479,7 +488,30 @@ byId('party').after(document.querySelector('.squad-skills'));
 // Battle-first layout; editors stay available without covering the board.
 const panel=document.querySelector('.panel'),boardShell=document.createElement('section');boardShell.className='board-shell';
 canvas.before(boardShell);const boardTitle=document.createElement('div');boardTitle.className='board-heading';boardTitle.innerHTML='<span>THE ORBIT CHAMBER</span><strong>精霊の回転盤</strong>';boardShell.append(boardTitle,canvas,byId('moveGuide'));
-const boardHelp=document.createElement('p');boardHelp.className='board-help';boardHelp.textContent='矢印ボタンで回転 · カーソルを合わせると青円に回転方向を表示';boardShell.append(boardHelp);
+const boardHelp=document.createElement('p');boardHelp.className='board-help';boardHelp.textContent='立方体をドラッグして見回す（手数なし）・タップして層を選択';boardShell.append(boardHelp);
+const viewReset=document.createElement('button');viewReset.id='viewReset';viewReset.textContent='視点を元に戻す';viewReset.disabled=true;viewReset.style.cssText='display:block;margin:8px auto;font-size:11px';boardShell.append(viewReset);
+viewReset.onclick=()=>{viewYaw=viewHome.yaw;viewPitch=viewHome.pitch;updateView()};
+const cubeTouch=document.createElement('div');cubeTouch.setAttribute('aria-label','立方体の視点操作。ドラッグで見回す。矢印キーでも視点を変更。');cubeTouch.tabIndex=0;cubeTouch.style.cssText='position:absolute;touch-action:none;cursor:grab;user-select:none;z-index:2;border-radius:12px';boardShell.append(cubeTouch);
+function placeCubeTouch(){
+ if(getComputedStyle(boardShell).position==='static')boardShell.style.position='relative';
+ const w=canvas.clientWidth,h=canvas.clientHeight;
+ Object.assign(cubeTouch.style,{left:(canvas.offsetLeft+w*170/600)+'px',top:(canvas.offsetTop+h*380/700)+'px',width:(w*260/600)+'px',height:(h*235/700)+'px'});
+}
+new ResizeObserver(placeCubeTouch).observe(canvas);
+cubeTouch.addEventListener('pointerdown',e=>{if(tutorial||e.button!==0||cubeDrag)return;suppressCubeClick=false;cubeDrag={id:e.pointerId,x:e.clientX,y:e.clientY,yaw:viewYaw,pitch:viewPitch,moved:false};cubeTouch.setPointerCapture(e.pointerId)});
+cubeTouch.addEventListener('pointermove',e=>{
+ if(!cubeDrag||e.pointerId!==cubeDrag.id)return;
+ const dx=e.clientX-cubeDrag.x,dy=e.clientY-cubeDrag.y;
+ if(!cubeDrag.moved&&Math.hypot(dx,dy)<6)return;
+ cubeDrag.moved=true;cubeTouch.style.cursor='grabbing';
+ viewYaw=cubeDrag.yaw-dx*.009;viewPitch=Math.max(-1.35,Math.min(1.35,cubeDrag.pitch+dy*.009));
+ hoverLayer=null;previewDir=0;updateView();
+});
+function endCubeDrag(e){if(!cubeDrag||e.pointerId!==cubeDrag.id)return;suppressCubeClick=cubeDrag.moved;cubeDrag=null;cubeTouch.style.cursor='grab';if(cubeTouch.hasPointerCapture(e.pointerId))cubeTouch.releasePointerCapture(e.pointerId);setTimeout(()=>{suppressCubeClick=false},350)}
+cubeTouch.addEventListener('pointerup',endCubeDrag);cubeTouch.addEventListener('pointercancel',endCubeDrag);cubeTouch.addEventListener('lostpointercapture',endCubeDrag);
+cubeTouch.addEventListener('click',boardClick);
+cubeTouch.addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)||tutorial)return;e.preventDefault();viewYaw+=(e.key==='ArrowLeft'?.2:e.key==='ArrowRight'?-.2:0);viewPitch=Math.max(-1.35,Math.min(1.35,viewPitch+(e.key==='ArrowUp'?.15:e.key==='ArrowDown'?-.15:0)));updateView()});
+const viewNote=document.createElement('small');viewNote.textContent='見回し中は固定矢印を隠します。面をタップして方向を選ぶか、視点を戻してください。';viewNote.style.cssText='display:block;text-align:center;font-size:10px;color:#a9bcb5;line-height:1.6';boardShell.append(viewNote);
 byId('moveGuide').querySelector('small').textContent='光る帯だけが移動対象。方向を選んで回転、選択解除で閉じます。';
 const settingsDrawer=document.createElement('details');settingsDrawer.className='settings-drawer';settingsDrawer.innerHTML='<summary>設定・操作説明・試作ツール</summary>';
 const rule=document.querySelector('.rule-panel'),ruleLabel=rule.querySelector('label'),ruleNote=rule.querySelector('small');settingsDrawer.append(document.querySelector('.difficulty-settings'),ruleLabel,ruleNote,document.querySelector('.settings'),byId('controls'),byId('tutorialStart'));
