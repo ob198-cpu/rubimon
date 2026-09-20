@@ -9,7 +9,7 @@ function battleVibration(kind,damage){
 }
 let compactBoard=false;
 let orbitExpanded=false;
-let refillAssistance=true;
+let refillAssistance=false;
 let customColorCount=null;
 const colorOrder=['R','B','D','U','F','L','V','I','M','H','P'];
 function activePool(){return customColorCount===null?B.pools[difficulty]:colorOrder.slice(0,customColorCount)}
@@ -614,11 +614,11 @@ const boardLeftActions=document.createElement('div');boardLeftActions.className=
 const immuneToggle=document.createElement('button');immuneToggle.id='immuneToggle';immuneToggle.textContent='無敵OFF';immuneToggle.title='自分の無敵をONにする';immuneToggle.setAttribute('aria-pressed','false');boardLeftActions.append(immuneToggle);
 immuneToggle.onclick=()=>{manualImmune=!manualImmune;immuneToggle.textContent=manualImmune?'無敵ON':'無敵OFF';immuneToggle.title=manualImmune?'自分の無敵をOFFにする':'自分の無敵をONにする';immuneToggle.setAttribute('aria-pressed',String(manualImmune));byId('battleLog').textContent=manualImmune?'無敵をONにしました。敵の攻撃ダメージは0になります。':'無敵をOFFにしました。敵の攻撃ダメージを受けます。';refresh()};
 orbitToolbar.append(viewReset);
-const refillToggle=document.createElement('button');refillToggle.id='refillToggle';refillToggle.textContent='補充OFF';refillToggle.title='そろえたパネルを灰色にして補充を停止';refillToggle.setAttribute('aria-pressed','false');orbitToolbar.append(refillToggle);
+const refillToggle=document.createElement('button');refillToggle.id='refillToggle';refillToggle.textContent='補充OFF';refillToggle.title='補充OFF：そろえたパネルは灰色になります';refillToggle.setAttribute('aria-pressed','false');orbitToolbar.append(refillToggle);
 refillToggle.onclick=()=>{
  refillAssistance=!refillAssistance;
  if(refillAssistance){const ids=new Set(state.filter(s=>s.face==='X').map(s=>s.id));if(ids.size)Q.refill(state,ids,activePool(),attackKeys(),attackPolicy(),2,Math.random,teamConversion,difficulty,attackChain);spentElements.clear();applyTemporaryConversion();refresh()}
- refillToggle.textContent=refillAssistance?'補充OFF':'補充ON';refillToggle.title=refillAssistance?'そろえたパネルを灰色にして補充を停止':'灰色パネルを補充して通常ルールへ戻す';refillToggle.setAttribute('aria-pressed',String(!refillAssistance));
+ refillToggle.textContent=refillAssistance?'補充ON':'補充OFF';refillToggle.title=refillAssistance?'補充ON：コンボしやすい属性を補充します':'補充OFF：そろえたパネルは灰色になります';refillToggle.setAttribute('aria-pressed',String(refillAssistance));
  byId('battleLog').textContent=refillAssistance?'補充をONにしました。灰色パネルを属性パネルへ戻しました。':'補充をOFFにしました。各属性は最初の成立時だけ攻撃し、そろえたパネルは灰色になります。';
 };
 viewReset.onclick=()=>{pendingMove=null;viewYaw=viewHome.yaw;viewPitch=viewHome.pitch;updateView()};
