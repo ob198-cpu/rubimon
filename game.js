@@ -2,7 +2,7 @@
 const E=CubeEngine,canvas=document.getElementById('scene'),ctx=canvas.getContext('2d');
 const B=BattleRules;
 let compactBoard=false;
-function boardViewport(){return compactBoard?{w:460,h:888,x:70,y:0}:{w:600,h:800,x:0,y:0}}
+function boardViewport(){return compactBoard?{w:460,h:908,x:70,y:-20}:{w:600,h:820,x:0,y:-20}}
 function boardPointer(e){const r=canvas.getBoundingClientRect(),v=boardViewport();return [(e.clientX-r.left)*v.w/r.width+v.x,(e.clientY-r.top)*v.h/r.height+v.y]}
 const T=TeamRules, Q=BalanceRules;
 let proofCache=null,shuffleCharges=2,balanceMetrics={repairs:0,refills:0,rejectedObstacles:0};
@@ -254,7 +254,7 @@ function frame(now){
       refresh();if(m.kind==='user'&&phase==='ready')resolveTurn();
     }
   }
-  ctx.clearRect(0,0,600,900);drawOrbits(angle);ctx.save();if(compactBoard)ctx.translate(0,30);drawCube(angle);drawGuide();ctx.restore();drawSliceArrows();
+  ctx.clearRect(0,-20,600,940);drawOrbits(angle);ctx.save();if(compactBoard)ctx.translate(0,30);drawCube(angle);drawGuide();ctx.restore();drawSliceArrows();
   if(fx){const t=(now-fx.start)/1100;if(t<1){ctx.save();ctx.globalAlpha=1-t;for(const p of fx.points){const x=p[0]+(540-p[0])*t,y=p[1]+(35-p[1])*t-60*Math.sin(t*Math.PI);ctx.beginPath();ctx.arc(x,y,5*(1-t)+2,0,Math.PI*2);ctx.fillStyle=fx.color;ctx.shadowColor=fx.color;ctx.shadowBlur=16;ctx.fill()}ctx.restore()}else fx=null}
   if(skillFlash){const t=(now-skillFlash.start)/2200;if(t<1){ctx.save();ctx.fillStyle='#121727df';ctx.fillRect(20,320,560,78);ctx.strokeStyle=skillFlash.color;ctx.lineWidth=2;ctx.strokeRect(20,320,560,78);ctx.textAlign='center';ctx.fillStyle='#ffe8ae';ctx.font='bold 17px sans-serif';ctx.fillText('1面完成 · SKILL',300,345);ctx.font='bold 21px sans-serif';ctx.fillStyle=skillFlash.color;ctx.fillText(skillFlash.name,300,379);ctx.restore()}else skillFlash=null}
   drawBattleEffects(now);
@@ -448,7 +448,7 @@ function drawBattleEffects(now){
   if(age<950&&!e.counter){
    const t=clamp((age-300)/650,0,1);
    e.points.forEach((point,i)=>{
-    const v=boardViewport(),source=[board.left+(point[0]-v.x)*board.width/v.w,board.top+point[1]*board.height/v.h];
+    const v=boardViewport(),source=[board.left+(point[0]-v.x)*board.width/v.w,board.top+(point[1]-v.y)*board.height/v.h];
     c.globalAlpha=(1-t)*.8;c.lineWidth=2;c.beginPath();c.arc(source[0],source[1],(10+age/35)*board.width/600,0,Math.PI*2);c.stroke();
     if(age<300||reducedMotion.matches)return;
     const bend=(i%2?1:-1)*(35+i*6),at=u=>[source[0]+(target[0]-source[0])*u+Math.sin(u*Math.PI)*bend,source[1]+(target[1]-source[1])*u-70*Math.sin(u*Math.PI)];
@@ -536,8 +536,8 @@ const cubeTouch=document.createElement('div');cubeTouch.setAttribute('aria-label
 function placeCubeTouch(){
  if(getComputedStyle(boardShell).position==='static')boardShell.style.position='relative';
  const w=canvas.clientWidth,h=canvas.clientHeight;
- const v=boardViewport();Object.assign(cubeTouch.style,{left:(canvas.offsetLeft+w*(202-v.x)/v.w)+'px',top:(canvas.offsetTop+h*(compactBoard?404:374)/v.h)+'px',width:(w*312/v.w)+'px',height:(h*312/v.h)+'px'});
- Object.assign(dragHint.style,{left:(canvas.offsetLeft+w*(358-v.x)/v.w)+'px',top:(canvas.offsetTop+h*(compactBoard?560:530)/v.h)+'px'});
+ const v=boardViewport();Object.assign(cubeTouch.style,{left:(canvas.offsetLeft+w*(202-v.x)/v.w)+'px',top:(canvas.offsetTop+h*((compactBoard?404:374)-v.y)/v.h)+'px',width:(w*312/v.w)+'px',height:(h*312/v.h)+'px'});
+ Object.assign(dragHint.style,{left:(canvas.offsetLeft+w*(358-v.x)/v.w)+'px',top:(canvas.offsetTop+h*((compactBoard?560:530)-v.y)/v.h)+'px'});
 }
 new ResizeObserver(placeCubeTouch).observe(canvas);
 cubeTouch.addEventListener('pointerdown',e=>{if(tutorial||e.button!==0||cubeDrag)return;suppressCubeClick=false;cubeDrag={id:e.pointerId,x:e.clientX,y:e.clientY,yaw:viewYaw,pitch:viewPitch,moved:false};cubeTouch.setPointerCapture(e.pointerId)});
