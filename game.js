@@ -2,7 +2,7 @@
 const E=CubeEngine,canvas=document.getElementById('scene'),ctx=canvas.getContext('2d');
 const B=BattleRules;
 let compactBoard=false;
-function boardViewport(){return compactBoard?{w:440,h:778,x:80,y:0}:{w:600,h:800,x:0,y:0}}
+function boardViewport(){return compactBoard?{w:460,h:888,x:70,y:0}:{w:600,h:800,x:0,y:0}}
 function boardPointer(e){const r=canvas.getBoundingClientRect(),v=boardViewport();return [(e.clientX-r.left)*v.w/r.width+v.x,(e.clientY-r.top)*v.h/r.height+v.y]}
 const T=TeamRules, Q=BalanceRules;
 let proofCache=null,shuffleCharges=2,balanceMetrics={repairs:0,refills:0,rejectedObstacles:0};
@@ -86,16 +86,18 @@ function sliceControl(axis,layer,dir){
 }
 function drawSliceArrows(){
  arrowHits=[];if(tutorial||cubeDrag?.moved)return;
+ const columns=[];for(const axis of [0,2])for(let layer=-1;layer<=1;layer++)columns.push({axis,layer,x:sliceControl(axis,layer,1).anchor[0]});columns.sort((a,b)=>a.x-b.x||a.axis-b.axis);
  for(let axis=0;axis<3;axis++)for(let layer=-1;layer<=1;layer++){
  const face=Object.keys(E.slices).find(k=>E.slices[k].axis===axis&&E.slices[k].layer===layer);
  for(const dir of [1,-1]){
  // Screen-space controls: horizontal rows on the left, vertical columns below.
  // Front columns (X) and right-face columns (Z) have opposite rotation signs.
  const control=sliceControl(axis,layer,dir),angle=control.angle;
- const p=compactBoard?(axis===1?[angle===0?172:110,474-layer*60]:[183+((control.p[0]<330?0:3)+Math.round((control.p[0]-(control.p[0]<330?204:350))/42))*62,angle<0?666:732]):[control.p[0]+(axis===1?0:40),control.p[1]+(axis===1?20:92)];
+ const rank=columns.findIndex(c=>c.axis===axis&&c.layer===layer);
+ const p=compactBoard?(axis===1?[angle===0?172:110,564-layer*60]:[183+rank*62,angle<0?756:822]):[axis===1?control.p[0]:183+rank*62,control.p[1]+(axis===1?20:92)];
  const points=[p],end=[p[0]+13*Math.cos(angle),p[1]+13*Math.sin(angle)];
  const disabled=!!active||phase!=='ready'||turnMoves>=turnLimit||!B.canRotate(state,face),lit=guideFace()===face&&(pendingMove?.dir||previewDir)===dir;
- if(lit){const a=[control.anchor[0],control.anchor[1]-(compactBoard?60:0)],half=compactBoard?29:19;ctx.save();ctx.strokeStyle='#ebc778';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(...a);if(axis===1){ctx.lineTo(204,a[1]);ctx.lineTo(204,p[1]);ctx.lineTo(p[0]+half,p[1])}else{ctx.lineTo(a[0],p[1]-half-10);ctx.lineTo(p[0],p[1]-half)}ctx.stroke();ctx.beginPath();ctx.arc(...a,3,0,Math.PI*2);ctx.fillStyle='#ebc778';ctx.fill();ctx.restore()}
+ if(lit||(axis===1?angle===0:angle<0)){const a=[control.anchor[0],control.anchor[1]+(compactBoard?30:0)],half=compactBoard?29:19;ctx.save();ctx.strokeStyle=lit?'#ebc778':'#a5b6b077';ctx.lineWidth=lit?1.8:1;ctx.beginPath();ctx.moveTo(...a);ctx.lineTo(axis===1?p[0]+half:p[0],axis===1?p[1]:p[1]-half);ctx.stroke();ctx.beginPath();ctx.arc(...a,2.5,0,Math.PI*2);ctx.fillStyle=lit?'#ebc778':'#a5b6b0';ctx.fill();ctx.restore()}
  arrowHits.push({p,points,face,dir});ctx.save();if(compactBoard){ctx.translate(...p);ctx.scale(1.58,1.58);ctx.translate(-p[0],-p[1])}ctx.globalAlpha=disabled?.3:1;ctx.lineCap='round';ctx.lineJoin='round';
  const finish=ctx.createLinearGradient(p[0],p[1]-17,p[0],p[1]+17);finish.addColorStop(0,lit?'#416168':'#30494c');finish.addColorStop(1,lit?'#223e45':'#142b30');ctx.fillStyle=finish;
  ctx.shadowColor='#0005';ctx.shadowBlur=4;ctx.shadowOffsetY=2;ctx.beginPath();ctx.roundRect(p[0]-17,p[1]-17,34,34,7);ctx.fill();ctx.shadowBlur=0;ctx.shadowOffsetY=0;
@@ -146,7 +148,7 @@ function drawOrbits(angle){
       p=[center[0]+r*Math.cos(a+delta*t),center[1]+r*Math.sin(a+delta*t)];
     }
     // An opaque backing keeps every orbit/selection line behind the symbol.
-    ctx.save();if(compactBoard){ctx.translate(...p);ctx.scale(1,1.25);ctx.translate(-p[0],-p[1])}ctx.beginPath();ctx.arc(...p,11,0,Math.PI*2);ctx.fillStyle='#152f34';ctx.fill();
+    ctx.save();ctx.beginPath();ctx.arc(...p,11,0,Math.PI*2);ctx.fillStyle='#152f34';ctx.fill();
     if(matched.has(s.id)&&!active){ctx.beginPath();ctx.arc(...p,10.7,0,Math.PI*2);ctx.strokeStyle='#ffe9a4';ctx.lineWidth=1.5;ctx.stroke()}
     drawSpirit(ctx,s.face,p[0],p[1],compactBoard?11:10);
     drawBlockStatus(s,p,11);
@@ -250,7 +252,7 @@ function frame(now){
       refresh();if(m.kind==='user'&&phase==='ready')resolveTurn();
     }
   }
-  ctx.clearRect(0,0,600,800);ctx.save();if(compactBoard)ctx.scale(1,.8);drawOrbits(angle);ctx.restore();ctx.save();if(compactBoard)ctx.translate(0,-60);drawCube(angle);drawGuide();ctx.restore();drawSliceArrows();
+  ctx.clearRect(0,0,600,900);drawOrbits(angle);ctx.save();if(compactBoard)ctx.translate(0,30);drawCube(angle);drawGuide();ctx.restore();drawSliceArrows();
   if(fx){const t=(now-fx.start)/1100;if(t<1){ctx.save();ctx.globalAlpha=1-t;for(const p of fx.points){const x=p[0]+(540-p[0])*t,y=p[1]+(35-p[1])*t-60*Math.sin(t*Math.PI);ctx.beginPath();ctx.arc(x,y,5*(1-t)+2,0,Math.PI*2);ctx.fillStyle=fx.color;ctx.shadowColor=fx.color;ctx.shadowBlur=16;ctx.fill()}ctx.restore()}else fx=null}
   if(skillFlash){const t=(now-skillFlash.start)/2200;if(t<1){ctx.save();ctx.fillStyle='#121727df';ctx.fillRect(20,320,560,78);ctx.strokeStyle=skillFlash.color;ctx.lineWidth=2;ctx.strokeRect(20,320,560,78);ctx.textAlign='center';ctx.fillStyle='#ffe8ae';ctx.font='bold 17px sans-serif';ctx.fillText('1面完成 · SKILL',300,345);ctx.font='bold 21px sans-serif';ctx.fillStyle=skillFlash.color;ctx.fillText(skillFlash.name,300,379);ctx.restore()}else skillFlash=null}
   drawBattleEffects(now);
@@ -349,7 +351,7 @@ byId('passTurn').onclick=()=>{if(tutorial||active||queue.length||phase!=='ready'
 byId('undo').onclick=()=>{if(active||queue.length||!history.length||phase!=='ready')return;const m=history[history.length-1];queue.push({face:m.face,dir:-m.dir,kind:'undo'})};
 addEventListener('keydown',e=>{if(e.target.matches('select,input,textarea')||e.ctrlKey||e.metaKey||e.altKey||e.repeat)return;const f=e.key.toUpperCase();if(E.slices[f]){e.preventDefault();userMove(f,e.shiftKey?-1:1)}});
 function inside(p,poly){let c=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const a=poly[i],b=poly[j];if((a[1]>p[1])!==(b[1]>p[1])&&p[0]<(b[0]-a[0])*(p[1]-a[1])/(b[1]-a[1])+a[0])c=!c}return c}
-function pickLayers(e){const p=boardPointer(e);if(compactBoard){if(p[1]>304)return [];p[1]/=.8}let sticker;
+function pickLayers(e){const p=boardPointer(e);let sticker;
  // The cube surface is for camera dragging only; arrows select rotation guides.
  if(p[1]>380)return [];
  else{let d=11;for(const s of state){const q=E.orbit(s),n=Math.hypot(p[0]-q[0],p[1]-q[1]);if(n<d){sticker=s;d=n}}}
@@ -444,7 +446,7 @@ function drawBattleEffects(now){
   if(age<950&&!e.counter){
    const t=clamp((age-300)/650,0,1);
    e.points.forEach((point,i)=>{
-    const v=boardViewport(),source=[board.left+(point[0]-v.x)*board.width/v.w,board.top+(compactBoard?point[1]*.8:point[1])*board.height/v.h];
+    const v=boardViewport(),source=[board.left+(point[0]-v.x)*board.width/v.w,board.top+point[1]*board.height/v.h];
     c.globalAlpha=(1-t)*.8;c.lineWidth=2;c.beginPath();c.arc(source[0],source[1],(10+age/35)*board.width/600,0,Math.PI*2);c.stroke();
     if(age<300||reducedMotion.matches)return;
     const bend=(i%2?1:-1)*(35+i*6),at=u=>[source[0]+(target[0]-source[0])*u+Math.sin(u*Math.PI)*bend,source[1]+(target[1]-source[1])*u-70*Math.sin(u*Math.PI)];
@@ -532,7 +534,7 @@ const cubeTouch=document.createElement('div');cubeTouch.setAttribute('aria-label
 function placeCubeTouch(){
  if(getComputedStyle(boardShell).position==='static')boardShell.style.position='relative';
  const w=canvas.clientWidth,h=canvas.clientHeight;
- const v=boardViewport();Object.assign(cubeTouch.style,{left:(canvas.offsetLeft+w*(202-v.x)/v.w)+'px',top:(canvas.offsetTop+h*(compactBoard?314:374)/v.h)+'px',width:(w*312/v.w)+'px',height:(h*312/v.h)+'px'});
+ const v=boardViewport();Object.assign(cubeTouch.style,{left:(canvas.offsetLeft+w*(202-v.x)/v.w)+'px',top:(canvas.offsetTop+h*(compactBoard?404:374)/v.h)+'px',width:(w*312/v.w)+'px',height:(h*312/v.h)+'px'});
 }
 new ResizeObserver(placeCubeTouch).observe(canvas);
 cubeTouch.addEventListener('pointerdown',e=>{if(tutorial||e.button!==0||cubeDrag)return;suppressCubeClick=false;cubeDrag={id:e.pointerId,x:e.clientX,y:e.clientY,yaw:viewYaw,pitch:viewPitch,moved:false};cubeTouch.setPointerCapture(e.pointerId)});
