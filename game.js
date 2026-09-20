@@ -587,6 +587,7 @@ const viewReset=document.createElement('button');viewReset.id='viewReset';viewRe
 const boardActions=document.createElement('div');boardActions.className='board-actions';viewReset.before(boardActions);boardActions.append(byId('rescue'),viewReset);
 boardActions.before(dragHint);
 const boardLeftActions=document.createElement('div');boardLeftActions.className='board-left-actions';boardActions.prepend(boardLeftActions);boardLeftActions.append(byId('hint'),byId('rescue'));
+orbitToolbar.append(viewReset);
 viewReset.onclick=()=>{pendingMove=null;viewYaw=viewHome.yaw;viewPitch=viewHome.pitch;updateView()};
 const cubeTouch=document.createElement('div');cubeTouch.setAttribute('aria-label','立方体の視点操作。ドラッグで見回す。矢印キーでも視点を変更。');cubeTouch.tabIndex=0;cubeTouch.style.cssText='position:absolute;touch-action:none;cursor:grab;user-select:none;z-index:2;border-radius:12px';boardShell.append(cubeTouch);
 function placeCubeTouch(){
