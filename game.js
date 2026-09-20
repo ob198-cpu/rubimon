@@ -274,9 +274,10 @@ function reset(){attackChain=0;comboBanner.classList.remove('active');pendingMov
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 async function resolveTurn(){
  if(phase!=='ready'||active||queue.length||(turnMoves===0&&canAct()))return;
- history=[];phase='resolving';const token=roundToken;combo=0;let total=0,healed=0;refresh();
+ history=[];phase='resolving';const token=roundToken;combo=0;let total=0,healed=0,recoveryMatched=false;refresh();
  for(let chain=0;chain<(tutorial?8:1);chain++){
   const groups=currentMatches();if(!groups.length)break;
+  recoveryMatched ||= groups.some(g=>g.element==='D');
   let result=teamOutcome(groups,combo);if(!tutorial){result=T.comboBonus(result,attackChain);attackChain=result.comboBonus.chain;showComboBonus(result.comboBonus);gravityUsed=result.usedGravity}combo+=groups.length;total+=result.damage;healed+=result.heal;
   const skill=groups.find(g=>g.skill);
   if(skill)skillFlash={start:performance.now(),name:tutorial?B.skills[skill.element]:B.spirits[skill.element].element+'属性・面攻撃',color:B.spirits[skill.element].color};
@@ -294,7 +295,7 @@ async function resolveTurn(){
   else{const budget=turnMoves>=turnLimit?3:Math.max(1,turnLimit-turnMoves);Q.refill(state,ids,B.pools[difficulty],attackKeys(),attackPolicy(),difficulty==='easy'?1:Math.min(3,budget),Math.random,teamConversion,difficulty,attackChain);balanceMetrics.refills++}
   applyTemporaryConversion();refresh();if(enemyHp===0)break;
  }
- if(!tutorial&&!total)attackChain=0;
+ if(!tutorial&&!total&&!recoveryMatched)attackChain=0;
  byId('battleLog').textContent=combo?combo+' COMBO / '+total+' ダメージ'+(!tutorial&&attackChain>1?' / CHAIN '+attackChain:'')+(healed?' / 回復 +'+healed:''):'そろわなかった！';
  if(enemyHp===0){
   await pause(550);if(token!==roundToken)return;
@@ -359,7 +360,7 @@ byId('rescue').onclick=()=>{
  const result=Q.initial(B.pools[difficulty],attackKeys(),rescuePolicy,'easy');
  if(!result.state){byId('battleLog').textContent='攻撃属性と出現色が合いません。編成・難易度を変更してください。';return}
  state=result.state;obstacles={seals:[],restrict:0};teamConversion=null;proofCache=null;history=[];balanceMetrics.repairs++;shuffleCharges--;
- byId('battleLog').textContent='再配置：色を再生成して妨害と一時変換を解除。HP・残り手数・技の待ち時間は維持。残り'+shuffleCharges+'回。';refresh();
+ byId('battleLog').textContent='再配置：色を再生成して妨害と一時変換を解除。HP・残り手数・技の待ち時間・チェインは維持。残り'+shuffleCharges+'回。';refresh();
 };
 byId('passTurn').onclick=()=>{if(tutorial||active||queue.length||phase!=='ready')return;turnMoves=turnLimit;resolveTurn()};
 byId('undo').onclick=()=>{if(active||queue.length||!history.length||phase!=='ready')return;const m=history[history.length-1];queue.push({face:m.face,dir:-m.dir,kind:'undo'})};

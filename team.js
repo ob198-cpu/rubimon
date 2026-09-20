@@ -43,8 +43,8 @@ function outcome(ids,groups,enemy,currentHp,usedGravity=false,tuning=defaults,bu
 function incoming(ids,enemy,turn,tuning=defaults,immune=false,shield=false){const raw=enemy.id==='storm'&&turn%3!==0?Math.round(enemy.attack*.35):enemy.attack;return immune?0:Math.max(1,Math.round(Math.max(1,raw-stats(ids,tuning).def)*(shield?.5:1)))}
 function comboBonus(result,previous){
  const count=result.attacks.filter(a=>!a.heal&&a.value>0).length;
- const chain=count?previous+1:0,chainRate=1+Math.min(5,Math.max(0,chain-1))*.1,burstRate=1+Math.min(4,Math.max(0,count-1))*.2;
- const multiplier=Math.min(2.5,chainRate*burstRate);
+ const chain=count?previous+1:result.attacks.some(a=>a.heal)?previous:0,chainRate=1+Math.min(5,Math.max(0,chain-1))*.1,burstRate=1+Math.min(4,Math.max(0,count-1))*.2;
+ const multiplier=count?Math.min(2.5,chainRate*burstRate):1;
  const attacks=result.attacks.map(a=>a.heal?{...a}:{...a,value:Math.round(a.value*multiplier)});
  return {...result,attacks,damage:attacks.filter(a=>!a.heal).reduce((sum,a)=>sum+a.value,0),comboBonus:{chain,burst:count,multiplier,baseDamage:result.damage}};
 }
