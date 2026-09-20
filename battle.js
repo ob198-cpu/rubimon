@@ -46,19 +46,14 @@ function board(E,random=Math.random,keys=pools.normal){
  for(let i=0;i<100;i++){const found=matches(state);if(!found.length)break;refill(state,new Set(found.flatMap(g=>g.ids)),random,keys)}
  return state;
 }
-function rubikBoard(E,random=Math.random,keys=pools.hard,moves=28){
- if(keys.length!==9)throw Error('9色ルービック盤面には9属性が必要です');
+function rubikBoard(E,random=Math.random,keys=pools.normal,moves=28){
+ if(keys.length!==6)throw Error('通常のルービック盤面には6属性が必要です');
  const state=E.create(),faceNames=Object.keys(E.faces);
- // Solved target: eighteen monochrome rows, two rows (six stickers) per attribute.
- // Starting from this target and applying only legal turns guarantees a reversible,
- // physically attainable nine-attribute arrangement.
+ // A standard solved 3x3 cube has one color on each of its six faces.
+ // Scrambling it only with legal turns guarantees a physically attainable board.
  for(const [faceIndex,faceName] of faceNames.entries()){
   const f=E.faces[faceName],stickers=state.filter(s=>s.n[f.axis]===f.layer);
-  const rowAxis=(f.axis+1)%3;
-  for(const [rowIndex,row] of [-1,0,1].entries()){
-   const key=keys[(faceIndex*3+rowIndex)%keys.length];
-   stickers.filter(s=>s.p[rowAxis]===row).forEach(s=>s.face=key);
-  }
+  stickers.forEach(s=>s.face=keys[faceIndex]);
  }
  let previous='';
  for(let i=0;i<moves;i++){
