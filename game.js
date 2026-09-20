@@ -87,6 +87,9 @@ function sliceControl(axis,layer,dir){
 function drawSliceArrows(){
  arrowHits=[];if(tutorial||cubeDrag?.moved)return;
  const columns=[];for(const axis of [0,2])for(let layer=-1;layer<=1;layer++)columns.push({axis,layer,x:sliceControl(axis,layer,1).anchor[0]});columns.sort((a,b)=>a.x-b.x||a.axis-b.axis);
+ const gap=compactBoard?56:38,center=columns.reduce((sum,c)=>sum+c.x,0)/columns.length;
+ const columnX=columns.map(c=>c.x);for(let i=1;i<columnX.length;i++)columnX[i]=Math.max(columnX[i],columnX[i-1]+gap);
+ let shift=center-columnX.reduce((sum,x)=>sum+x,0)/columnX.length;if(compactBoard)shift=Math.max(99-columnX[0],Math.min(501-columnX[5],shift));for(let i=0;i<columnX.length;i++)columnX[i]+=shift;
  for(let axis=0;axis<3;axis++)for(let layer=-1;layer<=1;layer++){
  const face=Object.keys(E.slices).find(k=>E.slices[k].axis===axis&&E.slices[k].layer===layer);
  for(const dir of [1,-1]){
@@ -94,10 +97,9 @@ function drawSliceArrows(){
  // Front columns (X) and right-face columns (Z) have opposite rotation signs.
  const control=sliceControl(axis,layer,dir),angle=control.angle;
  const rank=columns.findIndex(c=>c.axis===axis&&c.layer===layer);
- const p=compactBoard?(axis===1?[angle===0?172:110,564-layer*60]:[183+rank*62,angle<0?756:822]):[axis===1?control.p[0]:183+rank*62,control.p[1]+(axis===1?20:92)];
+ const p=compactBoard?(axis===1?[angle===0?174:116,564-layer*58]:[columnX[rank],angle<0?746:804]):[axis===1?(angle===0?179:141):columnX[rank],control.p[1]+(axis===1?20:76)];
  const points=[p],end=[p[0]+13*Math.cos(angle),p[1]+13*Math.sin(angle)];
  const disabled=!!active||phase!=='ready'||turnMoves>=turnLimit||!B.canRotate(state,face),lit=guideFace()===face&&(pendingMove?.dir||previewDir)===dir;
- if(lit||(axis===1?angle===0:angle<0)){const a=[control.anchor[0],control.anchor[1]+(compactBoard?30:0)],half=compactBoard?29:19;ctx.save();ctx.strokeStyle=lit?'#ebc778':'#a5b6b077';ctx.lineWidth=lit?1.8:1;ctx.beginPath();ctx.moveTo(...a);ctx.lineTo(axis===1?p[0]+half:p[0],axis===1?p[1]:p[1]-half);ctx.stroke();ctx.beginPath();ctx.arc(...a,2.5,0,Math.PI*2);ctx.fillStyle=lit?'#ebc778':'#a5b6b0';ctx.fill();ctx.restore()}
  arrowHits.push({p,points,face,dir});ctx.save();if(compactBoard){ctx.translate(...p);ctx.scale(1.58,1.58);ctx.translate(-p[0],-p[1])}ctx.globalAlpha=disabled?.3:1;ctx.lineCap='round';ctx.lineJoin='round';
  const finish=ctx.createLinearGradient(p[0],p[1]-17,p[0],p[1]+17);finish.addColorStop(0,lit?'#416168':'#30494c');finish.addColorStop(1,lit?'#223e45':'#142b30');ctx.fillStyle=finish;
  ctx.shadowColor='#0005';ctx.shadowBlur=4;ctx.shadowOffsetY=2;ctx.beginPath();ctx.roundRect(p[0]-17,p[1]-17,34,34,7);ctx.fill();ctx.shadowBlur=0;ctx.shadowOffsetY=0;
