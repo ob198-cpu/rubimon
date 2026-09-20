@@ -2,7 +2,7 @@
 const E=CubeEngine,canvas=document.getElementById('scene'),ctx=canvas.getContext('2d');
 const B=BattleRules;
 let compactBoard=false;
-function boardViewport(){return compactBoard?{w:440,h:780,x:80,y:0}:{w:600,h:800,x:0,y:0}}
+function boardViewport(){return compactBoard?{w:440,h:750,x:80,y:0}:{w:600,h:780,x:0,y:0}}
 function boardPointer(e){const r=canvas.getBoundingClientRect(),v=boardViewport();return [(e.clientX-r.left)*v.w/r.width+v.x,(e.clientY-r.top)*v.h/r.height+v.y]}
 const T=TeamRules, Q=BalanceRules;
 let proofCache=null,shuffleCharges=2,balanceMetrics={repairs:0,refills:0,rejectedObstacles:0};
@@ -90,8 +90,8 @@ function drawSliceArrows(){
  // Screen-space controls: horizontal rows on the left, vertical columns below.
  // Front columns (X) and right-face columns (Z) have opposite rotation signs.
  const control=sliceControl(axis,layer,dir),angle=control.angle;
- const p=compactBoard?(axis===1?[angle===0?172:110,484-layer*60]:[115+((control.p[0]<330?0:3)+Math.round((control.p[0]-(control.p[0]<330?204:350))/42))*74,angle<0?682:744]):[control.p[0],control.p[1]+(axis===1?30:100)];
- const points=[p],end=[p[0]+16*Math.cos(angle),p[1]+16*Math.sin(angle)];
+ const p=compactBoard?(axis===1?[angle===0?172:110,474-layer*60]:[115+((control.p[0]<330?0:3)+Math.round((control.p[0]-(control.p[0]<330?204:350))/42))*74,angle<0?654:716]):[control.p[0],control.p[1]+(axis===1?20:80)];
+ const points=[p],end=[p[0]+13*Math.cos(angle),p[1]+13*Math.sin(angle)];
  const disabled=!!active||phase!=='ready'||turnMoves>=turnLimit||!B.canRotate(state,face),lit=guideFace()===face&&(pendingMove?.dir||previewDir)===dir;
  arrowHits.push({p,points,face,dir});ctx.save();if(compactBoard){ctx.translate(...p);ctx.scale(1.58,1.58);ctx.translate(-p[0],-p[1])}ctx.globalAlpha=disabled?.3:1;ctx.lineCap='round';ctx.lineJoin='round';
  const finish=ctx.createLinearGradient(p[0],p[1]-17,p[0],p[1]+17);finish.addColorStop(0,lit?'#416168':'#30494c');finish.addColorStop(1,lit?'#223e45':'#142b30');ctx.fillStyle=finish;
@@ -99,8 +99,8 @@ function drawSliceArrows(){
  ctx.strokeStyle=lit?'#ebc778':'#89958d';ctx.lineWidth=lit?1.6:1;ctx.stroke();
  ctx.beginPath();ctx.moveTo(p[0]-10,p[1]-14);ctx.lineTo(p[0]+10,p[1]-14);ctx.strokeStyle='#ffffff18';ctx.stroke();
  ctx.strokeStyle=lit?'#ffe5a3':'#eee9db';ctx.lineWidth=2;
- ctx.beginPath();ctx.moveTo(p[0]-16*Math.cos(angle),p[1]-16*Math.sin(angle));ctx.lineTo(...end);ctx.stroke();
- ctx.beginPath();ctx.moveTo(end[0]-16*Math.cos(angle-.55),end[1]-16*Math.sin(angle-.55));ctx.lineTo(...end);ctx.lineTo(end[0]-16*Math.cos(angle+.55),end[1]-16*Math.sin(angle+.55));ctx.stroke();ctx.restore();
+ ctx.beginPath();ctx.moveTo(p[0]-13*Math.cos(angle),p[1]-13*Math.sin(angle));ctx.lineTo(...end);ctx.stroke();
+ ctx.beginPath();ctx.moveTo(end[0]-13*Math.cos(angle-.55),end[1]-13*Math.sin(angle-.55));ctx.lineTo(...end);ctx.lineTo(end[0]-13*Math.cos(angle+.55),end[1]-13*Math.sin(angle+.55));ctx.stroke();ctx.restore();
  }}
 }
 function arrowAt(e){const p=boardPointer(e),half=compactBoard?27:17;return arrowHits.find(a=>Math.abs(p[0]-a.p[0])<=half&&Math.abs(p[1]-a.p[1])<=half)}
@@ -115,7 +115,9 @@ function updateView(){
 }
 const byId=id=>document.getElementById(id);
 const add=(a,b)=>a.map((v,i)=>v+b[i]),scale=(v,k)=>v.map(x=>x*k);
-function cubePoint(v){return [cubeOrigin[0]+50+E.dot(v,camRight)*cubeScale*1.5,cubeOrigin[1]+30-E.dot(v,camUp)*cubeScale*1.5]}
+// 1.28 is the largest rounded scale with padding for every camera angle:
+// a projected cube fits inside a radius of 1.5 * sqrt(3) * scale.
+function cubePoint(v){return [cubeOrigin[0]+58+E.dot(v,camRight)*cubeScale*1.28,cubeOrigin[1]+20-E.dot(v,camUp)*cubeScale*1.28]}
 function polygon(points,fill,stroke,width=1){ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(...p):ctx.moveTo(...p));ctx.closePath();ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=width;ctx.stroke()}}
 function isMoving(p){return active&&p[E.slices[active.face].axis]===E.slices[active.face].layer}
 function transform(v,p,angle){return isMoving(p)?E.rotate(v,E.slices[active.face].axis,angle):v}
@@ -527,7 +529,7 @@ const cubeTouch=document.createElement('div');cubeTouch.setAttribute('aria-label
 function placeCubeTouch(){
  if(getComputedStyle(boardShell).position==='static')boardShell.style.position='relative';
  const w=canvas.clientWidth,h=canvas.clientHeight;
- const v=boardViewport();Object.assign(cubeTouch.style,{left:(canvas.offsetLeft+w*(200-v.x)/v.w)+'px',top:(canvas.offsetTop+h*(compactBoard?320:380)/v.h)+'px',width:(w*320/v.w)+'px',height:(h*335/v.h)+'px'});
+ const v=boardViewport();Object.assign(cubeTouch.style,{left:(canvas.offsetLeft+w*(202-v.x)/v.w)+'px',top:(canvas.offsetTop+h*(compactBoard?314:374)/v.h)+'px',width:(w*312/v.w)+'px',height:(h*312/v.h)+'px'});
 }
 new ResizeObserver(placeCubeTouch).observe(canvas);
 cubeTouch.addEventListener('pointerdown',e=>{if(tutorial||e.button!==0||cubeDrag)return;suppressCubeClick=false;cubeDrag={id:e.pointerId,x:e.clientX,y:e.clientY,yaw:viewYaw,pitch:viewPitch,moved:false};cubeTouch.setPointerCapture(e.pointerId)});
