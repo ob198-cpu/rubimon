@@ -143,6 +143,12 @@ function drawBlockStatus(s,p,r){
  ctx.restore();
 }
 function refresh(){
+  if(!tutorial&&!active&&!queue.length&&phase==='ready'){
+   const attackKeys=[...new Set(squad.map(id=>T.roster.find(c=>c.id===id).element))].filter(k=>k!=='D'&&B.pools[difficulty].includes(k));
+   const assurance=B.ensureWinningMove(E,state,attackKeys,attackPolicy());
+   if(assurance.changed){history=[];byId('battleLog').textContent='攻撃できる手がなかったため、1手でそろう配置に調整しました。「ヒント」で確認できます。'}
+   if(!assurance.move)byId('battleLog').textContent='現在の編成・妨害では攻撃できる配置を保証できません。攻撃属性を編成するか、妨害を解除してください。';
+  }
   updateGuide();
   const groups=currentMatches(),enemy=currentEnemy();
   matched=new Set(groups.flatMap(g=>g.ids));

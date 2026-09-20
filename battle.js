@@ -43,6 +43,39 @@ function board(E,random=Math.random,keys=pools.normal){
  for(let i=0;i<100;i++){const found=matches(state);if(!found.length)break;refill(state,new Set(found.flatMap(g=>g.ids)),random,keys)}
  return state;
 }
+function winningMove(E,state,keys,policy={}){
+ for(const face of Object.keys(E.slices))if(canRotate(state,face))for(const dir of [1,-1]){
+  const next=structuredClone(state);E.move(next,face,dir);
+  if(matches(next,policy).some(g=>keys.includes(g.element)))return {face,dir};
+ }
+ return null;
+}
+function ensureWinningMove(E,state,keys,policy={}){
+ const existing=winningMove(E,state,keys,policy);if(existing)return {move:existing,changed:false};
+ // Construct a legal matching destination and map its three stickers back.
+ // Never remove locks, seals, jammers, or change physical cubie positions.
+ for(const face of Object.keys(E.slices))if(canRotate(state,face))for(const dir of [1,-1]){
+  const next=structuredClone(state);E.move(next,face,dir);
+  for(const [targetFace,f] of Object.entries(E.faces)){
+   if(policy.faces&&!policy.faces.includes(targetFace))continue;
+   for(const axis of [0,1,2].filter(a=>a!==f.axis))for(const value of [-1,0,1]){
+    const line=next.filter(s=>s.n[f.axis]===f.layer&&s.p[axis]===value);
+    if(line.length!==3||line.some(s=>s.locked||s.face==='J'||sealed(s,policy)))continue;
+    for(const key of keys){
+     const candidate=structuredClone(state);
+     for(const s of candidate)if(line.some(t=>t.id===s.id))s.face=key;
+     // Do not create an already-matched board or overwrite temporary conversions.
+     if(matches(candidate,policy).length||candidate.some((s,i)=>s.face!==state[i].face&&s.tempOriginal!==undefined))continue;
+     const check=structuredClone(candidate);E.move(check,face,dir);
+     if(!matches(check,policy).some(g=>keys.includes(g.element)))continue;
+     candidate.forEach((s,i)=>state[i].face=s.face);
+     return {move:{face,dir},changed:true};
+    }
+   }
+  }
+ }
+ return {move:null,changed:false};
+}
 function outcome(groups,enemy,comboOffset=0){
  let damage=0,heal=0;const attacks=[];
  groups.forEach((g,i)=>{
@@ -75,6 +108,6 @@ function hinder(state,kind,obstacles){
 }
 function tick(state,obstacles){for(const s of state)s.locked=Math.max(0,(s.locked||0)-1);obstacles.seals=(obstacles.seals||[]).map(s=>({...s,turns:s.turns-1})).filter(s=>s.turns>0);obstacles.restrict=Math.max(0,(obstacles.restrict||0)-1)}
 function cleanse(state,obstacles,pool,random=Math.random){for(const s of state){s.locked=0;if(s.face==='J')s.face=pool[Math.floor(random()*pool.length)]}obstacles.seals=[];obstacles.restrict=0}
-const api={spirits,enemies,skills,pools,faceSpecs,matches,refill,board,outcome,tutorialBoard,convert,shuffle,sealed,canRotate,hinder,tick,cleanse};
+const api={spirits,enemies,skills,pools,faceSpecs,matches,refill,board,outcome,tutorialBoard,convert,shuffle,sealed,canRotate,hinder,tick,cleanse,winningMove,ensureWinningMove};
 root.BattleRules=api;if(typeof module!=='undefined')module.exports=api;
 })(typeof globalThis!=='undefined'?globalThis:this);
