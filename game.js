@@ -409,7 +409,7 @@ byId('hint').onclick=()=>{
   selectLayer(move.face);
   pendingMove={face:move.face,dir:move.dir,board:JSON.stringify(state)};
   previewDir=move.dir;updateGuide();
-  if(arrowsUnlocked&&!dragHint.classList.contains('is-complete'))dragHint.innerHTML=tapHintIcon+'<span>光っている矢印をタップすると回転するよ</span>';
+  if(arrowsUnlocked&&!dragHint.classList.contains('is-complete'))dragHint.innerHTML=tapHintIcon+(mousePrimary?'<span>光っている矢印を1クリックで回転</span>':'<span>光っている矢印をタップすると回転するよ</span>');
  }
 };
 byId('rescue').onclick=()=>{
@@ -434,8 +434,13 @@ function pickLayers(e){const p=boardPointer(e);let sticker;
  let near=null,distance=12;for(const ring of ringHits)for(const q of ring.points){const d=Math.hypot(p[0]-q[0],p[1]-q[1]);if(d<distance){near=ring.face;distance=d}}return near?[near]:[];
 }
 function confirmMove(){if(!pendingMove)return;const m=pendingMove;if(m.board!==JSON.stringify(state)){pendingMove=null;updateGuide();return}userMove(m.face,m.dir);updateGuide()}
-function chooseMove(face,dir){
+function finishArrowOnboarding(){
+ guidedArrowKey=null;arrowGuideActive=false;dragHint.classList.remove('arrow-step');dragHint.classList.add('is-complete');
+}
+function isMouseActivation(e){return e.pointerType==='mouse'||(!e.pointerType&&mousePrimary)}
+function chooseMove(face,dir,instant=false){
  if(panelPick||!arrowsUnlocked||tutorial||active||queue.length||phase!=='ready'||turnMoves>=turnLimit||!B.canRotate(state,face))return;
+ if(instant){pendingMove=null;selectedLayer=null;hoverLayer=null;previewDir=0;finishArrowOnboarding();userMove(face,dir);updateGuide();return}
  if(pendingMove?.face===face&&pendingMove.dir===dir){guidedArrowKey=null;arrowGuideActive=false;dragHint.classList.remove('arrow-step');dragHint.classList.add('is-complete');confirmMove();return}
  arrowGuideActive=!dragHint.classList.contains('is-complete');guidedArrowKey=face+':'+dir;dragHint.innerHTML=secondTapHintMarkup;dragHint.classList.add('arrow-step');requestAnimationFrame(placeCubeTouch);
  selectLayer(face);pendingMove={face,dir,board:JSON.stringify(state)};previewDir=dir;updateGuide();
@@ -451,14 +456,14 @@ function boardClick(e){
   const picked=panelPick,c=picked.char;for(const s of state)if(picked.ids.has(s.id)){s.face='B';delete s.tempOriginal;delete s.spentOriginal}
   panelPick=null;cooldowns[c.id]=c.cd;teamSpent.add(c.id);history=[];byId('battleLog').textContent=c.name+'：'+c.skill+' ／ 4パネルを水に変換！';refresh();return;
  }
- if(!arrowsUnlocked||tutorial||active||phase!=='ready')return;const arrow=arrowAt(e);if(arrow){chooseMove(arrow.face,arrow.dir);return}const faces=pickLayers(e);if(faces.length)selectLayer(faces[0],faces)
+ if(!arrowsUnlocked||tutorial||active||phase!=='ready')return;const arrow=arrowAt(e);if(arrow){chooseMove(arrow.face,arrow.dir,isMouseActivation(e));return}const faces=pickLayers(e);if(faces.length)selectLayer(faces[0],faces)
 }
 canvas.addEventListener('click',boardClick);
 canvas.addEventListener('pointermove',e=>{if(!arrowsUnlocked||e.pointerType==='touch')return;const arrow=arrowAt(e);if(arrow){hoverLayer=arrow.face;previewDir=arrow.dir;updateGuide();return}previewDir=0;hoverLayer=selectedLayer?null:pickLayers(e)[0]||null;updateGuide()});
 canvas.addEventListener('pointerleave',()=>{hoverLayer=null;previewDir=0;updateGuide()});
-for(const [id,dir] of [['guideCW',1],['guideCCW',-1]]){const b=byId(id);b.onclick=()=>{if(selectedLayer)chooseMove(selectedLayer,dir)};b.onpointerenter=b.onfocus=()=>{previewDir=dir};b.onpointerleave=b.onblur=()=>{previewDir=0}}
+for(const [id,dir] of [['guideCW',1],['guideCCW',-1]]){const b=byId(id);b.onclick=e=>{if(selectedLayer)chooseMove(selectedLayer,dir,isMouseActivation(e))};b.onpointerenter=b.onfocus=()=>{previewDir=dir};b.onpointerleave=b.onblur=()=>{previewDir=0}}
 byId('guideCancel').onclick=()=>{pendingMove=null;selectedLayer=null;hoverLayer=null;previewDir=0;byId('layerChoices').replaceChildren();updateGuide()};
-document.querySelectorAll('[data-face]').forEach(b=>{b.onpointerenter=b.onfocus=()=>{hoverLayer=b.dataset.face;previewDir=b.textContent==='↻'?1:-1;updateGuide()};b.onpointerleave=b.onblur=()=>{hoverLayer=null;previewDir=0;updateGuide()}});
+document.querySelectorAll('[data-face]').forEach(b=>{b.onclick=e=>chooseMove(b.dataset.face,b.textContent==='↻'?1:-1,isMouseActivation(e));b.onpointerenter=b.onfocus=()=>{hoverLayer=b.dataset.face;previewDir=b.textContent==='↻'?1:-1;updateGuide()};b.onpointerleave=b.onblur=()=>{hoverLayer=null;previewDir=0;updateGuide()}});
 addEventListener('keydown',e=>{if(e.key==='Escape'){if(panelPick){panelPick=null;byId('battleLog').textContent='パネル選択を解除しました。';refresh()}byId('guideCancel').click()}});
 function startTutorial(){
  if(tutorial||active||phase!=='ready')return;
@@ -629,8 +634,9 @@ byId('moveGuide').style.setProperty('display','none','important');
 const dragHint=document.createElement('div');dragHint.className='cube-drag-hint';
 const dragHintMarkup='<svg viewBox="0 0 64 48" aria-hidden="true"><path class="swipe-track" d="M8 12h48m-43-5-5 5 5 5m38-10 5 5-5 5"/><g class="swipe-finger"><path d="M26 39 18 29q-3-5 2-5l6 5V13q0-6 5-6t5 6v10q7-3 11 3l-1 12-5 7H30Z"/></g></svg><span>ドラッグで見回す<small>手数は減りません</small></span>';
 const tapHintIcon='<svg viewBox="0 0 64 48" aria-hidden="true"><path class="tap-ring" d="M9 24h20m-7-7 7 7-7 7"/><g class="tap-finger"><path d="M36 42 27 32q-3-5 2-6l5 5V15q0-6 5-6t5 6v9q8-2 10 5l-2 10-6 6Z"/></g></svg>';
-const arrowHintMarkup=tapHintIcon+'<span>矢印をタップすると<small>１回目で列を選択</small></span>';
-const secondTapHintMarkup=tapHintIcon+'<span>二回目のタップで回転するよ</span>';
+const mousePrimary=matchMedia('(hover:hover) and (pointer:fine)').matches;
+const arrowHintMarkup=tapHintIcon+(mousePrimary?'<span>矢印にカーソルを合わせる<small>ガイド確認・1クリックで回転</small></span>':'<span>矢印をタップすると<small>1回目で列を選択</small></span>');
+const secondTapHintMarkup=tapHintIcon+'<span>2回目のタップで回転するよ</span>';
 dragHint.innerHTML=dragHintMarkup;boardShell.append(dragHint);
 const viewReset=document.createElement('button');viewReset.id='viewReset';viewReset.textContent='視点を元に戻す';viewReset.disabled=true;viewReset.style.cssText='display:block;margin:8px auto;font-size:11px';boardShell.append(viewReset);
 const boardActions=document.createElement('div');boardActions.className='board-actions';viewReset.before(boardActions);boardActions.append(byId('rescue'),viewReset);
@@ -688,7 +694,7 @@ const squadPanel=byId('squadSlots').parentElement;squadPanel.open=false;
 panel.append(document.querySelector('.enemy-card'),document.querySelector('.player-hp'),rule,document.querySelector('.readout'),byId('attack'),byId('battleLog'),document.querySelector('.squad-skills'),document.querySelector('.actions'),byId('boardProof'),squadPanel,settingsDrawer);
 if(matchMedia('(max-width:600px)').matches){const detail=document.createElement('details');detail.className='mobile-battle-details';const summary=document.createElement('summary');summary.textContent='戦況・ルール';detail.append(summary);rule.before(detail);detail.append(rule,byId('boardProof'),byId('battleLog'));}
 const guideConfirm=document.createElement('button');guideConfirm.id='guideConfirm';guideConfirm.textContent='決定 · 回転';guideConfirm.disabled=true;guideConfirm.style.cssText='border-color:#d7b56c;color:#ffe5a3';guideConfirm.onclick=confirmMove;byId('guideCancel').before(guideConfirm);
-byId('moveGuide').querySelector('small').textContent='1回目で2Dガイドを表示。同じ矢印をもう一度押すか「決定」で1手回転。別の矢印は選び直し。';
+byId('moveGuide').querySelector('small').textContent='マウス：ホバーでガイド確認、1クリックで回転。タッチ：1回目で列選択、2回目で回転。';
 // Keep turn information next to the board and move secondary tools into settings.
 boardShell.prepend(document.querySelector('.readout'));
 const enemyInfo=document.createElement('div'),enemySkill=document.createElement('span');enemyInfo.className='enemy-weakness-info';enemySkill.id='enemySkill';byId('weakness').before(enemyInfo);enemyInfo.append(byId('weakness'),byId('count'),enemySkill);
