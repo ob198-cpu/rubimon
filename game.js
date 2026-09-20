@@ -63,6 +63,9 @@ const effectCanvas=document.createElement('canvas');
 effectCanvas.id='battleEffects';effectCanvas.setAttribute('aria-hidden','true');document.body.append(effectCanvas);
 const effectContext=effectCanvas.getContext('2d');
 let battleEffects=[];
+let attackChain=0;
+const comboBanner=document.createElement('div');comboBanner.className='combo-celebration';comboBanner.setAttribute('role','status');document.body.append(comboBanner);
+function showComboBonus(bonus){if(bonus.multiplier<=1)return;comboBanner.replaceChildren();const title=document.createElement('strong'),detail=document.createElement('span');title.textContent=[bonus.chain>1?'CHAIN '+bonus.chain:'',bonus.burst>1?'BURST '+bonus.burst:''].filter(Boolean).join(' × ');detail.textContent='ダメージ ×'+bonus.multiplier.toFixed(2);comboBanner.append(title,detail);comboBanner.classList.remove('active');void comboBanner.offsetWidth;comboBanner.classList.add('active')}
 const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
 const cubeOrigin=[300,510],cubeScale=46;
 let arrowHits=[];
@@ -261,14 +264,14 @@ function frame(now){
   requestAnimationFrame(frame);
 }
 function userMove(face,dir){if(tutorial||phase!=='ready'||active||queue.length||turnMoves>=turnLimit)return;if(!B.canRotate(state,face)){byId('battleLog').textContent='この層には固定ブロックがあります。別の面か、リベラの解除を使おう。';return}pendingMove=null;queue.push({face,dir,kind:'user'})}
-function reset(){pendingMove=null;shuffleCharges=2;roundToken++;endTeamTurn();cooldowns={};selectedLayer=null;hoverLayer=null;previewDir=0;byId('layerChoices').replaceChildren();state=B.board(E,Math.random,B.pools[difficulty]);skillUses={convert:2,shuffle:2,clock:2,cleanse:2,open:2};turnLimit=3;clockUsed=false;openFaces=false;obstacles={seals:[],restrict:0};enemyTurns=0;baseRule=byId('attackRule').value;active=null;queue=[];history=[];moves=0;hp=maxHp();wave=0;enemyHp=currentEnemy().hp;phase='ready';turnMoves=0;combo=0;fx=null;byId('battleLog').textContent='5体の編成で '+dungeon.name+' に挑戦。属性をそろえ、仲間の技で対策しよう。';byId('damageText').textContent='';balanceMetrics={repairs:0,refills:0,rejectedObstacles:0};certifiedStart();renderParty();refresh()}
+function reset(){attackChain=0;comboBanner.classList.remove('active');pendingMove=null;shuffleCharges=2;roundToken++;endTeamTurn();cooldowns={};selectedLayer=null;hoverLayer=null;previewDir=0;byId('layerChoices').replaceChildren();state=B.board(E,Math.random,B.pools[difficulty]);skillUses={convert:2,shuffle:2,clock:2,cleanse:2,open:2};turnLimit=3;clockUsed=false;openFaces=false;obstacles={seals:[],restrict:0};enemyTurns=0;baseRule=byId('attackRule').value;active=null;queue=[];history=[];moves=0;hp=maxHp();wave=0;enemyHp=currentEnemy().hp;phase='ready';turnMoves=0;combo=0;fx=null;byId('battleLog').textContent='5体の編成で '+dungeon.name+' に挑戦。属性をそろえ、仲間の技で対策しよう。';byId('damageText').textContent='';balanceMetrics={repairs:0,refills:0,rejectedObstacles:0};certifiedStart();renderParty();refresh()}
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 async function resolveTurn(){
  if(phase!=='ready'||active||queue.length||(turnMoves===0&&canAct()))return;
  history=[];phase='resolving';const token=roundToken;combo=0;let total=0,healed=0;refresh();
  for(let chain=0;chain<(tutorial?8:1);chain++){
   const groups=currentMatches();if(!groups.length)break;
-  const result=teamOutcome(groups,combo);if(!tutorial)gravityUsed=result.usedGravity;combo+=groups.length;total+=result.damage;healed+=result.heal;
+  let result=teamOutcome(groups,combo);if(!tutorial){result=T.comboBonus(result,attackChain);attackChain=result.comboBonus.chain;showComboBonus(result.comboBonus);gravityUsed=result.usedGravity}combo+=groups.length;total+=result.damage;healed+=result.heal;
   const skill=groups.find(g=>g.skill);
   if(skill)skillFlash={start:performance.now(),name:tutorial?B.skills[skill.element]:B.spirits[skill.element].element+'属性・面攻撃',color:B.spirits[skill.element].color};
   const ids=new Set(groups.flatMap(g=>g.ids));
@@ -284,7 +287,8 @@ async function resolveTurn(){
   else{const budget=turnMoves>=turnLimit?3:Math.max(1,turnLimit-turnMoves);Q.refill(state,ids,B.pools[difficulty],attackKeys(),attackPolicy(),difficulty==='easy'?1:Math.min(3,budget),Math.random,teamConversion);balanceMetrics.refills++}
   applyTemporaryConversion();refresh();if(enemyHp===0)break;
  }
- byId('battleLog').textContent=combo?combo+' COMBO / '+total+' ダメージ'+(healed?' / 回復 +'+healed:''):'そろわなかった！';
+ if(!tutorial&&!total)attackChain=0;
+ byId('battleLog').textContent=combo?combo+' COMBO / '+total+' ダメージ'+(!tutorial&&attackChain>1?' / CHAIN '+attackChain:'')+(healed?' / 回復 +'+healed:''):'そろわなかった！';
  if(enemyHp===0){
   await pause(550);if(token!==roundToken)return;
   if(!tutorial||wave===2){phase='victory';byId('battleLog').textContent='CLEAR！ '+currentEnemy().name+'を撃破。'+(!tutorial?'想定報酬 '+dungeon.reward+'素材（試算のみ・所持数への加算なし）':'');endTeamTurn();refresh();return}
@@ -429,7 +433,7 @@ byId('tutorialNext').onclick=nextTutorial;
 byId('tutorialExit').onclick=endTutorial;
 function playBattleEffects(groups,result){
  const start=performance.now();
- groups.forEach((g,i)=>battleEffects.push({start,token:roundToken,key:g.element,skill:!!g.skill,value:result.attacks[i].value,heal:g.element==='D',index:i,points:state.filter(s=>g.ids.includes(s.id)).map(E.orbit)}));
+ groups.forEach((g,i)=>battleEffects.push({start,token:roundToken,key:g.element,skill:!!g.skill,value:result.attacks[i].value,heal:g.element==='D',index:i,bonus:result.comboBonus?.multiplier||1,points:state.filter(s=>g.ids.includes(s.id)).map(E.orbit)}));
 }
 function drawBattleEffects(now){
  const w=innerWidth,h=innerHeight,dpr=Math.min(devicePixelRatio||1,2),c=effectContext;
@@ -445,6 +449,7 @@ function drawBattleEffects(now){
   const target=[clamp(rect.left+rect.width/2,45,w-45),clamp(rect.top+rect.height/2,70,h-70)];
   const size=e.skill?1.85:1;
   c.save();c.lineCap='round';c.lineJoin='round';c.strokeStyle=color;c.fillStyle=color;
+  if(e.bonus>1&&e.index===0&&impact>0&&impact<1&&!reducedMotion.matches){c.save();c.strokeStyle='#ffe4a0';c.globalAlpha=(1-impact)*.7;for(let ring=0;ring<3;ring++){c.lineWidth=3-ring*.7;c.beginPath();c.arc(...target,18+impact*(100+ring*32),0,Math.PI*2);c.stroke()}for(let i=0;i<16;i++){const a=i*Math.PI/8,r=35+impact*160;c.beginPath();c.moveTo(target[0]+Math.cos(a)*r,target[1]+Math.sin(a)*r);c.lineTo(target[0]+Math.cos(a)*(r+12),target[1]+Math.sin(a)*(r+12));c.stroke()}c.restore()}
   if(age<950&&!e.counter){
    const t=clamp((age-300)/650,0,1);
    e.points.forEach((point,i)=>{
