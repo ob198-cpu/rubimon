@@ -169,4 +169,5 @@ button:active:not(:disabled){transform:translateY(1px)}button:focus-visible,summ
 .color-count-control.is-rubik select option{color:#e7d6b0}
 .color-count-control.is-rubik::after{content:'6色';position:absolute;right:25px;top:50%;transform:translateY(-50%);color:#e7d6b0;font:600 12px system-ui;pointer-events:none}
 @media(max-width:600px){.orbit-toolbar{grid-template-columns:auto auto minmax(0,1fr) auto;width:100%;gap:5px}.color-count-control{grid-column:1;justify-self:start}.color-count-control select{width:58px;min-width:58px;max-width:58px;padding:6px 4px}.orbit-toolbar .orbit-toggle{grid-column:2;justify-self:stretch;padding:6px!important}.orbit-toolbar #viewReset{grid-column:3;justify-self:stretch;padding:6px!important}.orbit-toolbar #refillToggle{grid-column:4;justify-self:stretch;padding:6px!important}.color-count-control.is-rubik::after{right:20px;font-size:11px}}
-@media(max-width:850px){.board-shell{margin-top:-4px!important}}
+@media(max-width:850px){.board-shell{margin-top:-7px!important}}
+@media(max-width:400px){.board-shell{margin-top:-6px!important}}
