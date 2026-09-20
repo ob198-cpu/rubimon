@@ -13,7 +13,7 @@ let refillAssistance=false;
 let customColorCount=null;
 const colorOrder=['R','B','D','U','F','L','V','I','M','H','P'];
 function activePool(){return customColorCount===null?B.pools[difficulty]:colorOrder.slice(0,customColorCount)}
-function boardViewport(){return compactBoard?(orbitExpanded?{w:460,h:908,x:70,y:-20}:{w:460,h:494,x:70,y:394}):(orbitExpanded?{w:600,h:820,x:0,y:-20}:{w:600,h:436,x:0,y:364})}
+function boardViewport(){return compactBoard?(orbitExpanded?{w:460,h:908,x:70,y:-20}:{w:460,h:448,x:70,y:394}):(orbitExpanded?{w:600,h:820,x:0,y:-20}:{w:600,h:436,x:0,y:364})}
 function boardPointer(e){const r=canvas.getBoundingClientRect(),v=boardViewport();return [(e.clientX-r.left)*v.w/r.width+v.x,(e.clientY-r.top)*v.h/r.height+v.y]}
 function orbitDisplayScale(){return compactBoard?.8:.86}
 function orbitDisplayPoint([x,y]){const scale=orbitDisplayScale();return [300+(x-300)*scale,250+(y-250)*scale]}
@@ -638,7 +638,7 @@ function placeCubeTouch(){
   :[358,compactBoard?560:530];
  Object.assign(dragHint.style,{left:(canvas.offsetLeft+w*(hintPoint[0]-v.x)/v.w)+'px',top:(canvas.offsetTop+h*(hintPoint[1]-v.y)/v.h)+'px'});
 }
-function showArrowHint(){arrowsUnlocked=true;if(dragHint.classList.contains('is-complete')||pendingMove)return;const target=arrowHits.find(a=>a.p[0]<220&&B.canRotate(state,a.face));if(!target)return;guidedArrowKey=target.face+':'+target.dir;arrowGuideActive=true;dragHint.innerHTML=arrowHintMarkup;dragHint.classList.add('arrow-step');requestAnimationFrame(placeCubeTouch)}
+function showArrowHint(){if(dragHint.classList.contains('is-complete')||pendingMove)return;const target=arrowHits.find(a=>a.p[0]<220&&B.canRotate(state,a.face));if(!target)return;guidedArrowKey=target.face+':'+target.dir;arrowGuideActive=true;dragHint.innerHTML=arrowHintMarkup;dragHint.classList.add('arrow-step');requestAnimationFrame(()=>{placeCubeTouch();dragHint.scrollIntoView({block:'nearest',behavior:'smooth'});arrowsUnlocked=true})}
 new ResizeObserver(placeCubeTouch).observe(canvas);
 cubeTouch.addEventListener('pointerdown',e=>{if(tutorial||e.button!==0||cubeDrag)return;suppressCubeClick=false;cubeDrag={id:e.pointerId,x:e.clientX,y:e.clientY,yaw:viewYaw,pitch:viewPitch,moved:false};cubeTouch.setPointerCapture(e.pointerId)});
 cubeTouch.addEventListener('pointermove',e=>{
