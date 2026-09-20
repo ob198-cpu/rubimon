@@ -111,7 +111,7 @@ function showVictory(){byId('victoryEnemy').textContent=currentEnemy().name+' �
 document.getElementById('victoryRetry').onclick=()=>{victoryScreen.hidden=true;reset()};document.getElementById('victoryClose').onclick=()=>{victoryScreen.hidden=true};
 const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
 const cubeOrigin=[300,510],cubeScale=46;
-let arrowHits=[],guidedArrowKey=null,arrowGuideActive=false,arrowsUnlocked=false;
+let arrowHits=[],guidedArrowKey=null,arrowGuideActive=false,arrowsUnlocked=false,viewArrowCueKey=null,viewArrowCueTimer=0;
 function sliceControl(axis,layer,dir){
  // Identify which visible side is on screen-left, then map its columns.
  const sx=camera[0]>=0?1:-1,sz=camera[2]>=0?1:-1;
@@ -145,7 +145,7 @@ function drawSliceArrows(){
  const rank=columns.findIndex(c=>c.axis===axis&&c.layer===layer);
  const p=compactBoard?(axis===1?[angle===0?174:116,564-layer*58]:[columnX[rank],angle<0?746:804]):[axis===1?(angle===0?179:141):columnX[rank],control.p[1]+(axis===1?20:76)];
  const points=[p],end=[p[0]+13*Math.cos(angle),p[1]+13*Math.sin(angle)];
- const disabled=!arrowsUnlocked||!!active||phase!=='ready'||turnMoves>=turnLimit||!B.canRotate(state,face),lit=guideFace()===face&&(pendingMove?.dir||previewDir)===dir;
+ const disabled=!arrowsUnlocked||!!active||phase!=='ready'||turnMoves>=turnLimit||!B.canRotate(state,face),lit=(guideFace()===face&&(pendingMove?.dir||previewDir)===dir)||viewArrowCueKey===face+':'+dir;
  if(arrowGuideActive&&(axis===1?angle===0:angle<0)){
   const anchor=[control.anchor[0],control.anchor[1]+(compactBoard?30:0)];
   const dx=anchor[0]-p[0],dy=anchor[1]-p[1],half=17*(compactBoard?1.58:1);
@@ -673,7 +673,24 @@ function placeCubeTouch(){
 }
 function showArrowHint(){if(dragHint.classList.contains('is-complete')||pendingMove)return;const target=arrowHits.find(a=>a.p[0]<220&&B.canRotate(state,a.face));if(!target)return;guidedArrowKey=target.face+':'+target.dir;arrowGuideActive=true;dragHint.innerHTML=arrowHintMarkup;dragHint.classList.add('arrow-step');canvas.before(dragHint);requestAnimationFrame(()=>{placeCubeTouch();arrowsUnlocked=true})}
 new ResizeObserver(placeCubeTouch).observe(canvas);
-cubeTouch.addEventListener('pointerdown',e=>{if(tutorial||e.button!==0||cubeDrag)return;suppressCubeClick=false;cubeDrag={id:e.pointerId,x:e.clientX,y:e.clientY,yaw:viewYaw,pitch:viewPitch,moved:false};cubeTouch.setPointerCapture(e.pointerId)});
+function clearViewArrowCue(){viewArrowCueKey=null;if(viewArrowCueTimer){clearTimeout(viewArrowCueTimer);viewArrowCueTimer=0}}
+function cueArrowForCurrentView(){
+ clearViewArrowCue();
+ const available=arrowHits.filter(a=>B.canRotate(state,a.face));if(!available.length)return;
+ // Prefer the control nearest the cube so the connection stays obvious on a phone.
+ available.sort((a,b)=>Math.hypot(a.p[0]-300,a.p[1]-570)-Math.hypot(b.p[0]-300,b.p[1]-570));
+ viewArrowCueKey=available[0].face+':'+available[0].dir;
+ viewArrowCueTimer=setTimeout(clearViewArrowCue,2400);
+}
+cubeTouch.addEventListener('pointerdown',e=>{
+ if(tutorial||e.button!==0)return;
+ // Recover from an interrupted iOS pointer sequence instead of leaving dragging locked.
+ if(cubeDrag&&cubeDrag.id!==e.pointerId)cubeDrag=null;
+ if(cubeDrag)return;
+ clearViewArrowCue();suppressCubeClick=false;pendingMove=null;selectedLayer=null;hoverLayer=null;previewDir=0;
+ cubeDrag={id:e.pointerId,x:e.clientX,y:e.clientY,yaw:viewYaw,pitch:viewPitch,moved:false};
+ try{cubeTouch.setPointerCapture(e.pointerId)}catch(_){/* Safari can finish a gesture before capture. */}
+});
 cubeTouch.addEventListener('pointermove',e=>{
  if(!cubeDrag||e.pointerId!==cubeDrag.id)return;
  const dx=e.clientX-cubeDrag.x,dy=e.clientY-cubeDrag.y;
@@ -682,10 +699,17 @@ cubeTouch.addEventListener('pointermove',e=>{
  viewYaw=cubeDrag.yaw-dx*.009;viewPitch=Math.max(-1.35,Math.min(1.35,cubeDrag.pitch+dy*.009));
  hoverLayer=null;previewDir=0;updateView();
 });
-function endCubeDrag(e){if(!cubeDrag||e.pointerId!==cubeDrag.id)return;const moved=cubeDrag.moved;suppressCubeClick=moved;cubeDrag=null;cubeTouch.style.cursor='grab';if(cubeTouch.hasPointerCapture(e.pointerId))cubeTouch.releasePointerCapture(e.pointerId);if(moved)requestAnimationFrame(()=>requestAnimationFrame(showArrowHint));setTimeout(()=>{suppressCubeClick=false},350)}
+function endCubeDrag(e){
+ if(!cubeDrag||e.pointerId!==cubeDrag.id)return;
+ const moved=cubeDrag.moved;suppressCubeClick=moved;cubeDrag=null;cubeTouch.style.cursor='grab';
+ try{if(cubeTouch.hasPointerCapture(e.pointerId))cubeTouch.releasePointerCapture(e.pointerId)}catch(_){}
+ if(moved)requestAnimationFrame(()=>requestAnimationFrame(()=>{showArrowHint();cueArrowForCurrentView()}));
+ setTimeout(()=>{suppressCubeClick=false},350)
+}
 cubeTouch.addEventListener('pointerup',endCubeDrag);cubeTouch.addEventListener('pointercancel',endCubeDrag);cubeTouch.addEventListener('lostpointercapture',endCubeDrag);
 addEventListener('pointerup',endCubeDrag,true);
-cubeTouch.addEventListener('click',boardClick);
+// Tapping the cube never selects a face or layer. This overlay is camera-only.
+cubeTouch.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();suppressCubeClick=false});
 cubeTouch.addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)||tutorial)return;e.preventDefault();viewYaw+=(e.key==='ArrowLeft'?.2:e.key==='ArrowRight'?-.2:0);viewPitch=Math.max(-1.35,Math.min(1.35,viewPitch+(e.key==='ArrowUp'?.15:e.key==='ArrowDown'?-.15:0)));updateView()});
 const viewNote=document.createElement('small');viewNote.textContent='視点を変えても矢印で操作できます。左は左右、下は上下。表示中の面に合わせて列と方向が切り替わります。';viewNote.style.cssText='display:block;text-align:center;font-size:10px;color:#a9bcb5;line-height:1.6';boardShell.append(viewNote);
 // Keep detailed rules available without reserving space on the phone battle screen.
