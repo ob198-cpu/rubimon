@@ -340,7 +340,8 @@ byId('undo').onclick=()=>{if(active||queue.length||!history.length||phase!=='rea
 addEventListener('keydown',e=>{if(e.target.matches('select,input,textarea')||e.ctrlKey||e.metaKey||e.altKey||e.repeat)return;const f=e.key.toUpperCase();if(E.slices[f]){e.preventDefault();userMove(f,e.shiftKey?-1:1)}});
 function inside(p,poly){let c=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const a=poly[i],b=poly[j];if((a[1]>p[1])!==(b[1]>p[1])&&p[0]<(b[0]-a[0])*(p[1]-a[1])/(b[1]-a[1])+a[0])c=!c}return c}
 function pickLayers(e){const r=canvas.getBoundingClientRect(),p=[(e.clientX-r.left)*600/r.width,(e.clientY-r.top)*700/r.height];let sticker;
- if(p[1]>380){sticker=[...hitFaces].reverse().find(h=>inside(p,h.points))?.sticker}
+ // The cube surface is for camera dragging only; arrows select rotation guides.
+ if(p[1]>380)return [];
  else{let d=11;for(const s of state){const q=E.orbit(s),n=Math.hypot(p[0]-q[0],p[1]-q[1]);if(n<d){sticker=s;d=n}}}
  if(sticker){const faces=Object.keys(E.faces).filter(f=>sticker.p[E.slices[f].axis]===E.slices[f].layer);faces.sort((a,b)=>(sticker.n[E.slices[b].axis]===E.slices[b].layer)-(sticker.n[E.slices[a].axis]===E.slices[a].layer));return faces}
  let near=null,distance=12;for(const ring of ringHits)for(const q of ring.points){const d=Math.hypot(p[0]-q[0],p[1]-q[1]);if(d<distance){near=ring.face;distance=d}}return near?[near]:[];
