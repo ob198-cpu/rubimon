@@ -21,7 +21,16 @@ const T=TeamRules, Q=BalanceRules;
 let proofCache=null,shuffleCharges=2,balanceMetrics={repairs:0,refills:0,rejectedObstacles:0};
 function attackKeys(){return [...new Set(squad.map(id=>T.roster.find(c=>c.id===id).element))].filter(k=>k!=='D'&&(activePool().includes(k)||teamConversion?.[1]===k))}
 function boardProof(){const depth=difficulty==='easy'?1:Math.max(1,Math.min(3,turnLimit-turnMoves));const key=JSON.stringify([state,attackKeys(),attackPolicy(),depth]);if(proofCache?.key!==key)proofCache={key,...Q.plan(state,attackKeys(),attackPolicy(),depth)};return proofCache}
-function certifiedStart(){const result=Q.initial(activePool(),attackKeys(),attackPolicy(),customColorCount!==null?'easy':difficulty);if(!result.state){byId('battleLog').textContent='攻撃属性と出現色が合いません。編成または難易度を変更してください。';phase='setup';return false}state=result.state;proofCache=null;return true}
+function rubikNineStart(){
+ let fallback=null;
+ for(let i=0;i<24;i++){
+  const candidate=B.rubikBoard(E,Math.random,activePool(),28+i%7);if(B.matches(candidate,attackPolicy()).length)continue;
+  fallback ||= candidate;const proof=Q.plan(candidate,attackKeys(),attackPolicy(),3,4200);if(proof.moves)return {state:candidate,...proof,status:'rubik-verified'};
+ }
+ return {state:fallback||B.rubikBoard(E,Math.random,activePool()),moves:null,status:'rubik-unverified'};
+}
+function initialBoard(){return customColorCount===9?rubikNineStart():Q.initial(activePool(),attackKeys(),attackPolicy(),customColorCount!==null?'easy':difficulty)}
+function certifiedStart(){const result=initialBoard();if(!result.state){byId('battleLog').textContent='攻撃属性と出現色が合いません。編成または難易度を変更してください。';phase='setup';return false}state=result.state;proofCache=null;return true}
 let squad=['sala','undine','raika','ferrum','libera'],dungeon=T.dungeons[0],tuning={...T.defaults},cooldowns={},teamSpent=new Set(),teamBuffs={},teamImmune=false,manualImmune=false,teamShield=false,teamConversion=null,gravityUsed=false;
 function maxHp(){return tutorial?1800:T.stats(squad,tuning).hp}
 function currentEnemy(){return tutorial?B.enemies[wave]:{...dungeon,hp:dungeon.id==='grove'?800:Math.round(dungeon.hp*Q.settings[difficulty].hp),attack:Math.round(dungeon.attack*Q.settings[difficulty].attack),name:dungeon.bossName||dungeon.name,element:{grove:'火',armor:'鋼',abyss:'闇',storm:'風'}[dungeon.id]}}
@@ -396,7 +405,7 @@ byId('rescue').onclick=()=>{
  if(tutorial||active||queue.length||phase!=='ready'||shuffleCharges===0)return;
  // Explicit limited recovery: reset the board only, not HP, enemy turn, or cooldowns.
  const rescuePolicy={faces:openFaces?Object.keys(E.faces):baseRule==='front'?['F']:baseRule==='visible'?['U','F','R']:Object.keys(E.faces)};
- const result=Q.initial(activePool(),attackKeys(),rescuePolicy,'easy');
+ const result=customColorCount===9?rubikNineStart():Q.initial(activePool(),attackKeys(),rescuePolicy,'easy');
  if(!result.state){byId('battleLog').textContent='攻撃属性と出現色が合いません。編成・難易度を変更してください。';return}
  state=result.state;obstacles={seals:[],restrict:0};teamConversion=null;proofCache=null;history=[];balanceMetrics.repairs++;shuffleCharges--;
  byId('battleLog').textContent='再配置：色を再生成して妨害と一時変換を解除。HP・残り手数・技の待ち時間・チェインは維持。残り'+shuffleCharges+'回。';refresh();
@@ -587,7 +596,7 @@ orbitToggle.onclick=()=>{orbitExpanded=!orbitExpanded;orbitToggle.textContent=or
 const orbitToolbar=document.createElement('div');orbitToolbar.className='orbit-toolbar';orbitToggle.before(orbitToolbar);
 const colorLabel=document.createElement('label');colorLabel.className='color-count-control';colorLabel.textContent='属性 ';
 const colorSelect=document.createElement('select');colorSelect.id='colorCount';colorSelect.setAttribute('aria-label','属性の種類数');colorSelect.title='色数を変更すると戦闘を再開始します';
-for(let n=3;n<=11;n++){const option=document.createElement('option');option.value=n;option.textContent=n+'色';colorSelect.append(option)}colorSelect.value=activePool().length;
+for(let n=3;n<=11;n++){const option=document.createElement('option');option.value=n;option.textContent=n===9?'9色（ルービックキューブ）':n+'色';colorSelect.append(option)}colorSelect.value=activePool().length;
 colorLabel.append(colorSelect);orbitToolbar.append(colorLabel,orbitToggle);
 colorSelect.onchange=()=>{if(tutorial||active||queue.length||phase==='resolving')return;const count=Number(colorSelect.value);if(!Number.isInteger(count)||count<3||count>11)return;customColorCount=count;reset()};
 // Keep internal selection controls for existing handlers, but remove the guide panel from the UI.

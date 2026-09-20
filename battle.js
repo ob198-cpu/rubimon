@@ -46,6 +46,22 @@ function board(E,random=Math.random,keys=pools.normal){
  for(let i=0;i<100;i++){const found=matches(state);if(!found.length)break;refill(state,new Set(found.flatMap(g=>g.ids)),random,keys)}
  return state;
 }
+function rubikBoard(E,random=Math.random,keys=pools.hard,moves=28){
+ if(keys.length!==9)throw Error('9色ルービック盤面には9属性が必要です');
+ const state=E.create(),faceNames=Object.keys(E.faces);
+ // Each face starts with the same nine-attribute count, then only legal outer-layer turns are used.
+ for(const [faceIndex,faceName] of faceNames.entries()){
+  const f=E.faces[faceName],stickers=state.filter(s=>s.n[f.axis]===f.layer);
+  stickers.sort((a,b)=>a.p[(f.axis+1)%3]-b.p[(f.axis+1)%3]||a.p[(f.axis+2)%3]-b.p[(f.axis+2)%3]);
+  stickers.forEach((s,i)=>s.face=keys[(i+faceIndex*2)%keys.length]);
+ }
+ let previous='';
+ for(let i=0;i<moves;i++){
+  const choices=faceNames.filter(face=>face!==previous),face=choices[Math.floor(random()*choices.length)],dir=random()<.5?-1:1;
+  E.move(state,face,dir);previous=face;
+ }
+ return state;
+}
 function winningMove(E,state,keys,policy={}){
  for(const face of Object.keys(E.slices))if(canRotate(state,face))for(const dir of [1,-1]){
   const next=structuredClone(state);E.move(next,face,dir);
@@ -111,6 +127,6 @@ function hinder(state,kind,obstacles){
 }
 function tick(state,obstacles){for(const s of state)s.locked=Math.max(0,(s.locked||0)-1);obstacles.seals=(obstacles.seals||[]).map(s=>({...s,turns:s.turns-1})).filter(s=>s.turns>0);obstacles.restrict=Math.max(0,(obstacles.restrict||0)-1)}
 function cleanse(state,obstacles,pool,random=Math.random){for(const s of state){s.locked=0;if(s.face==='J')s.face=pool[Math.floor(random()*pool.length)]}obstacles.seals=[];obstacles.restrict=0}
-const api={spirits,enemies,skills,pools,faceSpecs,matches,refill,board,outcome,tutorialBoard,convert,shuffle,sealed,canRotate,hinder,tick,cleanse,winningMove,ensureWinningMove};
+const api={spirits,enemies,skills,pools,faceSpecs,matches,refill,board,rubikBoard,outcome,tutorialBoard,convert,shuffle,sealed,canRotate,hinder,tick,cleanse,winningMove,ensureWinningMove};
 root.BattleRules=api;if(typeof module!=='undefined')module.exports=api;
 })(typeof globalThis!=='undefined'?globalThis:this);
