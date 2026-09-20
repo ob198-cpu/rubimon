@@ -94,3 +94,10 @@ main{padding:2px 2px 10px;gap:3px}header,.board-heading{display:none!important}
 .board-shell .cube-drag-hint{position:absolute;right:auto;bottom:auto;transform:translate(-50%,-50%);margin:0;padding:8px;border-radius:50%;background:#102526cc;border:1px solid #e6ce9780;z-index:3;opacity:1;pointer-events:none;box-shadow:0 2px 10px #0006}
 .board-shell .cube-drag-hint span{display:none}.board-shell .cube-drag-hint svg{width:48px;height:40px}
 .board-shell .cube-drag-hint.is-learned{display:none}
+/* Keep HP in a separate, non-overlapping row at every stacked-layout width. */
+@media(max-width:850px){
+.player-hp{position:relative;z-index:1;flex:0 0 auto;min-height:42px;margin:0;padding:8px 10px 10px;background:#142422;border:1px solid #49645b;border-radius:7px;isolation:isolate}
+.player-hp .bar{flex:0 0 100%;margin-top:4px}
+.board-shell{position:relative;flex:0 0 auto;margin-top:20px;padding-top:8px;clear:both}
+#scene{display:block;position:static}
+}
