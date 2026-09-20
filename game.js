@@ -9,6 +9,7 @@ function battleVibration(kind,damage){
 }
 let compactBoard=false;
 let orbitExpanded=false;
+let refillAssistance=true;
 let customColorCount=null;
 const colorOrder=['R','B','D','U','F','L','V','I','M','H','P'];
 function activePool(){return customColorCount===null?B.pools[difficulty]:colorOrder.slice(0,customColorCount)}
@@ -26,6 +27,15 @@ function maxHp(){return tutorial?1800:T.stats(squad,tuning).hp}
 function currentEnemy(){return tutorial?B.enemies[wave]:{...dungeon,hp:dungeon.id==='grove'?800:Math.round(dungeon.hp*Q.settings[difficulty].hp),attack:Math.round(dungeon.attack*Q.settings[difficulty].attack),name:dungeon.bossName||dungeon.name,element:{grove:'火',armor:'鋼',abyss:'闇',storm:'風'}[dungeon.id]}}
 function teamOutcome(groups,offset=0){return tutorial?B.outcome(groups,currentEnemy(),offset):T.outcome(squad,groups,currentEnemy(),enemyHp,gravityUsed,tuning,teamBuffs,offset)}
 function applyTemporaryConversion(){if(!tutorial&&teamConversion)for(const s of state)if(s.face===teamConversion[0]&&s.tempOriginal===undefined){s.tempOriginal=s.face;s.face=teamConversion[1]}}
+function refillWithoutAssistance(ids){
+ let fallback=null;
+ for(let i=0;i<48;i++){
+  const candidate=structuredClone(state);B.refill(candidate,ids,Math.random,activePool());
+  if(teamConversion)for(const s of candidate)if(s.face===teamConversion[0]&&s.tempOriginal===undefined){s.tempOriginal=s.face;s.face=teamConversion[1]}
+  fallback ||= candidate;if(!B.matches(candidate,attackPolicy()).length){state.splice(0,state.length,...candidate);return}
+ }
+ state.splice(0,state.length,...fallback);
+}
 function endTeamTurn(){for(const s of state)if(s.tempOriginal!==undefined){s.face=s.tempOriginal;delete s.tempOriginal}teamConversion=null;teamBuffs={};teamImmune=false;teamShield=false;gravityUsed=false;for(const id in cooldowns)if(!teamSpent.has(id))cooldowns[id]=Math.max(0,cooldowns[id]-1);teamSpent.clear()}
 let state=B.board(E),active=null,queue=[],history=[],moves=0,hitFaces=[],ringHits=[];
 let hp=1800,wave=0,enemyHp=B.enemies[0].hp,phase='ready',turnMoves=0,combo=0,fx=null,matched=new Set(),roundToken=0;
@@ -227,6 +237,7 @@ function refresh(){
   byId('attack').textContent=groups.some(g=>g.skill)?'攻撃判定 · 必殺技発動！':groups.length?'攻撃判定 · '+groups.length+' COMBO':'攻撃判定 · そろいなし／敵が反撃';
   byId('undo').disabled=!!tutorial||!!active||!history.length||phase!=='ready';
   byId('hint').disabled=!!tutorial||!!active||phase!=='ready'||turnMoves>=turnLimit;
+  if(byId('refillToggle'))byId('refillToggle').disabled=!!tutorial||!!active||phase==='resolving';
   byId('tutorialStart').disabled=!!active||phase!=='ready';
   const locked=!!tutorial||!!active||queue.length>0||phase!=='ready';
   byId('convertSkill').disabled=locked||skillUses.convert===0||!state.some(s=>s.face==='R');
@@ -310,7 +321,8 @@ async function resolveTurn(){
   if(tutorial){byId('tutorialText').textContent=skill?'9体がすべて火属性！ 「サラマンダー・インフェルノ」発動。列攻撃の5倍の威力です。':'3手目で火の精霊が1列そろいました。サラマンダーが攻撃！ 光る列と敵HPに注目してください。'}
   refresh();await pause(tutorial||skill?1800:1100);if(token!==roundToken)return;
   if(tutorial)B.refill(state,ids,Math.random,B.pools.normal);
-  else{const budget=turnMoves>=turnLimit?3:Math.max(1,turnLimit-turnMoves);Q.refill(state,ids,activePool(),attackKeys(),attackPolicy(),difficulty==='easy'?1:Math.min(3,budget),Math.random,teamConversion,difficulty,attackChain);balanceMetrics.refills++}
+  else if(refillAssistance){const budget=turnMoves>=turnLimit?3:Math.max(1,turnLimit-turnMoves);Q.refill(state,ids,activePool(),attackKeys(),attackPolicy(),difficulty==='easy'?1:Math.min(3,budget),Math.random,teamConversion,difficulty,attackChain);balanceMetrics.refills++}
+  else refillWithoutAssistance(ids);
   applyTemporaryConversion();refresh();if(enemyHp===0)break;
  }
  if(!tutorial&&!attackMatched&&!recoveryMatched)attackChain=0;
@@ -588,6 +600,8 @@ const boardActions=document.createElement('div');boardActions.className='board-a
 boardActions.before(dragHint);
 const boardLeftActions=document.createElement('div');boardLeftActions.className='board-left-actions';boardActions.prepend(boardLeftActions);boardLeftActions.append(byId('hint'),byId('rescue'));
 orbitToolbar.append(viewReset);
+const refillToggle=document.createElement('button');refillToggle.id='refillToggle';refillToggle.textContent='補充OFF';refillToggle.title='コンボしやすい補充を停止';refillToggle.setAttribute('aria-pressed','false');orbitToolbar.append(refillToggle);
+refillToggle.onclick=()=>{refillAssistance=!refillAssistance;refillToggle.textContent=refillAssistance?'補充OFF':'補充ON';refillToggle.title=refillAssistance?'コンボしやすい補充を停止':'コンボしやすい補充を再開';refillToggle.setAttribute('aria-pressed',String(!refillAssistance));byId('battleLog').textContent=refillAssistance?'補充アシストをONにしました。次の攻撃後からコンボしやすい配置を補充します。':'補充アシストをOFFにしました。次の攻撃後から通常のランダム補充になります。'};
 viewReset.onclick=()=>{pendingMove=null;viewYaw=viewHome.yaw;viewPitch=viewHome.pitch;updateView()};
 const cubeTouch=document.createElement('div');cubeTouch.setAttribute('aria-label','立方体の視点操作。ドラッグで見回す。矢印キーでも視点を変更。');cubeTouch.tabIndex=0;cubeTouch.style.cssText='position:absolute;touch-action:none;cursor:grab;user-select:none;z-index:2;border-radius:12px';boardShell.append(cubeTouch);
 function placeCubeTouch(){

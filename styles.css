@@ -153,8 +153,10 @@ button:active:not(:disabled){transform:translateY(1px)}button:focus-visible,summ
 .board-shell .cube-drag-hint.arrow-step small{font-size:11px}
 .board-shell .cube-drag-hint.arrow-step.is-complete{display:none}
 .orbit-toolbar{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;margin:4px 0 0;padding:0 6px}.orbit-toolbar .orbit-toggle{margin:0;grid-column:2}.color-count-control{justify-self:start;display:flex;align-items:center;gap:6px;color:#bfcfca;font-size:11px;white-space:nowrap}.color-count-control select{min-height:40px;min-width:66px;border:1px solid #74948966;border-radius:10px;background:#172e33;color:#e7d6b0;padding:6px 8px;font:600 12px system-ui;cursor:pointer}.color-count-control select:focus-visible{outline:2px solid #74dacd;outline-offset:2px}@media(max-width:360px){.orbit-toolbar{grid-template-columns:auto 1fr;padding:0;gap:6px}.orbit-toolbar .orbit-toggle{justify-self:center;padding:6px 10px}}
-.orbit-toolbar{grid-template-columns:auto auto minmax(0,1fr);gap:6px;padding:0}
+.orbit-toolbar{grid-template-columns:auto auto auto auto;gap:6px;padding:0}
 .orbit-toolbar #viewReset{grid-column:3;justify-self:start;margin:0!important;min-height:40px;padding:6px 8px!important;white-space:nowrap;font-size:11px;color:#bfcfca;background:#172e33;border:1px solid #74948944;border-radius:10px}
+.orbit-toolbar #refillToggle{grid-column:4;justify-self:start;min-height:40px;padding:6px 8px;white-space:nowrap;font-size:11px;color:#ffadad;background:#342628;border:1px solid #9b5a5e;border-radius:10px}
+.orbit-toolbar #refillToggle[aria-pressed="true"]{color:#9fdcc7;background:#18322f;border-color:#4f8979}
 .orbit-toolbar .orbit-toggle{white-space:nowrap;padding:6px 10px}
 .board-left-actions{max-width:100%;align-items:center}
-@media(max-width:360px){.color-count-control{gap:3px;font-size:10px}.color-count-control select{min-width:52px;padding:6px 3px}.orbit-toolbar .orbit-toggle{padding:6px;font-size:10px}.orbit-toolbar #viewReset{padding:6px!important;font-size:10px}}
+@media(max-width:360px){.color-count-control{gap:3px;font-size:10px}.color-count-control select{min-width:52px;padding:6px 3px}.orbit-toolbar .orbit-toggle{padding:6px;font-size:10px}.orbit-toolbar #viewReset,.orbit-toolbar #refillToggle{padding:6px!important;font-size:10px}}
