@@ -18,7 +18,7 @@ const roster=[
  {id:'astra',name:'アストラ',element:'U',hp:360,atk:110,def:6,recovery:15,passive:'チーム回復力＋30',ability:'heal',skill:'領域展開：このターン全6面で攻撃可能',action:'open',cd:4,source:'雷塔報酬'}
 ];
 const dungeons=[
- {id:'grove',name:'翠緑の試練',bossName:'炎竜 ヴェルディス',hp:2200,attack:230,def:20,weak:'B',obstacle:'lock',gravity:1,reward:30,tip:'炎竜 ヴェルディスは水が弱点。固定を解くリベラ、水編成が有利。'},
+ {id:'grove',name:'翠緑の試練',bossName:'炎竜 ヴェルディス',hp:800,attack:230,def:20,weak:'B',obstacle:'lock',gravity:1,reward:30,tip:'炎竜 ヴェルディスは水が弱点。固定を解くリベラ、水編成が有利。'},
  {id:'armor',name:'鋼殻の回廊',hp:420,attack:240,def:420,weak:'B',obstacle:'jam',gravity:0,reward:40,tip:'各キャラの攻撃ごとに防御420。固定ダメージが有効。割合ダメージ無効。'},
  {id:'abyss',name:'深淵の巨竜',hp:10000,attack:370,def:60,weak:'U',obstacle:'seal',gravity:1,reward:50,tip:'闇1面の割合攻撃や、雷編成が有効。'},
  {id:'storm',name:'暴風の祭壇',hp:3300,attack:800,def:35,weak:'R',obstacle:'restrict',gravity:.2,reward:50,tip:'3ターンごとに大攻撃。それ以外は攻撃力35％。無敵を温存。割合効果80％軽減。'}

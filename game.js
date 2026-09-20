@@ -20,7 +20,7 @@ function boardProof(){const depth=difficulty==='easy'?1:Math.max(1,Math.min(3,tu
 function certifiedStart(){const result=Q.initial(B.pools[difficulty],attackKeys(),attackPolicy(),difficulty);if(!result.state){byId('battleLog').textContent='攻撃属性と出現色が合いません。編成または難易度を変更してください。';phase='setup';return false}state=result.state;proofCache=null;return true}
 let squad=['sala','undine','raika','ferrum','libera'],dungeon=T.dungeons[0],tuning={...T.defaults},cooldowns={},teamSpent=new Set(),teamBuffs={},teamImmune=false,teamShield=false,teamConversion=null,gravityUsed=false;
 function maxHp(){return tutorial?1800:T.stats(squad,tuning).hp}
-function currentEnemy(){return tutorial?B.enemies[wave]:{...dungeon,hp:Math.round(dungeon.hp*Q.settings[difficulty].hp),attack:Math.round(dungeon.attack*Q.settings[difficulty].attack),name:dungeon.bossName||dungeon.name,element:{grove:'火',armor:'鋼',abyss:'闇',storm:'風'}[dungeon.id]}}
+function currentEnemy(){return tutorial?B.enemies[wave]:{...dungeon,hp:dungeon.id==='grove'?800:Math.round(dungeon.hp*Q.settings[difficulty].hp),attack:Math.round(dungeon.attack*Q.settings[difficulty].attack),name:dungeon.bossName||dungeon.name,element:{grove:'火',armor:'鋼',abyss:'闇',storm:'風'}[dungeon.id]}}
 function teamOutcome(groups,offset=0){return tutorial?B.outcome(groups,currentEnemy(),offset):T.outcome(squad,groups,currentEnemy(),enemyHp,gravityUsed,tuning,teamBuffs,offset)}
 function applyTemporaryConversion(){if(!tutorial&&teamConversion)for(const s of state)if(s.face===teamConversion[0]&&s.tempOriginal===undefined){s.tempOriginal=s.face;s.face=teamConversion[1]}}
 function endTeamTurn(){for(const s of state)if(s.tempOriginal!==undefined){s.face=s.tempOriginal;delete s.tempOriginal}teamConversion=null;teamBuffs={};teamImmune=false;teamShield=false;gravityUsed=false;for(const id in cooldowns)if(!teamSpent.has(id))cooldowns[id]=Math.max(0,cooldowns[id]-1);teamSpent.clear()}
@@ -594,4 +594,9 @@ panel.append(document.querySelector('.enemy-card'),document.querySelector('.play
 if(matchMedia('(max-width:600px)').matches){const detail=document.createElement('details');detail.className='mobile-battle-details';const summary=document.createElement('summary');summary.textContent='戦況・ルール';detail.append(summary);rule.before(detail);detail.append(rule,byId('boardProof'),byId('battleLog'));}
 const guideConfirm=document.createElement('button');guideConfirm.id='guideConfirm';guideConfirm.textContent='決定 · 回転';guideConfirm.disabled=true;guideConfirm.style.cssText='border-color:#d7b56c;color:#ffe5a3';guideConfirm.onclick=confirmMove;byId('guideCancel').before(guideConfirm);
 byId('moveGuide').querySelector('small').textContent='1回目で2Dガイドを表示。同じ矢印をもう一度押すか「決定」で1手回転。別の矢印は選び直し。';
+// Keep turn information next to the board and move secondary tools into settings.
+boardShell.prepend(document.querySelector('.readout'));
+settingsDrawer.append(viewNote,document.querySelector('.actions'),squadPanel);
+settingsDrawer.querySelector('summary').textContent='設定・遊び方';
+boardTitle.innerHTML='<span>RUBIMON</span><strong>精霊の回転盤</strong>';
 buildSquadSkills();addEventListener('resize',resize);resize();reset();requestAnimationFrame(frame);
