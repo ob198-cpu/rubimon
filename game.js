@@ -633,6 +633,8 @@ const guideConfirm=document.createElement('button');guideConfirm.id='guideConfir
 byId('moveGuide').querySelector('small').textContent='1回目で2Dガイドを表示。同じ矢印をもう一度押すか「決定」で1手回転。別の矢印は選び直し。';
 // Keep turn information next to the board and move secondary tools into settings.
 boardShell.prepend(document.querySelector('.readout'));
+const enemyInfo=document.createElement('div');enemyInfo.className='enemy-weakness-info';byId('weakness').before(enemyInfo);enemyInfo.append(byId('weakness'),byId('count'));
+document.querySelector('.readout').style.display='none';
 settingsDrawer.append(viewNote,document.querySelector('.actions'),squadPanel);
 settingsDrawer.querySelector('summary').textContent='設定・遊び方';
 boardTitle.innerHTML='<span>RUBIMON</span><strong>精霊の回転盤</strong>';
