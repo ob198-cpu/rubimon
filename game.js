@@ -59,17 +59,30 @@ let battleEffects=[];
 const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
 const cubeOrigin=[300,510],cubeScale=46;
 let arrowHits=[];
+function sliceControl(axis,layer,dir){
+ // Identify which visible side is on screen-left, then map its columns.
+ const sx=camera[0]>=0?1:-1,sz=camera[2]>=0?1:-1;
+ const leftNormal=camRight[0]*sx<camRight[2]*sz?0:2;
+ const leftAxis=leftNormal===0?2:0;
+ const normalAxis=axis===1?leftNormal:axis===0?2:0;
+ const pivot=[0,0,0];pivot[axis]=layer;pivot[normalAxis]=(normalAxis===0?sx:sz)*1.5;
+ const a=cubePoint(pivot),b=cubePoint(E.rotate(pivot,axis,.001));
+ const sign=-(layer||1)*dir,component=axis===1?0:1;
+ const towardStart=(b[component]-a[component])*sign<0;
+ const column=camRight[axis]>=0?layer+1:1-layer;
+ return {
+  p:axis===1?[towardStart?117:159,514-layer*42]:[(axis===leftAxis?204:350)+column*42,towardStart?632:674],
+  angle:axis===1?(towardStart?Math.PI:0):(towardStart?-Math.PI/2:Math.PI/2)
+ };
+}
 function drawSliceArrows(){
- arrowHits=[];if(tutorial||viewTurned())return;
+ arrowHits=[];if(tutorial||cubeDrag?.moved)return;
  for(let axis=0;axis<3;axis++)for(let layer=-1;layer<=1;layer++){
  const face=Object.keys(E.slices).find(k=>E.slices[k].axis===axis&&E.slices[k].layer===layer);
  for(const dir of [1,-1]){
  // Screen-space controls: horizontal rows on the left, vertical columns below.
  // Front columns (X) and right-face columns (Z) have opposite rotation signs.
- const sign=-(layer||1)*dir;
- const towardStart=axis===2?sign===1:sign===-1;
- const angle=axis===1?(towardStart?Math.PI:0):(towardStart?-Math.PI/2:Math.PI/2);
- const p=axis===1?[towardStart?117:159,514-layer*42]:[axis===0?204+(layer+1)*42:350+(1-layer)*42,towardStart?632:674];
+ const {p,angle}=sliceControl(axis,layer,dir);
  const points=[p],end=[p[0]+8*Math.cos(angle),p[1]+8*Math.sin(angle)];
  const disabled=!!active||phase!=='ready'||turnMoves>=turnLimit||!B.canRotate(state,face),lit=guideFace()===face&&previewDir===dir;
  arrowHits.push({p,points,face,dir});ctx.save();ctx.globalAlpha=disabled?.3:1;ctx.lineCap='round';ctx.lineJoin='round';
@@ -511,7 +524,7 @@ function endCubeDrag(e){if(!cubeDrag||e.pointerId!==cubeDrag.id)return;suppressC
 cubeTouch.addEventListener('pointerup',endCubeDrag);cubeTouch.addEventListener('pointercancel',endCubeDrag);cubeTouch.addEventListener('lostpointercapture',endCubeDrag);
 cubeTouch.addEventListener('click',boardClick);
 cubeTouch.addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)||tutorial)return;e.preventDefault();viewYaw+=(e.key==='ArrowLeft'?.2:e.key==='ArrowRight'?-.2:0);viewPitch=Math.max(-1.35,Math.min(1.35,viewPitch+(e.key==='ArrowUp'?.15:e.key==='ArrowDown'?-.15:0)));updateView()});
-const viewNote=document.createElement('small');viewNote.textContent='見回し中は固定矢印を隠します。面をタップして方向を選ぶか、視点を戻してください。';viewNote.style.cssText='display:block;text-align:center;font-size:10px;color:#a9bcb5;line-height:1.6';boardShell.append(viewNote);
+const viewNote=document.createElement('small');viewNote.textContent='視点を変えても矢印で操作できます。左は左右、下は上下。表示中の面に合わせて列と方向が切り替わります。';viewNote.style.cssText='display:block;text-align:center;font-size:10px;color:#a9bcb5;line-height:1.6';boardShell.append(viewNote);
 byId('moveGuide').querySelector('small').textContent='光る帯だけが移動対象。方向を選んで回転、選択解除で閉じます。';
 const settingsDrawer=document.createElement('details');settingsDrawer.className='settings-drawer';settingsDrawer.innerHTML='<summary>設定・操作説明・試作ツール</summary>';
 const rule=document.querySelector('.rule-panel'),ruleLabel=rule.querySelector('label'),ruleNote=rule.querySelector('small');settingsDrawer.append(document.querySelector('.difficulty-settings'),ruleLabel,ruleNote,document.querySelector('.settings'),byId('controls'),byId('tutorialStart'));
