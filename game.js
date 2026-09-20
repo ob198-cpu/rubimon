@@ -91,16 +91,16 @@ function drawSliceArrows(){
  // Front columns (X) and right-face columns (Z) have opposite rotation signs.
  const control=sliceControl(axis,layer,dir),angle=control.angle;
  const p=compactBoard?(axis===1?[angle===0?172:110,454-layer*60]:[115+((control.p[0]<330?0:3)+Math.round((control.p[0]-(control.p[0]<330?204:350))/42))*74,angle<0?582:644]):control.p;
- const points=[p],end=[p[0]+8*Math.cos(angle),p[1]+8*Math.sin(angle)];
+ const points=[p],end=[p[0]+16*Math.cos(angle),p[1]+16*Math.sin(angle)];
  const disabled=!!active||phase!=='ready'||turnMoves>=turnLimit||!B.canRotate(state,face),lit=guideFace()===face&&(pendingMove?.dir||previewDir)===dir;
  arrowHits.push({p,points,face,dir});ctx.save();if(compactBoard){ctx.translate(...p);ctx.scale(1.58,1.58);ctx.translate(-p[0],-p[1])}ctx.globalAlpha=disabled?.3:1;ctx.lineCap='round';ctx.lineJoin='round';
  const finish=ctx.createLinearGradient(p[0],p[1]-17,p[0],p[1]+17);finish.addColorStop(0,lit?'#416168':'#30494c');finish.addColorStop(1,lit?'#223e45':'#142b30');ctx.fillStyle=finish;
  ctx.shadowColor='#0005';ctx.shadowBlur=4;ctx.shadowOffsetY=2;ctx.beginPath();ctx.roundRect(p[0]-17,p[1]-17,34,34,7);ctx.fill();ctx.shadowBlur=0;ctx.shadowOffsetY=0;
  ctx.strokeStyle=lit?'#ebc778':'#89958d';ctx.lineWidth=lit?1.6:1;ctx.stroke();
  ctx.beginPath();ctx.moveTo(p[0]-10,p[1]-14);ctx.lineTo(p[0]+10,p[1]-14);ctx.strokeStyle='#ffffff18';ctx.stroke();
- ctx.strokeStyle=lit?'#ffe5a3':'#eee9db';ctx.lineWidth=2.7;
- ctx.beginPath();ctx.moveTo(p[0]-8*Math.cos(angle),p[1]-8*Math.sin(angle));ctx.lineTo(...end);ctx.stroke();
- ctx.beginPath();ctx.moveTo(end[0]-8*Math.cos(angle-.55),end[1]-8*Math.sin(angle-.55));ctx.lineTo(...end);ctx.lineTo(end[0]-8*Math.cos(angle+.55),end[1]-8*Math.sin(angle+.55));ctx.stroke();ctx.restore();
+ ctx.strokeStyle=lit?'#ffe5a3':'#eee9db';ctx.lineWidth=2;
+ ctx.beginPath();ctx.moveTo(p[0]-16*Math.cos(angle),p[1]-16*Math.sin(angle));ctx.lineTo(...end);ctx.stroke();
+ ctx.beginPath();ctx.moveTo(end[0]-16*Math.cos(angle-.55),end[1]-16*Math.sin(angle-.55));ctx.lineTo(...end);ctx.lineTo(end[0]-16*Math.cos(angle+.55),end[1]-16*Math.sin(angle+.55));ctx.stroke();ctx.restore();
  }}
 }
 function arrowAt(e){const p=boardPointer(e),half=compactBoard?27:17;return arrowHits.find(a=>Math.abs(p[0]-a.p[0])<=half&&Math.abs(p[1]-a.p[1])<=half)}
