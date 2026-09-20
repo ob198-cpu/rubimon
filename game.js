@@ -11,6 +11,8 @@ let compactBoard=false;
 let orbitExpanded=true;
 function boardViewport(){return compactBoard?(orbitExpanded?{w:460,h:908,x:70,y:-20}:{w:460,h:494,x:70,y:394}):(orbitExpanded?{w:600,h:820,x:0,y:-20}:{w:600,h:436,x:0,y:364})}
 function boardPointer(e){const r=canvas.getBoundingClientRect(),v=boardViewport();return [(e.clientX-r.left)*v.w/r.width+v.x,(e.clientY-r.top)*v.h/r.height+v.y]}
+function orbitDisplayScale(){return compactBoard?.8:.86}
+function orbitDisplayPoint([x,y]){const scale=orbitDisplayScale();return [300+(x-300)*scale,250+(y-250)*scale]}
 const T=TeamRules, Q=BalanceRules;
 let proofCache=null,shuffleCharges=2,balanceMetrics={repairs:0,refills:0,rejectedObstacles:0};
 function attackKeys(){return [...new Set(squad.map(id=>T.roster.find(c=>c.id===id).element))].filter(k=>k!=='D'&&(B.pools[difficulty].includes(k)||teamConversion?.[1]===k))}
@@ -71,8 +73,12 @@ effectCanvas.id='battleEffects';effectCanvas.setAttribute('aria-hidden','true');
 const effectContext=effectCanvas.getContext('2d');
 let battleEffects=[];
 let attackChain=0;
+let bestChain=0,battleDamage=0;
 const comboBanner=document.createElement('div');comboBanner.className='combo-celebration';comboBanner.setAttribute('role','status');document.body.append(comboBanner);
 function showComboBonus(bonus){if(bonus.multiplier<=1)return;comboBanner.replaceChildren();const title=document.createElement('strong'),detail=document.createElement('span');title.textContent=[bonus.chain>1?'CHAIN '+bonus.chain:'',bonus.burst>1?'BURST '+bonus.burst:''].filter(Boolean).join(' × ');detail.textContent='ダメージ ×'+bonus.multiplier.toFixed(2);comboBanner.append(title,detail);comboBanner.classList.remove('active');void comboBanner.offsetWidth;comboBanner.classList.add('active')}
+const victoryScreen=document.createElement('section');victoryScreen.className='victory-screen';victoryScreen.hidden=true;victoryScreen.setAttribute('role','dialog');victoryScreen.setAttribute('aria-modal','true');victoryScreen.setAttribute('aria-labelledby','victoryTitle');victoryScreen.innerHTML='<div class="victory-rays" aria-hidden="true"></div><div class="victory-panel"><small>DUNGEON CLEAR</small><h2 id="victoryTitle">VICTORY</h2><p id="victoryEnemy"></p><div class="victory-stats"><span>総ダメージ<strong id="victoryDamage"></strong></span><span>最大チェイン<strong id="victoryChain"></strong></span><span>獲得素材<strong id="victoryReward"></strong></span></div><div class="victory-actions"><button id="victoryRetry">もう一度挑戦</button><button id="victoryClose">盤面を見る</button></div></div>';document.body.append(victoryScreen);
+function showVictory(){byId('victoryEnemy').textContent=currentEnemy().name+' 撃破';byId('victoryDamage').textContent=battleDamage.toLocaleString();byId('victoryChain').textContent=bestChain;byId('victoryReward').textContent=dungeon.reward+' 個';victoryScreen.hidden=false;victoryScreen.classList.remove('reveal');void victoryScreen.offsetWidth;victoryScreen.classList.add('reveal');battleVibration('attack',1)}
+document.getElementById('victoryRetry').onclick=()=>{victoryScreen.hidden=true;reset()};document.getElementById('victoryClose').onclick=()=>{victoryScreen.hidden=true};
 const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
 const cubeOrigin=[300,510],cubeScale=46;
 let arrowHits=[];
@@ -264,22 +270,22 @@ function frame(now){
       refresh();if(m.kind==='user'&&phase==='ready')resolveTurn();
     }
   }
-  ctx.clearRect(0,-20,600,940);if(orbitExpanded)drawOrbits(angle);ctx.save();if(compactBoard)ctx.translate(0,30);drawCube(angle);drawGuide();ctx.restore();drawSliceArrows();
+  ctx.clearRect(0,-20,600,940);if(orbitExpanded){ctx.save();ctx.translate(300,250);ctx.scale(orbitDisplayScale(),orbitDisplayScale());ctx.translate(-300,-250);drawOrbits(angle);ctx.restore()}ctx.save();if(compactBoard)ctx.translate(0,30);drawCube(angle);drawGuide();ctx.restore();drawSliceArrows();
   if(fx){const t=(now-fx.start)/1100;if(t<1){ctx.save();ctx.globalAlpha=1-t;for(const p of fx.points){const x=p[0]+(540-p[0])*t,y=p[1]+(35-p[1])*t-60*Math.sin(t*Math.PI);ctx.beginPath();ctx.arc(x,y,5*(1-t)+2,0,Math.PI*2);ctx.fillStyle=fx.color;ctx.shadowColor=fx.color;ctx.shadowBlur=16;ctx.fill()}ctx.restore()}else fx=null}
   if(skillFlash){const t=(now-skillFlash.start)/2200;if(t<1){ctx.save();ctx.fillStyle='#121727df';ctx.fillRect(20,320,560,78);ctx.strokeStyle=skillFlash.color;ctx.lineWidth=2;ctx.strokeRect(20,320,560,78);ctx.textAlign='center';ctx.fillStyle='#ffe8ae';ctx.font='bold 17px sans-serif';ctx.fillText('1面完成 · SKILL',300,345);ctx.font='bold 21px sans-serif';ctx.fillStyle=skillFlash.color;ctx.fillText(skillFlash.name,300,379);ctx.restore()}else skillFlash=null}
   drawBattleEffects(now);
   requestAnimationFrame(frame);
 }
 function userMove(face,dir){if(tutorial||phase!=='ready'||active||queue.length||turnMoves>=turnLimit)return;if(!B.canRotate(state,face)){byId('battleLog').textContent='この層には固定ブロックがあります。別の面か、リベラの解除を使おう。';return}pendingMove=null;queue.push({face,dir,kind:'user'})}
-function reset(){attackChain=0;comboBanner.classList.remove('active');pendingMove=null;shuffleCharges=2;roundToken++;endTeamTurn();cooldowns={};selectedLayer=null;hoverLayer=null;previewDir=0;byId('layerChoices').replaceChildren();state=B.board(E,Math.random,B.pools[difficulty]);skillUses={convert:2,shuffle:2,clock:2,cleanse:2,open:2};turnLimit=3;clockUsed=false;openFaces=false;obstacles={seals:[],restrict:0};enemyTurns=0;baseRule=byId('attackRule').value;active=null;queue=[];history=[];moves=0;hp=maxHp();wave=0;enemyHp=currentEnemy().hp;phase='ready';turnMoves=0;combo=0;fx=null;byId('battleLog').textContent='5体の編成で '+dungeon.name+' に挑戦。属性をそろえ、仲間の技で対策しよう。';byId('damageText').textContent='';balanceMetrics={repairs:0,refills:0,rejectedObstacles:0};certifiedStart();renderParty();refresh()}
+function reset(){attackChain=0;bestChain=0;battleDamage=0;victoryScreen.hidden=true;comboBanner.classList.remove('active');pendingMove=null;shuffleCharges=2;roundToken++;endTeamTurn();cooldowns={};selectedLayer=null;hoverLayer=null;previewDir=0;byId('layerChoices').replaceChildren();state=B.board(E,Math.random,B.pools[difficulty]);skillUses={convert:2,shuffle:2,clock:2,cleanse:2,open:2};turnLimit=3;clockUsed=false;openFaces=false;obstacles={seals:[],restrict:0};enemyTurns=0;baseRule=byId('attackRule').value;active=null;queue=[];history=[];moves=0;hp=maxHp();wave=0;enemyHp=currentEnemy().hp;phase='ready';turnMoves=0;combo=0;fx=null;byId('battleLog').textContent='5体の編成で '+dungeon.name+' に挑戦。属性をそろえ、仲間の技で対策しよう。';byId('damageText').textContent='';balanceMetrics={repairs:0,refills:0,rejectedObstacles:0};certifiedStart();renderParty();refresh()}
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 async function resolveTurn(){
  if(phase!=='ready'||active||queue.length||(turnMoves===0&&canAct()))return;
- history=[];phase='resolving';const token=roundToken;combo=0;let total=0,healed=0,recoveryMatched=false;refresh();
+ history=[];phase='resolving';const token=roundToken;combo=0;let total=0,healed=0,recoveryMatched=false,attackMatched=false;refresh();
  for(let chain=0;chain<(tutorial?8:1);chain++){
   const groups=currentMatches();if(!groups.length)break;
   recoveryMatched ||= groups.some(g=>g.element==='D');
-  let result=teamOutcome(groups,combo);if(!tutorial){result=T.comboBonus(result,attackChain);attackChain=result.comboBonus.chain;showComboBonus(result.comboBonus);gravityUsed=result.usedGravity}combo+=groups.length;total+=result.damage;healed+=result.heal;
+  let result=teamOutcome(groups,combo);if(!tutorial){result=T.comboBonus(result,attackChain);attackMatched ||= result.comboBonus.burst>0;attackChain=result.comboBonus.chain;bestChain=Math.max(bestChain,attackChain);battleDamage+=result.damage;showComboBonus(result.comboBonus);gravityUsed=result.usedGravity}combo+=groups.length;total+=result.damage;healed+=result.heal;
   const skill=groups.find(g=>g.skill);
   if(skill)skillFlash={start:performance.now(),name:tutorial?B.skills[skill.element]:B.spirits[skill.element].element+'属性・面攻撃',color:B.spirits[skill.element].color};
   const ids=new Set(groups.flatMap(g=>g.ids));
@@ -296,11 +302,11 @@ async function resolveTurn(){
   else{const budget=turnMoves>=turnLimit?3:Math.max(1,turnLimit-turnMoves);Q.refill(state,ids,B.pools[difficulty],attackKeys(),attackPolicy(),difficulty==='easy'?1:Math.min(3,budget),Math.random,teamConversion,difficulty,attackChain);balanceMetrics.refills++}
   applyTemporaryConversion();refresh();if(enemyHp===0)break;
  }
- if(!tutorial&&!total&&!recoveryMatched)attackChain=0;
+ if(!tutorial&&!attackMatched&&!recoveryMatched)attackChain=0;
  byId('battleLog').textContent=combo?combo+' COMBO / '+total+' ダメージ'+(!tutorial&&attackChain>1?' / CHAIN '+attackChain:'')+(healed?' / 回復 +'+healed:''):'そろわなかった！';
  if(enemyHp===0){
   await pause(550);if(token!==roundToken)return;
-  if(!tutorial||wave===2){phase='victory';byId('battleLog').textContent='CLEAR！ '+currentEnemy().name+'を撃破。'+(!tutorial?'想定報酬 '+dungeon.reward+'素材（試算のみ・所持数への加算なし）':'');endTeamTurn();refresh();return}
+  if(!tutorial||wave===2){phase='victory';byId('battleLog').textContent='CLEAR！ '+currentEnemy().name+'を撃破。'+(!tutorial?'想定報酬 '+dungeon.reward+'素材（試算のみ・所持数への加算なし）':'');endTeamTurn();refresh();if(!tutorial)showVictory();return}
   wave++;enemyTurns=0;B.cleanse(state,obstacles,B.pools[difficulty]);enemyHp=B.enemies[wave].hp;hp=Math.min(1800,hp+250);byId('battleLog').textContent='次の敵が現れた！ HP +250・妨害解除';
  }else{
   if(turnMoves<turnLimit){phase='ready';refresh();return}
@@ -370,7 +376,8 @@ function inside(p,poly){let c=false;for(let i=0,j=poly.length-1;i<poly.length;j=
 function pickLayers(e){const p=boardPointer(e);let sticker;
  // The cube surface is for camera dragging only; arrows select rotation guides.
  if(p[1]>380)return [];
- else{let d=11;for(const s of state){const q=E.orbit(s),n=Math.hypot(p[0]-q[0],p[1]-q[1]);if(n<d){sticker=s;d=n}}}
+ const scale=orbitDisplayScale();p[0]=300+(p[0]-300)/scale;p[1]=250+(p[1]-250)/scale;
+ let d=11;for(const s of state){const q=E.orbit(s),n=Math.hypot(p[0]-q[0],p[1]-q[1]);if(n<d){sticker=s;d=n}}
  if(sticker){const faces=Object.keys(E.faces).filter(f=>sticker.p[E.slices[f].axis]===E.slices[f].layer);faces.sort((a,b)=>(sticker.n[E.slices[b].axis]===E.slices[b].layer)-(sticker.n[E.slices[a].axis]===E.slices[a].layer));return faces}
  let near=null,distance=12;for(const ring of ringHits)for(const q of ring.points){const d=Math.hypot(p[0]-q[0],p[1]-q[1]);if(d<distance){near=ring.face;distance=d}}return near?[near]:[];
 }
@@ -463,7 +470,7 @@ function drawBattleEffects(now){
   if(age<950&&!e.counter){
    const t=clamp((age-300)/650,0,1);
    e.points.forEach((point,i)=>{
-    const v=boardViewport(),source=[board.left+(point[0]-v.x)*board.width/v.w,board.top+(point[1]-v.y)*board.height/v.h];
+    const v=boardViewport(),shown=orbitDisplayPoint(point),source=[board.left+(shown[0]-v.x)*board.width/v.w,board.top+(shown[1]-v.y)*board.height/v.h];
     c.globalAlpha=(1-t)*.8;c.lineWidth=2;c.beginPath();c.arc(source[0],source[1],(10+age/35)*board.width/600,0,Math.PI*2);c.stroke();
     if(age<300||reducedMotion.matches)return;
     const bend=(i%2?1:-1)*(35+i*6),at=u=>[source[0]+(target[0]-source[0])*u+Math.sin(u*Math.PI)*bend,source[1]+(target[1]-source[1])*u-70*Math.sin(u*Math.PI)];
@@ -525,7 +532,7 @@ function useCharacterSkill(c){
  if(c.action==='cleanse')B.cleanse(state,obstacles,B.pools[difficulty]);
  if(c.action==='fireBoost')teamBuffs.R=1.5;
  if(c.action==='thunderBoost')teamBuffs.U=1.5;
- if(c.action==='pierce'){enemyHp=Math.max(0,enemyHp-tuning.fixed);battleVibration('attack',tuning.fixed);byId('damageText').textContent='固定 −'+tuning.fixed;if(enemyHp===0)phase='victory'}
+ if(c.action==='pierce'){enemyHp=Math.max(0,enemyHp-tuning.fixed);battleDamage+=tuning.fixed;battleVibration('attack',tuning.fixed);byId('damageText').textContent='固定 −'+tuning.fixed;if(enemyHp===0){phase='victory';showVictory()}}
  cooldowns[c.id]=c.cd;teamSpent.add(c.id);history=[];byId('battleLog').textContent=c.name+'：'+c.skill+(phase==='victory'?' ／ CLEAR！':'');refresh();
 }
 function previewSlot(select,detail){const c=T.roster.find(c=>c.id===select.value);detail.textContent='HP '+c.hp+' / 攻撃 '+c.atk+' / 防御 '+c.def+' / 回復 '+c.recovery+'｜固有：'+c.passive+'｜技：'+c.skill+'（'+c.cd+'T）｜想定入手：'+c.source}

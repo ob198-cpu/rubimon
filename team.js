@@ -38,11 +38,12 @@ function outcome(ids,groups,enemy,currentHp,usedGravity=false,tuning=defaults,bu
  details.push(c.name+'：'+normal+(fixed?'＋固定'+fixed:''));
  if(c.ability==='leech')heal+=40;
  if(c.ability==='gravity'&&g.skill&&!usedGravity){const gravity=Math.floor(Math.max(0,currentHp-damage)*tuning.gravity/100*(enemy.gravity??1));value+=gravity;usedGravity=true;details.push('割合：'+gravity+'（現在HP基準・耐性適用）')}
- }damage+=value;attacks.push({element:g.element,value,heal:false,skill:!!g.skill});
+ }damage+=value;attacks.push({element:g.element,value,heal:false,skill:!!g.skill,eligible:s.chars.some(c=>c.element===g.element)});
  }return {damage,heal,attacks,details,usedGravity};}
 function incoming(ids,enemy,turn,tuning=defaults,immune=false,shield=false){const raw=enemy.id==='storm'&&turn%3!==0?Math.round(enemy.attack*.35):enemy.attack;return immune?0:Math.max(1,Math.round(Math.max(1,raw-stats(ids,tuning).def)*(shield?.5:1)))}
 function comboBonus(result,previous){
- const count=result.attacks.filter(a=>!a.heal&&a.value>0).length;
+ // A valid attack keeps the chain even when enemy defense reduces its damage to zero.
+ const count=result.attacks.filter(a=>!a.heal&&a.eligible!==false).length;
  const chain=count?previous+1:result.attacks.some(a=>a.heal)?previous:0,chainRate=1+Math.min(5,Math.max(0,chain-1))*.1,burstRate=1+Math.min(4,Math.max(0,count-1))*.2;
  const multiplier=count?Math.min(2.5,chainRate*burstRate):1;
  const attacks=result.attacks.map(a=>a.heal?{...a}:{...a,value:Math.round(a.value*multiplier)});

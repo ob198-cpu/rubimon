@@ -96,6 +96,14 @@ main{padding:2px 2px 10px;gap:3px}header,.board-heading{display:none!important}
 .board-shell .cube-drag-hint.is-learned{display:none}
 .orbit-toggle{display:block;margin:0 auto 8px;padding:7px 18px;min-height:36px;border:1px solid #947c50;border-radius:8px;background:#203331;color:#ead5a4;font-size:12px;white-space:nowrap}
 .orbit-toggle:focus-visible{outline:2px solid #83f5ff;outline-offset:2px}
+.victory-screen[hidden]{display:none}.victory-screen{position:fixed;inset:0;z-index:100;display:grid;place-items:center;overflow:hidden;padding:20px;background:radial-gradient(circle at 50% 42%,#81621a99,#081517ed 58%);isolation:isolate}
+.victory-rays{position:absolute;width:min(130vw,950px);aspect-ratio:1;border-radius:50%;background:repeating-conic-gradient(from 0deg,#ffe69b00 0 8deg,#ffe69b36 9deg 12deg);filter:blur(1px);animation:victory-spin 16s linear infinite;z-index:-1}
+.victory-panel{width:min(92vw,480px);padding:34px 24px 24px;text-align:center;border:2px solid #e3be67;border-radius:22px;background:linear-gradient(155deg,#183b39f5,#121b1cf5);box-shadow:0 0 0 5px #3e2e1b,0 0 70px #ffd76a66,inset 0 0 40px #f6c85b18;color:#f4e7c1}
+.victory-panel>small{letter-spacing:.35em;color:#e6c46f}.victory-panel h2{margin:5px 0;font:700 clamp(38px,12vw,72px) Georgia,serif;color:#fff0ad;text-shadow:0 3px 0 #92661f,0 0 25px #ffdd72}.victory-panel>p{margin:0 0 22px;color:#fff}
+.victory-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.victory-stats span{padding:10px 4px;border:1px solid #b6975470;border-radius:9px;background:#08171688;font-size:10px}.victory-stats strong{display:block;margin-top:5px;font-size:19px;color:#ffe59b}
+.victory-actions{display:flex;gap:9px;margin-top:22px}.victory-actions button{flex:1;min-height:44px}.victory-actions button:first-child{background:#d3a94f;color:#17201e;font-weight:700}.victory-screen.reveal .victory-panel{animation:victory-panel-in .9s cubic-bezier(.2,.8,.2,1) both}.victory-screen.reveal:after{content:"";position:absolute;inset:-20%;z-index:-1;background:radial-gradient(circle,#fff8 0 2%,transparent 3%) 0 0/70px 70px;animation:victory-sparks 1.8s ease-out both}
+@keyframes victory-panel-in{0%{opacity:0;transform:scale(.55) translateY(50px);filter:brightness(3)}60%{transform:scale(1.06)}100%{opacity:1;transform:scale(1)}}@keyframes victory-spin{to{transform:rotate(360deg)}}@keyframes victory-sparks{0%{opacity:0;transform:scale(.5)}25%{opacity:1}100%{opacity:.25;transform:scale(1.5)}}
+@media(prefers-reduced-motion:reduce){.victory-rays,.victory-screen.reveal .victory-panel,.victory-screen.reveal:after{animation:none}}
 .board-actions{display:flex;justify-content:space-between;align-items:flex-end;gap:8px;padding:8px 4px;flex-wrap:wrap}
 .board-left-actions{display:flex;flex-direction:column;align-items:stretch;gap:6px}
 .board-left-actions #hint{min-height:40px;padding:8px 10px;font-size:11px;white-space:nowrap}
