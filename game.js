@@ -84,7 +84,7 @@ function showVictory(){byId('victoryEnemy').textContent=currentEnemy().name+' �
 document.getElementById('victoryRetry').onclick=()=>{victoryScreen.hidden=true;reset()};document.getElementById('victoryClose').onclick=()=>{victoryScreen.hidden=true};
 const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
 const cubeOrigin=[300,510],cubeScale=46;
-let arrowHits=[],guidedArrowKey=null;
+let arrowHits=[],guidedArrowKey=null,arrowGuideActive=false;
 function sliceControl(axis,layer,dir){
  // Identify which visible side is on screen-left, then map its columns.
  const sx=camera[0]>=0?1:-1,sz=camera[2]>=0?1:-1;
@@ -119,7 +119,7 @@ function drawSliceArrows(){
  const p=compactBoard?(axis===1?[angle===0?174:116,564-layer*58]:[columnX[rank],angle<0?746:804]):[axis===1?(angle===0?179:141):columnX[rank],control.p[1]+(axis===1?20:76)];
  const points=[p],end=[p[0]+13*Math.cos(angle),p[1]+13*Math.sin(angle)];
  const disabled=!!active||phase!=='ready'||turnMoves>=turnLimit||!B.canRotate(state,face),lit=guideFace()===face&&(pendingMove?.dir||previewDir)===dir;
- if(guidedArrowKey===face+':'+dir){ctx.save();ctx.strokeStyle='#8ff6ff';ctx.lineWidth=2.4;ctx.shadowColor='#62eaf5';ctx.shadowBlur=10;ctx.globalAlpha=.9;ctx.beginPath();ctx.moveTo(...control.anchor);ctx.lineTo(...p);ctx.stroke();ctx.restore()}
+ if(arrowGuideActive){ctx.save();ctx.strokeStyle='#8ff6ff';ctx.lineWidth=1.7;ctx.shadowColor='#62eaf5';ctx.shadowBlur=7;ctx.globalAlpha=.62;ctx.beginPath();ctx.moveTo(...control.anchor);ctx.lineTo(...p);ctx.stroke();ctx.restore()}
  arrowHits.push({p,points,face,dir});ctx.save();if(compactBoard){ctx.translate(...p);ctx.scale(1.58,1.58);ctx.translate(-p[0],-p[1])}ctx.globalAlpha=disabled?.3:1;ctx.lineCap='round';ctx.lineJoin='round';
  const finish=ctx.createLinearGradient(p[0],p[1]-17,p[0],p[1]+17);finish.addColorStop(0,lit?'#416168':'#30494c');finish.addColorStop(1,lit?'#223e45':'#142b30');ctx.fillStyle=finish;
  ctx.shadowColor='#0005';ctx.shadowBlur=4;ctx.shadowOffsetY=2;ctx.beginPath();ctx.roundRect(p[0]-17,p[1]-17,34,34,7);ctx.fill();ctx.shadowBlur=0;ctx.shadowOffsetY=0;
@@ -389,7 +389,7 @@ function pickLayers(e){const p=boardPointer(e);let sticker;
 function confirmMove(){if(!pendingMove)return;const m=pendingMove;if(m.board!==JSON.stringify(state)){pendingMove=null;updateGuide();return}userMove(m.face,m.dir);updateGuide()}
 function chooseMove(face,dir){
  if(tutorial||active||queue.length||phase!=='ready'||turnMoves>=turnLimit||!B.canRotate(state,face))return;
- guidedArrowKey=null;dragHint.classList.remove('arrow-step');dragHint.classList.add('is-complete');
+ guidedArrowKey=null;arrowGuideActive=false;dragHint.classList.remove('arrow-step');dragHint.classList.add('is-complete');
  if(pendingMove?.face===face&&pendingMove.dir===dir){confirmMove();return}
  selectLayer(face);pendingMove={face,dir,board:JSON.stringify(state)};previewDir=dir;updateGuide();
  byId('guideText').textContent=E.slices[face].name+'層：'+(dir===1?'↻':'↺')+' をプレビュー中。同じ矢印を再タップ、または決定。';
@@ -567,7 +567,7 @@ colorSelect.onchange=()=>{if(tutorial||active||queue.length||phase==='resolving'
 byId('moveGuide').style.setProperty('display','none','important');
 const dragHint=document.createElement('div');dragHint.className='cube-drag-hint';
 const dragHintMarkup='<svg viewBox="0 0 64 48" aria-hidden="true"><path class="swipe-track" d="M8 12h48m-43-5-5 5 5 5m38-10 5 5-5 5"/><g class="swipe-finger"><path d="M26 39 18 29q-3-5 2-5l6 5V13q0-6 5-6t5 6v10q7-3 11 3l-1 12-5 7H30Z"/></g></svg><span>ドラッグで見回す<small>手数は減りません</small></span>';
-const arrowHintMarkup='<svg viewBox="0 0 64 48" aria-hidden="true"><path class="tap-ring" d="M9 24h20m-7-7 7 7-7 7"/><g class="tap-finger"><path d="M36 42 27 32q-3-5 2-6l5 5V15q0-6 5-6t5 6v9q8-2 10 5l-2 10-6 6Z"/></g></svg><span>次は矢印をタップ<small>1回目で動きを確認</small></span>';
+const arrowHintMarkup='<svg viewBox="0 0 64 48" aria-hidden="true"><path class="tap-ring" d="M9 24h20m-7-7 7 7-7 7"/><g class="tap-finger"><path d="M36 42 27 32q-3-5 2-6l5 5V15q0-6 5-6t5 6v9q8-2 10 5l-2 10-6 6Z"/></g></svg><span>回す列の矢印をタップ<small>線で対応する層を確認</small></span>';
 dragHint.innerHTML=dragHintMarkup;boardShell.append(dragHint);
 const viewReset=document.createElement('button');viewReset.id='viewReset';viewReset.textContent='視点を元に戻す';viewReset.disabled=true;viewReset.style.cssText='display:block;margin:8px auto;font-size:11px';boardShell.append(viewReset);
 const boardActions=document.createElement('div');boardActions.className='board-actions';viewReset.before(boardActions);boardActions.append(byId('rescue'),viewReset);
@@ -582,7 +582,7 @@ function placeCubeTouch(){
  const hintPoint=arrowTarget?[arrowTarget.p[0]-42,arrowTarget.p[1]]:[358,compactBoard?560:530];
  Object.assign(dragHint.style,{left:(canvas.offsetLeft+w*(hintPoint[0]-v.x)/v.w)+'px',top:(canvas.offsetTop+h*(hintPoint[1]-v.y)/v.h)+'px'});
 }
-function showArrowHint(){if(dragHint.classList.contains('is-complete'))return;const target=arrowHits.find(a=>a.p[0]<220&&B.canRotate(state,a.face));if(!target)return;guidedArrowKey=target.face+':'+target.dir;dragHint.innerHTML=arrowHintMarkup;dragHint.classList.add('arrow-step');requestAnimationFrame(placeCubeTouch)}
+function showArrowHint(){if(dragHint.classList.contains('is-complete'))return;const target=arrowHits.find(a=>a.p[0]<220&&B.canRotate(state,a.face));if(!target)return;guidedArrowKey=target.face+':'+target.dir;arrowGuideActive=true;dragHint.innerHTML=arrowHintMarkup;dragHint.classList.add('arrow-step');requestAnimationFrame(placeCubeTouch)}
 new ResizeObserver(placeCubeTouch).observe(canvas);
 cubeTouch.addEventListener('pointerdown',e=>{if(tutorial||e.button!==0||cubeDrag)return;suppressCubeClick=false;cubeDrag={id:e.pointerId,x:e.clientX,y:e.clientY,yaw:viewYaw,pitch:viewPitch,moved:false};cubeTouch.setPointerCapture(e.pointerId)});
 cubeTouch.addEventListener('pointermove',e=>{
