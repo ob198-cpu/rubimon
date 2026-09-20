@@ -369,7 +369,13 @@ byId('undo').style.display='none';
 byId('hint').onclick=()=>{
  const proof=boardProof();
  byId('battleLog').textContent=proof.moves?proof.moves.map((m,i)=>(i+1)+'. '+E.slices[m.face].name+'層 '+(m.dir===1?'↻':'↺')).join(' → ')+'（途中で消去が発生しない検証済み手順）':'確実な手順は未確認です。救済で盤面を再配置できます。';
- if(proof.moves){selectLayer(proof.moves[0].face);previewDir=proof.moves[0].dir}
+ if(proof.moves?.length){
+  const move=proof.moves[0];
+  selectLayer(move.face);
+  pendingMove={face:move.face,dir:move.dir,board:JSON.stringify(state)};
+  previewDir=move.dir;updateGuide();
+  if(arrowsUnlocked&&!dragHint.classList.contains('is-complete'))dragHint.innerHTML=tapHintIcon+'<span>光っている矢印をタップすると回転するよ</span>';
+ }
 };
 byId('rescue').onclick=()=>{
  if(tutorial||active||queue.length||phase!=='ready'||shuffleCharges===0)return;
