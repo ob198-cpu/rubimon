@@ -515,6 +515,7 @@ const panel=document.querySelector('.panel'),boardShell=document.createElement('
 canvas.before(boardShell);const boardTitle=document.createElement('div');boardTitle.className='board-heading';boardTitle.innerHTML='<span>THE ORBIT CHAMBER</span><strong>精霊の回転盤</strong>';boardShell.append(boardTitle,canvas,byId('moveGuide'));
 // Keep internal selection controls for existing handlers, but remove the guide panel from the UI.
 byId('moveGuide').style.setProperty('display','none','important');
+const dragHint=document.createElement('div');dragHint.className='cube-drag-hint';dragHint.innerHTML='<svg viewBox="0 0 64 48" aria-hidden="true"><path class="swipe-track" d="M8 12h48m-43-5-5 5 5 5m38-10 5 5-5 5"/><g class="swipe-finger"><path d="M26 39 18 29q-3-5 2-5l6 5V13q0-6 5-6t5 6v10q7-3 11 3l-1 12-5 7H30Z"/></g></svg><span>ドラッグで見回す<small>手数は減りません</small></span>';boardShell.append(dragHint);
 const viewReset=document.createElement('button');viewReset.id='viewReset';viewReset.textContent='視点を元に戻す';viewReset.disabled=true;viewReset.style.cssText='display:block;margin:8px auto;font-size:11px';boardShell.append(viewReset);
 viewReset.onclick=()=>{pendingMove=null;viewYaw=viewHome.yaw;viewPitch=viewHome.pitch;updateView()};
 const cubeTouch=document.createElement('div');cubeTouch.setAttribute('aria-label','立方体の視点操作。ドラッグで見回す。矢印キーでも視点を変更。');cubeTouch.tabIndex=0;cubeTouch.style.cssText='position:absolute;touch-action:none;cursor:grab;user-select:none;z-index:2;border-radius:12px';boardShell.append(cubeTouch);
@@ -529,7 +530,7 @@ cubeTouch.addEventListener('pointermove',e=>{
  if(!cubeDrag||e.pointerId!==cubeDrag.id)return;
  const dx=e.clientX-cubeDrag.x,dy=e.clientY-cubeDrag.y;
  if(!cubeDrag.moved&&Math.hypot(dx,dy)<6)return;
- pendingMove=null;cubeDrag.moved=true;cubeTouch.style.cursor='grabbing';
+ pendingMove=null;cubeDrag.moved=true;cubeTouch.style.cursor='grabbing';dragHint.classList.add('is-learned');
  viewYaw=cubeDrag.yaw-dx*.009;viewPitch=Math.max(-1.35,Math.min(1.35,cubeDrag.pitch+dy*.009));
  hoverLayer=null;previewDir=0;updateView();
 });

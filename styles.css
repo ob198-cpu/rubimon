@@ -66,3 +66,10 @@ header{order:0;padding-bottom:10px}header h1{font-size:24px;white-space:nowrap}h
 .board-help{font-size:10px}.guide-actions button{font-size:11px;padding:7px 4px}.squad-skills button{min-height:58px}
 }
 @media(prefers-reduced-motion:reduce){.enemy-sprite,.monster.hit,.board-change{animation:none;will-change:auto}}
+.cube-drag-hint{display:flex;align-items:center;justify-content:center;gap:10px;margin:8px auto 4px;color:#eed9a5;pointer-events:none;user-select:none;font-size:12px;line-height:1.5}
+.cube-drag-hint svg{width:52px;height:40px;flex:none;overflow:visible;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.cube-drag-hint .swipe-track{opacity:.45}.cube-drag-hint .swipe-finger{fill:#203c3d;animation:cube-swipe 2.4s ease-in-out infinite;transform-origin:32px 38px}
+.cube-drag-hint small{display:block;color:#a9bcb5;font-size:10px}.cube-drag-hint span{white-space:nowrap}
+.cube-drag-hint.is-learned .swipe-finger{animation:none}.tutorial-mode .cube-drag-hint{visibility:hidden}
+@keyframes cube-swipe{0%,100%{transform:translateX(-6px) rotate(-8deg)}50%{transform:translateX(6px) rotate(8deg)}}
+@media(prefers-reduced-motion:reduce){.cube-drag-hint .swipe-finger{animation:none}}
