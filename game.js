@@ -84,7 +84,7 @@ function showVictory(){byId('victoryEnemy').textContent=currentEnemy().name+' �
 document.getElementById('victoryRetry').onclick=()=>{victoryScreen.hidden=true;reset()};document.getElementById('victoryClose').onclick=()=>{victoryScreen.hidden=true};
 const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
 const cubeOrigin=[300,510],cubeScale=46;
-let arrowHits=[],guidedArrowKey=null,arrowGuideActive=false;
+let arrowHits=[],guidedArrowKey=null,arrowGuideActive=false,arrowsUnlocked=false;
 function sliceControl(axis,layer,dir){
  // Identify which visible side is on screen-left, then map its columns.
  const sx=camera[0]>=0?1:-1,sz=camera[2]>=0?1:-1;
@@ -118,8 +118,8 @@ function drawSliceArrows(){
  const rank=columns.findIndex(c=>c.axis===axis&&c.layer===layer);
  const p=compactBoard?(axis===1?[angle===0?174:116,564-layer*58]:[columnX[rank],angle<0?746:804]):[axis===1?(angle===0?179:141):columnX[rank],control.p[1]+(axis===1?20:76)];
  const points=[p],end=[p[0]+13*Math.cos(angle),p[1]+13*Math.sin(angle)];
- const disabled=!!active||phase!=='ready'||turnMoves>=turnLimit||!B.canRotate(state,face),lit=guideFace()===face&&(pendingMove?.dir||previewDir)===dir;
- if(arrowGuideActive){
+ const disabled=!arrowsUnlocked||!!active||phase!=='ready'||turnMoves>=turnLimit||!B.canRotate(state,face),lit=guideFace()===face&&(pendingMove?.dir||previewDir)===dir;
+ if(arrowGuideActive&&(axis===1?angle===0:angle<0)){
   const anchor=[control.anchor[0],control.anchor[1]+(compactBoard?30:0)];
   const dx=anchor[0]-p[0],dy=anchor[1]-p[1],half=17*(compactBoard?1.58:1);
   const edgeScale=half/Math.max(Math.abs(dx),Math.abs(dy),1);
@@ -394,15 +394,15 @@ function pickLayers(e){const p=boardPointer(e);let sticker;
 }
 function confirmMove(){if(!pendingMove)return;const m=pendingMove;if(m.board!==JSON.stringify(state)){pendingMove=null;updateGuide();return}userMove(m.face,m.dir);updateGuide()}
 function chooseMove(face,dir){
- if(tutorial||active||queue.length||phase!=='ready'||turnMoves>=turnLimit||!B.canRotate(state,face))return;
+ if(!arrowsUnlocked||tutorial||active||queue.length||phase!=='ready'||turnMoves>=turnLimit||!B.canRotate(state,face))return;
  if(pendingMove?.face===face&&pendingMove.dir===dir){guidedArrowKey=null;arrowGuideActive=false;dragHint.classList.remove('arrow-step');dragHint.classList.add('is-complete');confirmMove();return}
  arrowGuideActive=!dragHint.classList.contains('is-complete');guidedArrowKey=face+':'+dir;dragHint.innerHTML=secondTapHintMarkup;dragHint.classList.add('arrow-step');requestAnimationFrame(placeCubeTouch);
  selectLayer(face);pendingMove={face,dir,board:JSON.stringify(state)};previewDir=dir;updateGuide();
  byId('guideText').textContent=E.slices[face].name+'層：'+(dir===1?'↻':'↺')+' をプレビュー中。同じ矢印を再タップ、または決定。';
 }
-function boardClick(e){if(suppressCubeClick){suppressCubeClick=false;return}if(tutorial||active||phase!=='ready')return;const arrow=arrowAt(e);if(arrow){chooseMove(arrow.face,arrow.dir);return}const faces=pickLayers(e);if(faces.length)selectLayer(faces[0],faces)}
+function boardClick(e){if(suppressCubeClick){suppressCubeClick=false;return}if(!arrowsUnlocked||tutorial||active||phase!=='ready')return;const arrow=arrowAt(e);if(arrow){chooseMove(arrow.face,arrow.dir);return}const faces=pickLayers(e);if(faces.length)selectLayer(faces[0],faces)}
 canvas.addEventListener('click',boardClick);
-canvas.addEventListener('pointermove',e=>{if(e.pointerType==='touch')return;const arrow=arrowAt(e);if(arrow){hoverLayer=arrow.face;previewDir=arrow.dir;updateGuide();return}previewDir=0;hoverLayer=selectedLayer?null:pickLayers(e)[0]||null;updateGuide()});
+canvas.addEventListener('pointermove',e=>{if(!arrowsUnlocked||e.pointerType==='touch')return;const arrow=arrowAt(e);if(arrow){hoverLayer=arrow.face;previewDir=arrow.dir;updateGuide();return}previewDir=0;hoverLayer=selectedLayer?null:pickLayers(e)[0]||null;updateGuide()});
 canvas.addEventListener('pointerleave',()=>{hoverLayer=null;previewDir=0;updateGuide()});
 for(const [id,dir] of [['guideCW',1],['guideCCW',-1]]){const b=byId(id);b.onclick=()=>{if(selectedLayer)chooseMove(selectedLayer,dir)};b.onpointerenter=b.onfocus=()=>{previewDir=dir};b.onpointerleave=b.onblur=()=>{previewDir=0}}
 byId('guideCancel').onclick=()=>{pendingMove=null;selectedLayer=null;hoverLayer=null;previewDir=0;byId('layerChoices').replaceChildren();updateGuide()};
@@ -592,7 +592,7 @@ function placeCubeTouch(){
   :[358,compactBoard?560:530];
  Object.assign(dragHint.style,{left:(canvas.offsetLeft+w*(hintPoint[0]-v.x)/v.w)+'px',top:(canvas.offsetTop+h*(hintPoint[1]-v.y)/v.h)+'px'});
 }
-function showArrowHint(){if(dragHint.classList.contains('is-complete'))return;const target=arrowHits.find(a=>a.p[0]<220&&B.canRotate(state,a.face));if(!target)return;guidedArrowKey=target.face+':'+target.dir;arrowGuideActive=true;dragHint.innerHTML=arrowHintMarkup;dragHint.classList.add('arrow-step');requestAnimationFrame(placeCubeTouch)}
+function showArrowHint(){arrowsUnlocked=true;if(dragHint.classList.contains('is-complete')||pendingMove)return;const target=arrowHits.find(a=>a.p[0]<220&&B.canRotate(state,a.face));if(!target)return;guidedArrowKey=target.face+':'+target.dir;arrowGuideActive=true;dragHint.innerHTML=arrowHintMarkup;dragHint.classList.add('arrow-step');requestAnimationFrame(placeCubeTouch)}
 new ResizeObserver(placeCubeTouch).observe(canvas);
 cubeTouch.addEventListener('pointerdown',e=>{if(tutorial||e.button!==0||cubeDrag)return;suppressCubeClick=false;cubeDrag={id:e.pointerId,x:e.clientX,y:e.clientY,yaw:viewYaw,pitch:viewPitch,moved:false};cubeTouch.setPointerCapture(e.pointerId)});
 cubeTouch.addEventListener('pointermove',e=>{
