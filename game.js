@@ -9,7 +9,7 @@ function battleVibration(kind,damage){
 }
 let compactBoard=false;
 let orbitExpanded=false;
-let refillAssistance=false;
+let refillAssistance=true;
 let customColorCount=null;
 const colorOrder=['R','B','D','U','F','L','V','I','M','H','P'];
 function activePool(){return customColorCount===null?B.pools[difficulty]:colorOrder.slice(0,customColorCount)}
@@ -619,7 +619,7 @@ const boardLeftActions=document.createElement('div');boardLeftActions.className=
 const immuneToggle=document.createElement('button');immuneToggle.id='immuneToggle';immuneToggle.textContent='無敵OFF';immuneToggle.title='自分の無敵をONにする';immuneToggle.setAttribute('aria-pressed','false');boardLeftActions.append(immuneToggle);
 immuneToggle.onclick=()=>{manualImmune=!manualImmune;immuneToggle.textContent=manualImmune?'無敵ON':'無敵OFF';immuneToggle.title=manualImmune?'自分の無敵をOFFにする':'自分の無敵をONにする';immuneToggle.setAttribute('aria-pressed',String(manualImmune));byId('battleLog').textContent=manualImmune?'無敵をONにしました。敵の攻撃ダメージは0になります。':'無敵をOFFにしました。敵の攻撃ダメージを受けます。';refresh()};
 orbitToolbar.append(viewReset);
-const refillToggle=document.createElement('button');refillToggle.id='refillToggle';refillToggle.textContent='補充OFF';refillToggle.title='補充OFF：そろえたパネルは灰色になります';refillToggle.setAttribute('aria-pressed','false');orbitToolbar.append(refillToggle);
+const refillToggle=document.createElement('button');refillToggle.id='refillToggle';refillToggle.textContent='補充ON';refillToggle.title='補充ON：コンボしやすい属性を補充します';refillToggle.setAttribute('aria-pressed','true');orbitToolbar.append(refillToggle);
 refillToggle.onclick=()=>{
  refillAssistance=!refillAssistance;
  if(refillAssistance){const used=state.filter(s=>s.face==='X'),ids=new Set(used.map(s=>s.id));if(ids.size)Q.refill(state,ids,activePool(),attackKeys(),attackPolicy(),2,Math.random,teamConversion,difficulty,attackChain);for(const s of used)delete s.spentOriginal;spentElements.clear();applyTemporaryConversion();refresh()}
