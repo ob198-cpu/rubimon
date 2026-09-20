@@ -70,7 +70,7 @@ header{order:0;padding-bottom:10px}header h1{font-size:24px;white-space:nowrap}h
 .cube-drag-hint svg{width:52px;height:40px;flex:none;overflow:visible;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .cube-drag-hint .swipe-track{opacity:.45}.cube-drag-hint .swipe-finger{fill:#203c3d;animation:cube-swipe 2.4s ease-in-out infinite;transform-origin:32px 38px}
 .cube-drag-hint small{display:block;color:#a9bcb5;font-size:10px}.cube-drag-hint span{white-space:nowrap}
-.cube-drag-hint.is-learned .swipe-finger{animation:none}.tutorial-mode .cube-drag-hint{visibility:hidden}
+.cube-drag-hint.is-complete{display:none}.tutorial-mode .cube-drag-hint{visibility:hidden}
 @keyframes cube-swipe{0%,100%{transform:translateX(-6px) rotate(-8deg)}50%{transform:translateX(6px) rotate(8deg)}}
 @media(prefers-reduced-motion:reduce){.cube-drag-hint .swipe-finger{animation:none}}
 @media(max-width:600px){
@@ -93,7 +93,7 @@ main{padding:2px 2px 10px;gap:3px}header,.board-heading{display:none!important}
 }
 .board-shell .cube-drag-hint{position:absolute;right:auto;bottom:auto;transform:translate(-50%,-50%);margin:0;padding:8px;border-radius:50%;background:#102526cc;border:1px solid #e6ce9780;z-index:3;opacity:1;pointer-events:none;box-shadow:0 2px 10px #0006}
 .board-shell .cube-drag-hint span{display:none}.board-shell .cube-drag-hint svg{width:48px;height:40px}
-.board-shell .cube-drag-hint.is-learned{display:none}
+.board-shell .cube-drag-hint.arrow-step{padding:6px 9px;border-radius:12px;background:#17383be8;border-color:#ffe099;box-shadow:0 0 18px #f4c85b42}.board-shell .cube-drag-hint.arrow-step svg{width:42px;height:34px}.board-shell .cube-drag-hint.arrow-step span{display:block;font-size:10px;color:#ffeba9;line-height:1.3}.board-shell .cube-drag-hint.arrow-step small{font-size:8px;color:#c1d4ce}.tap-finger{fill:#203c3d;animation:arrow-tap 1.15s ease-in-out infinite;transform-origin:39px 26px}.tap-ring{opacity:.8;animation:arrow-ring 1.15s ease-in-out infinite}@keyframes arrow-tap{0%,100%{transform:translateX(5px) scale(1)}45%{transform:translateX(-3px) scale(.9)}}@keyframes arrow-ring{0%,100%{opacity:.35}45%{opacity:1}}
 .orbit-toggle{display:block;margin:0 auto 8px;padding:7px 18px;min-height:36px;border:1px solid #947c50;border-radius:8px;background:#203331;color:#ead5a4;font-size:12px;white-space:nowrap}
 .orbit-toggle:focus-visible{outline:2px solid #83f5ff;outline-offset:2px}
 .victory-screen[hidden]{display:none}.victory-screen{position:fixed;inset:0;z-index:100;display:grid;place-items:center;overflow:hidden;padding:20px;background:radial-gradient(circle at 50% 42%,#81621a99,#081517ed 58%);isolation:isolate}
