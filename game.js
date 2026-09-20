@@ -537,6 +537,7 @@ function placeCubeTouch(){
  if(getComputedStyle(boardShell).position==='static')boardShell.style.position='relative';
  const w=canvas.clientWidth,h=canvas.clientHeight;
  const v=boardViewport();Object.assign(cubeTouch.style,{left:(canvas.offsetLeft+w*(202-v.x)/v.w)+'px',top:(canvas.offsetTop+h*(compactBoard?404:374)/v.h)+'px',width:(w*312/v.w)+'px',height:(h*312/v.h)+'px'});
+ Object.assign(dragHint.style,{left:(canvas.offsetLeft+w*(358-v.x)/v.w)+'px',top:(canvas.offsetTop+h*(compactBoard?560:530)/v.h)+'px'});
 }
 new ResizeObserver(placeCubeTouch).observe(canvas);
 cubeTouch.addEventListener('pointerdown',e=>{if(tutorial||e.button!==0||cubeDrag)return;suppressCubeClick=false;cubeDrag={id:e.pointerId,x:e.clientX,y:e.clientY,yaw:viewYaw,pitch:viewPitch,moved:false};cubeTouch.setPointerCapture(e.pointerId)});
