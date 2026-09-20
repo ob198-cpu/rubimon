@@ -148,6 +148,10 @@ button:active:not(:disabled){transform:translateY(1px)}button:focus-visible,summ
 .enemy-weakness-info #enemySkill{font-size:9px;font-weight:600;color:#ffb49f;white-space:nowrap}
 @media(max-width:850px){.enemy-card{min-height:130px;padding:7px 12px;gap:3px 12px}}
 @media(max-width:400px){.enemy-card{min-height:112px;padding:6px 10px;gap:3px 10px}}
+.enemy-title-row{grid-column:2;display:flex;align-items:flex-end;justify-content:space-between;gap:8px;min-width:0}
+.enemy-title-row h2{min-width:0;margin-bottom:0}
+.enemy-title-row #damageText{position:static;flex:0 0 auto;margin:0 0 1px auto;min-height:0;text-align:right;font-size:12px;white-space:nowrap;pointer-events:none}
+@media(max-width:400px){.enemy-title-row{gap:5px}.enemy-title-row #damageText{font-size:10px}}
 .orbit-toggle[aria-expanded="false"]{color:#ff7777;font-weight:700}
 .board-shell .cube-drag-hint.arrow-step{position:static;transform:none;left:auto!important;top:auto!important;display:flex;width:fit-content;max-width:100%;box-sizing:border-box;margin:10px auto;padding:8px 14px;pointer-events:none;box-shadow:none;gap:8px}
 .board-shell .cube-drag-hint.arrow-step span{font-size:12px;white-space:normal;line-height:1.5}

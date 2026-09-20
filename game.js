@@ -698,6 +698,7 @@ byId('moveGuide').querySelector('small').textContent='マウス：ホバーで�
 // Keep turn information next to the board and move secondary tools into settings.
 boardShell.prepend(document.querySelector('.readout'));
 const enemyInfo=document.createElement('div'),enemySkill=document.createElement('span');enemyInfo.className='enemy-weakness-info';enemySkill.id='enemySkill';byId('weakness').before(enemyInfo);enemyInfo.append(byId('weakness'),byId('count'),enemySkill);
+const enemyTitleRow=document.createElement('div');enemyTitleRow.className='enemy-title-row';byId('enemyName').before(enemyTitleRow);enemyTitleRow.append(byId('enemyName'),byId('damageText'));
 document.querySelector('.readout').style.display='none';
 settingsDrawer.append(viewNote,document.querySelector('.actions'),squadPanel);
 settingsDrawer.querySelector('summary').textContent='設定・遊び方';
