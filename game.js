@@ -55,6 +55,7 @@ function endTeamTurn(){for(const s of state)if(s.tempOriginal!==undefined){s.fac
 let state=B.board(E),active=null,queue=[],history=[],moves=0,hitFaces=[],ringHits=[],spentElements=new Set();
 let hp=1800,wave=0,enemyHp=B.enemies[0].hp,phase='ready',turnMoves=0,combo=0,fx=null,matched=new Set(),roundToken=0;
 let tutorial=null,skillFlash=null;
+let challengeMode=false;
 let pendingMove=null;
 let selectedLayer=null,hoverLayer=null,previewDir=0,guideCache=null;
 function guideFace(){return tutorial||active||phase!=='ready'?null:pendingMove?.face||hoverLayer||selectedLayer}
@@ -203,7 +204,7 @@ function drawOrbits(angle){
     // An opaque backing keeps every orbit/selection line behind the symbol.
     ctx.save();ctx.beginPath();ctx.arc(...p,11,0,Math.PI*2);ctx.fillStyle='#152f34';ctx.fill();
     if(matched.has(s.id)&&!active){ctx.beginPath();ctx.arc(...p,10.7,0,Math.PI*2);ctx.strokeStyle='#ffe9a4';ctx.lineWidth=1.5;ctx.stroke()}
-    drawPanelSpirit(s,p[0],p[1],compactBoard?11:10);
+    drawPanelSpirit(s,p[0],p[1],compactBoard?11:10,false);
     drawBlockStatus(s,p,11);
     ctx.restore();
   }
@@ -225,12 +226,13 @@ function drawCube(angle){
     const n=transform(s.n,s.p,angle);if(E.dot(n,camera)<=0)continue;
     const axis=s.n.findIndex(v=>v!==0),a=(axis+1)%3,b=(axis+2)%3,center=add(s.p,scale(s.n,.502));
     const corners=[[-1,-1],[1,-1],[1,1],[-1,1]].map(([u,v])=>{const q=center.slice();q[a]+=u*.436;q[b]+=v*.436;return transform(q,s.p,angle)});
-    polygons.push({points:corners.map(cubePoint),depth:E.dot(transform(center,s.p,angle),camera)+.003,fill:B.spirits[s.face].color,stroke:panelPick?.ids.has(s.id)?'#72efff':matched.has(s.id)?'#fff6ba':'#c8d0c477',normal:s.n,spirit:s.face,sticker:s});
+    polygons.push({points:corners.map(cubePoint),depth:E.dot(transform(center,s.p,angle),camera)+.003,fill:challengeMode?'#354448':B.spirits[s.face].color,stroke:panelPick?.ids.has(s.id)?'#72efff':matched.has(s.id)?'#fff6ba':'#c8d0c477',normal:s.n,spirit:s.face,sticker:s});
   }
   polygons.sort((a,b)=>a.depth-b.depth);
   for(const p of polygons){polygon(p.points,p.fill,p.stroke,.8);if(p.normal){hitFaces.push(p);const c=p.points.reduce((a,v)=>[a[0]+v[0]/4,a[1]+v[1]/4],[0,0]);drawPanelSpirit(p.sticker,c[0],c[1],11);drawBlockStatus(p.sticker,c,14)}}
 }
-function drawPanelSpirit(sticker,x,y,r){
+function drawPanelSpirit(sticker,x,y,r,conceal=challengeMode){
+ if(conceal){ctx.save();ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#f5f0df';ctx.font='800 '+Math.round(r*1.55)+'px system-ui';ctx.fillText('?',x,y+1);ctx.restore();return}
  if(sticker.face!=='X'||!sticker.spentOriginal){drawSpirit(ctx,sticker.face,x,y,r);return}
  ctx.save();ctx.filter='grayscale(1)';ctx.globalAlpha=.72;drawSpirit(ctx,sticker.spentOriginal,x,y,r);ctx.restore();
 }
@@ -622,7 +624,8 @@ byId('party').after(document.querySelector('.squad-skills'));
 const panel=document.querySelector('.panel'),boardShell=document.createElement('section');boardShell.className='board-shell';
 canvas.before(boardShell);const boardTitle=document.createElement('div');boardTitle.className='board-heading';boardTitle.innerHTML='<span>THE ORBIT CHAMBER</span><strong>精霊の回転盤</strong>';boardShell.append(boardTitle,canvas,byId('moveGuide'));
 const orbitToggle=document.createElement('button');orbitToggle.id='orbitToggle';orbitToggle.className='orbit-toggle';orbitToggle.textContent='2D表示 ▸ 開く';orbitToggle.setAttribute('aria-expanded','false');canvas.before(orbitToggle);
-orbitToggle.onclick=()=>{orbitExpanded=!orbitExpanded;orbitToggle.textContent=orbitExpanded?'2D表示 ▾ 閉じる':'2D表示 ▸ 開く';orbitToggle.setAttribute('aria-expanded',String(orbitExpanded));resize();placeCubeTouch()};
+orbitToggle.onclick=()=>{if(challengeMode&&orbitExpanded){byId('battleLog').textContent='2Dチャレンジ中は2D盤面を使って解きます。';return}orbitExpanded=!orbitExpanded;orbitToggle.textContent=orbitExpanded?'2D表示 ▾ 閉じる':'2D表示 ▸ 開く';orbitToggle.setAttribute('aria-expanded',String(orbitExpanded));resize();placeCubeTouch()};
+function setChallengeMode(on){challengeMode=!!on;if(challengeMode&&!orbitExpanded){orbitExpanded=true;orbitToggle.textContent='2D表示 ▾ 閉じる';orbitToggle.setAttribute('aria-expanded','true')}byId('battleLog').textContent=challengeMode?'2DチャレンジON：3Dパネルを隠しました。2D盤面を見てそろえよう。':'2DチャレンジOFF：3Dパネルを通常表示に戻しました。';resize();placeCubeTouch()}
 const orbitToolbar=document.createElement('div');orbitToolbar.className='orbit-toolbar';orbitToggle.before(orbitToolbar);
 const colorLabel=document.createElement('label');colorLabel.className='color-count-control';colorLabel.textContent='属性 ';
 const colorSelect=document.createElement('select');colorSelect.id='colorCount';colorSelect.setAttribute('aria-label','属性の種類数');colorSelect.title='色数を変更すると戦闘を再開始します';
