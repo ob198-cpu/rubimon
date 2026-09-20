@@ -31,9 +31,15 @@ function rubikSixStart(){
 }
 function initialBoard(){return activePool().length===6?rubikSixStart():Q.initial(activePool(),attackKeys(),attackPolicy(),customColorCount!==null?'easy':difficulty)}
 function certifiedStart(){const result=initialBoard();if(!result.state){byId('battleLog').textContent='攻撃属性と出現色が合いません。編成または難易度を変更してください。';phase='setup';return false}state=result.state;proofCache=null;return true}
-let squad=['sala','undine','raika','ferrum','libera'],dungeon=T.dungeons[0],tuning={...T.defaults},cooldowns={},teamSpent=new Set(),teamBuffs={},teamImmune=false,manualImmune=false,teamShield=false,teamConversion=null,gravityUsed=false;
+let squad=['sala','undine','raika','ferrum','libera'],dungeon=T.dungeons[0],tuning={...T.defaults},cooldowns={},teamSpent=new Set(),teamBuffs={},teamImmune=false,manualImmune=false,teamShield=false,teamConversion=null,gravityUsed=false,panelPick=null;
 function maxHp(){return tutorial?1800:T.stats(squad,tuning).hp}
 function currentEnemy(){return tutorial?B.enemies[wave]:{...dungeon,hp:dungeon.id==='grove'?800:Math.round(dungeon.hp*Q.settings[difficulty].hp),attack:Math.round(dungeon.attack*Q.settings[difficulty].attack),name:dungeon.bossName||dungeon.name,element:{grove:'火',armor:'鋼',abyss:'闇',storm:'風'}[dungeon.id]}}
+function enemyTechnique(enemy){
+ const turn=enemyTurns+1;
+ if(tutorial)return {name:['灼熱爪','熔岩突進','宵闇砲'][wave]||'竜撃',damage:enemy.attack};
+ if(enemy.id==='storm')return turn%3===0?{name:'天嵐崩界',damage:enemy.attack}:{name:'裂風刃',damage:Math.round(enemy.attack*.35)};
+ return {name:{grove:'灼熱の鉤爪',armor:'鋼殻衝',abyss:'深淵滅光'}[enemy.id]||'竜撃',damage:enemy.attack};
+}
 function teamOutcome(groups,offset=0){return tutorial?B.outcome(groups,currentEnemy(),offset):T.outcome(squad,groups,currentEnemy(),enemyHp,gravityUsed,tuning,teamBuffs,offset)}
 function applyTemporaryConversion(){if(!tutorial&&teamConversion)for(const s of state)if(s.face===teamConversion[0]&&s.tempOriginal===undefined){s.tempOriginal=s.face;s.face=teamConversion[1]}}
 function refillWithoutAssistance(ids){
@@ -219,7 +225,7 @@ function drawCube(angle){
     const n=transform(s.n,s.p,angle);if(E.dot(n,camera)<=0)continue;
     const axis=s.n.findIndex(v=>v!==0),a=(axis+1)%3,b=(axis+2)%3,center=add(s.p,scale(s.n,.502));
     const corners=[[-1,-1],[1,-1],[1,1],[-1,1]].map(([u,v])=>{const q=center.slice();q[a]+=u*.436;q[b]+=v*.436;return transform(q,s.p,angle)});
-    polygons.push({points:corners.map(cubePoint),depth:E.dot(transform(center,s.p,angle),camera)+.003,fill:B.spirits[s.face].color,stroke:matched.has(s.id)?'#fff6ba':'#c8d0c477',normal:s.n,spirit:s.face,sticker:s});
+    polygons.push({points:corners.map(cubePoint),depth:E.dot(transform(center,s.p,angle),camera)+.003,fill:B.spirits[s.face].color,stroke:panelPick?.ids.has(s.id)?'#72efff':matched.has(s.id)?'#fff6ba':'#c8d0c477',normal:s.n,spirit:s.face,sticker:s});
   }
   polygons.sort((a,b)=>a.depth-b.depth);
   for(const p of polygons){polygon(p.points,p.fill,p.stroke,.8);if(p.normal){hitFaces.push(p);const c=p.points.reduce((a,v)=>[a[0]+v[0]/4,a[1]+v[1]/4],[0,0]);drawPanelSpirit(p.sticker,c[0],c[1],11);drawBlockStatus(p.sticker,c,14)}}
@@ -245,6 +251,7 @@ function refresh(){
   const groups=currentMatches(),enemy=currentEnemy();
   matched=new Set(groups.flatMap(g=>g.ids));
   byId('count').textContent='敵の行動まで '+(turnLimit-turnMoves)+' 手';
+  const technique=enemyTechnique(enemy);byId('enemySkill').textContent=technique.name+' · '+technique.damage+'ダメージ';
   byId('status').textContent=phase==='victory'?'ダンジョンクリア！':phase==='lost'?'敗北 … 再挑戦しよう':phase==='resolving'?'精霊たちが攻撃中':active?'回転中':groups.length?groups.length+' 列がそろった！':'仲間の属性を縦・横に3個そろえよう';
   byId('attack').disabled=!!tutorial||phase!=='ready'||!!active||queue.length>0||(turnMoves===0&&canAct());
   byId('attack').textContent=groups.some(g=>g.skill)?'攻撃判定 · 必殺技発動！':groups.length?'攻撃判定 · '+groups.length+' COMBO':'攻撃判定 · そろいなし／敵が反撃';
@@ -312,8 +319,8 @@ function frame(now){
   drawBattleEffects(now);
   requestAnimationFrame(frame);
 }
-function userMove(face,dir){if(tutorial||phase!=='ready'||active||queue.length||turnMoves>=turnLimit)return;if(!B.canRotate(state,face)){byId('battleLog').textContent='この層には固定ブロックがあります。別の面か、リベラの解除を使おう。';return}pendingMove=null;queue.push({face,dir,kind:'user'})}
-function reset(){attackChain=0;bestChain=0;battleDamage=0;spentElements.clear();victoryScreen.hidden=true;comboBanner.classList.remove('active');pendingMove=null;shuffleCharges=2;roundToken++;endTeamTurn();cooldowns={};selectedLayer=null;hoverLayer=null;previewDir=0;byId('layerChoices').replaceChildren();state=B.board(E,Math.random,activePool());skillUses={convert:2,shuffle:2,clock:2,cleanse:2,open:2};turnLimit=3;clockUsed=false;openFaces=false;obstacles={seals:[],restrict:0};enemyTurns=0;baseRule=byId('attackRule').value;active=null;queue=[];history=[];moves=0;hp=maxHp();wave=0;enemyHp=currentEnemy().hp;phase='ready';turnMoves=0;combo=0;fx=null;byId('battleLog').textContent='5体の編成で '+dungeon.name+' に挑戦。属性をそろえ、仲間の技で対策しよう。';byId('damageText').textContent='';balanceMetrics={repairs:0,refills:0,rejectedObstacles:0};certifiedStart();renderParty();refresh()}
+function userMove(face,dir){if(panelPick||tutorial||phase!=='ready'||active||queue.length||turnMoves>=turnLimit)return;if(!B.canRotate(state,face)){byId('battleLog').textContent='この層には固定ブロックがあります。別の面か、リベラの解除を使おう。';return}pendingMove=null;queue.push({face,dir,kind:'user'})}
+function reset(){attackChain=0;bestChain=0;battleDamage=0;spentElements.clear();victoryScreen.hidden=true;comboBanner.classList.remove('active');pendingMove=null;panelPick=null;shuffleCharges=2;roundToken++;endTeamTurn();cooldowns={};selectedLayer=null;hoverLayer=null;previewDir=0;byId('layerChoices').replaceChildren();state=B.board(E,Math.random,activePool());skillUses={convert:2,shuffle:2,clock:2,cleanse:2,open:2};turnLimit=3;clockUsed=false;openFaces=false;obstacles={seals:[],restrict:0};enemyTurns=0;baseRule=byId('attackRule').value;active=null;queue=[];history=[];moves=0;hp=maxHp();wave=0;enemyHp=currentEnemy().hp;phase='ready';turnMoves=0;combo=0;fx=null;byId('battleLog').textContent='5体の編成で '+dungeon.name+' に挑戦。属性をそろえ、仲間の技で対策しよう。';byId('damageText').textContent='';balanceMetrics={repairs:0,refills:0,rejectedObstacles:0};certifiedStart();renderParty();refresh()}
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 async function resolveTurn(){
  if(phase!=='ready'||active||queue.length||(turnMoves===0&&canAct()))return;
@@ -428,20 +435,31 @@ function pickLayers(e){const p=boardPointer(e);let sticker;
 }
 function confirmMove(){if(!pendingMove)return;const m=pendingMove;if(m.board!==JSON.stringify(state)){pendingMove=null;updateGuide();return}userMove(m.face,m.dir);updateGuide()}
 function chooseMove(face,dir){
- if(!arrowsUnlocked||tutorial||active||queue.length||phase!=='ready'||turnMoves>=turnLimit||!B.canRotate(state,face))return;
+ if(panelPick||!arrowsUnlocked||tutorial||active||queue.length||phase!=='ready'||turnMoves>=turnLimit||!B.canRotate(state,face))return;
  if(pendingMove?.face===face&&pendingMove.dir===dir){guidedArrowKey=null;arrowGuideActive=false;dragHint.classList.remove('arrow-step');dragHint.classList.add('is-complete');confirmMove();return}
  arrowGuideActive=!dragHint.classList.contains('is-complete');guidedArrowKey=face+':'+dir;dragHint.innerHTML=secondTapHintMarkup;dragHint.classList.add('arrow-step');requestAnimationFrame(placeCubeTouch);
  selectLayer(face);pendingMove={face,dir,board:JSON.stringify(state)};previewDir=dir;updateGuide();
  byId('guideText').textContent=E.slices[face].name+'層：'+(dir===1?'↻':'↺')+' をプレビュー中。同じ矢印を再タップ、または決定。';
 }
-function boardClick(e){if(suppressCubeClick){suppressCubeClick=false;return}if(!arrowsUnlocked||tutorial||active||phase!=='ready')return;const arrow=arrowAt(e);if(arrow){chooseMove(arrow.face,arrow.dir);return}const faces=pickLayers(e);if(faces.length)selectLayer(faces[0],faces)}
+function boardClick(e){
+ if(suppressCubeClick){suppressCubeClick=false;return}
+ if(panelPick){
+  const p=boardPointer(e);if(compactBoard)p[1]-=30;
+  const hit=[...hitFaces].reverse().find(h=>inside(p,h.points));if(!hit)return;
+  const id=hit.sticker.id;panelPick.ids.has(id)?panelPick.ids.delete(id):panelPick.ids.add(id);
+  if(panelPick.ids.size<4){byId('battleLog').textContent=panelPick.char.name+'：水に変えるパネルを4個タップ（'+panelPick.ids.size+' / 4）';refresh();return}
+  const picked=panelPick,c=picked.char;for(const s of state)if(picked.ids.has(s.id)){s.face='B';delete s.tempOriginal;delete s.spentOriginal}
+  panelPick=null;cooldowns[c.id]=c.cd;teamSpent.add(c.id);history=[];byId('battleLog').textContent=c.name+'：'+c.skill+' ／ 4パネルを水に変換！';refresh();return;
+ }
+ if(!arrowsUnlocked||tutorial||active||phase!=='ready')return;const arrow=arrowAt(e);if(arrow){chooseMove(arrow.face,arrow.dir);return}const faces=pickLayers(e);if(faces.length)selectLayer(faces[0],faces)
+}
 canvas.addEventListener('click',boardClick);
 canvas.addEventListener('pointermove',e=>{if(!arrowsUnlocked||e.pointerType==='touch')return;const arrow=arrowAt(e);if(arrow){hoverLayer=arrow.face;previewDir=arrow.dir;updateGuide();return}previewDir=0;hoverLayer=selectedLayer?null:pickLayers(e)[0]||null;updateGuide()});
 canvas.addEventListener('pointerleave',()=>{hoverLayer=null;previewDir=0;updateGuide()});
 for(const [id,dir] of [['guideCW',1],['guideCCW',-1]]){const b=byId(id);b.onclick=()=>{if(selectedLayer)chooseMove(selectedLayer,dir)};b.onpointerenter=b.onfocus=()=>{previewDir=dir};b.onpointerleave=b.onblur=()=>{previewDir=0}}
 byId('guideCancel').onclick=()=>{pendingMove=null;selectedLayer=null;hoverLayer=null;previewDir=0;byId('layerChoices').replaceChildren();updateGuide()};
 document.querySelectorAll('[data-face]').forEach(b=>{b.onpointerenter=b.onfocus=()=>{hoverLayer=b.dataset.face;previewDir=b.textContent==='↻'?1:-1;updateGuide()};b.onpointerleave=b.onblur=()=>{hoverLayer=null;previewDir=0;updateGuide()}});
-addEventListener('keydown',e=>{if(e.key==='Escape')byId('guideCancel').click()});
+addEventListener('keydown',e=>{if(e.key==='Escape'){if(panelPick){panelPick=null;byId('battleLog').textContent='パネル選択を解除しました。';refresh()}byId('guideCancel').click()}});
 function startTutorial(){
  if(tutorial||active||phase!=='ready')return;
  const saved=structuredClone({state,history,moves,hp,wave,enemyHp,phase,turnMoves,combo,turnLimit,clockUsed,openFaces,obstacles,enemyTurns,skillUses});
@@ -561,7 +579,7 @@ renderParty=function(){if(tutorial){renderAttributeParty();return}byId('party').
 function refreshSquad(){
  const stats=T.stats(squad,tuning);byId('squadStats').textContent='適用中：HP '+stats.hp+' ／ 防御 '+stats.def+' ／ 回復 '+stats.recovery+' ／ 雷加算＋'+stats.thunder+' ／ 同属性1体追加につき＋'+tuning.synergy+'％';
  const absent=[...new Set(stats.chars.map(c=>c.element))].filter(e=>!activePool().includes(e));byId('dungeonTip').textContent=dungeon.tip+(absent.length?' ⚠ 現在の色数に '+absent.map(e=>B.spirits[e].element).join('・')+' がありません。技の変換またはHardを使ってください。':'');
- for(const b of byId('squadSkills').querySelectorAll('button')){const c=T.roster.find(c=>c.id===b.dataset.char),wait=cooldowns[c.id]||0;b.disabled=!!tutorial||!!active||!!queue.length||phase!=='ready'||wait>0;b.style.setProperty('--element',B.spirits[c.element].color);b.title=c.passive+' ／ '+c.skill+' ／ 再使用'+c.cd+'ターン';b.innerHTML='<span class="skill-name">'+c.name+'<em>'+B.spirits[c.element].element+'</em></span><span class="skill-description">'+c.skill+'</span><span class="skill-ready">'+(wait?'あと '+wait+' ターン':'発動する')+'</span>'}
+ for(const b of byId('squadSkills').querySelectorAll('button')){const c=T.roster.find(c=>c.id===b.dataset.char),wait=cooldowns[c.id]||0;b.disabled=!!panelPick||!!tutorial||!!active||!!queue.length||phase!=='ready'||wait>0;b.style.setProperty('--element',B.spirits[c.element].color);b.title=c.passive+' ／ '+c.skill+' ／ 再使用'+c.cd+'ターン';b.innerHTML='<span class="skill-name">'+c.name+'<em>'+B.spirits[c.element].element+'</em></span><span class="skill-description">'+c.skill+'</span><span class="skill-ready">'+(wait?'あと '+wait+' ターン':'発動する')+'</span>'}
  byId('applySquad').disabled=!!tutorial||!!active||phase==='resolving';
 }
 function buildSquadSkills(){byId('squadSkills').replaceChildren();for(const c of T.members(squad)){const b=document.createElement('button');b.dataset.char=c.id;b.onclick=()=>useCharacterSkill(c);byId('squadSkills').append(b)}}
@@ -569,7 +587,9 @@ function useCharacterSkill(c){
  if(tutorial||active||queue.length||phase!=='ready'||cooldowns[c.id]>0)return;
  const conversions={fireWater:['R','B'],windFire:['F','R'],earthThunder:['L','U'],thunderDark:['U','V']};
  if(conversions[c.action]){if(teamConversion){byId('battleLog').textContent='属性変換は1ターン1種類まで。次のターンに使えます。';return}teamConversion=conversions[c.action];applyTemporaryConversion()}
+ if(c.action==='waterFour'){panelPick={char:c,ids:new Set()};pendingMove=null;history=[];byId('battleLog').textContent='セレーネ：水に変えるパネルを4個タップ（0 / 4）';refresh();return}
  if(c.action==='clock')turnLimit+=2;
+ if(c.action==='enemyDelay')turnLimit+=2;
  if(c.action==='shuffle'){if(teamConversion){byId('battleLog').textContent='一時変換中はシャッフルできません。次のターンに使用してください。';return}B.shuffle(state)}
  if(c.action==='open')openFaces=true;
  if(c.action==='immune')teamImmune=true;
@@ -671,7 +691,7 @@ const guideConfirm=document.createElement('button');guideConfirm.id='guideConfir
 byId('moveGuide').querySelector('small').textContent='1回目で2Dガイドを表示。同じ矢印をもう一度押すか「決定」で1手回転。別の矢印は選び直し。';
 // Keep turn information next to the board and move secondary tools into settings.
 boardShell.prepend(document.querySelector('.readout'));
-const enemyInfo=document.createElement('div');enemyInfo.className='enemy-weakness-info';byId('weakness').before(enemyInfo);enemyInfo.append(byId('weakness'),byId('count'));
+const enemyInfo=document.createElement('div'),enemySkill=document.createElement('span');enemyInfo.className='enemy-weakness-info';enemySkill.id='enemySkill';byId('weakness').before(enemyInfo);enemyInfo.append(byId('weakness'),byId('count'),enemySkill);
 document.querySelector('.readout').style.display='none';
 settingsDrawer.append(viewNote,document.querySelector('.actions'),squadPanel);
 settingsDrawer.querySelector('summary').textContent='設定・遊び方';

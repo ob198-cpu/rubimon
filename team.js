@@ -5,6 +5,7 @@ const roster=[
  {id:'ignis',name:'イグニス',element:'R',hp:360,atk:155,def:4,recovery:5,passive:'自分の火列攻撃に固定50を追加',ability:'fixed',skill:'烈火変換：このターン風→火',action:'windFire',cd:4,source:'火山報酬'},
  {id:'ember',name:'エンバー',element:'R',hp:520,atk:80,def:15,recovery:10,passive:'チームHP＋200',ability:'hp',skill:'炎壁：このターン被ダメージ半減',action:'shield',cd:3,source:'通常探索'},
  {id:'undine',name:'ウンディーネ',element:'B',hp:390,atk:115,def:7,recovery:30,passive:'水3体で回復力＋50（重複なし）',ability:'waterHeal',skill:'潮変換：このターン火→水',action:'fireWater',cd:3,source:'初期'},
+ {id:'selene',name:'セレーネ',element:'B',hp:365,atk:105,def:7,recovery:45,passive:'水列成立時にHPを40回復',ability:'leech',skill:'蒼天配置：任意の4パネルを水に変える',action:'waterFour',cd:5,source:'精霊召喚'},
  {id:'aqua',name:'アクア',element:'B',hp:470,atk:90,def:12,recovery:30,passive:'自分の水列成立でHPを40回復',ability:'leech',skill:'水鏡：このターン無敵',action:'immune',cd:6,source:'海底報酬'},
  {id:'marina',name:'マリナ',element:'B',hp:350,atk:80,def:6,recovery:65,passive:'チーム回復力＋30',ability:'heal',skill:'潮の祝福：最大HPの30％回復',action:'heal',cd:4,source:'通常探索'},
  {id:'raika',name:'ライカ',element:'U',hp:340,atk:140,def:4,recovery:5,passive:'雷キャラ全員の攻撃力＋50（重複なし）',ability:'thunder',skill:'雷鳴：このターン雷の攻撃力1.5倍',action:'thunderBoost',cd:3,source:'初期'},
@@ -13,6 +14,7 @@ const roster=[
  {id:'ferrum',name:'フェラム',element:'M',hp:510,atk:75,def:20,recovery:5,passive:'自分の鋼列攻撃に固定50を追加',ability:'fixed',skill:'貫通：固定50ダメージ（防御無視）',action:'pierce',cd:3,source:'初期'},
  {id:'lumina',name:'ルミナ',element:'D',hp:350,atk:40,def:5,recovery:90,passive:'チーム回復力＋30',ability:'heal',skill:'祝福：最大HPの30％回復',action:'heal',cd:4,source:'初期'},
  {id:'chrono',name:'クロノ',element:'F',hp:340,atk:100,def:6,recovery:15,passive:'異なる属性が5種ならチームHP＋250',ability:'diverse',skill:'時渡り：このターン＋2手',action:'clock',cd:4,source:'通常探索'},
+ {id:'tempora',name:'テンポラ',element:'F',hp:380,atk:90,def:9,recovery:20,passive:'チームHP＋200',ability:'hp',skill:'時縛り：敵の行動まで＋2手',action:'enemyDelay',cd:5,source:'精霊召喚'},
  {id:'libera',name:'リベラ',element:'L',hp:460,atk:85,def:14,recovery:20,passive:'チーム防御＋15',ability:'guard',skill:'解呪：全妨害を解除',action:'cleanse',cd:3,source:'初期'},
  {id:'sylph',name:'シルフ',element:'F',hp:350,atk:115,def:5,recovery:20,passive:'異なる属性が5種ならチームHP＋250',ability:'diverse',skill:'旋風：固定・お邪魔以外をシャッフル',action:'shuffle',cd:3,source:'通常探索'},
  {id:'astra',name:'アストラ',element:'U',hp:360,atk:110,def:6,recovery:15,passive:'チーム回復力＋30',ability:'heal',skill:'領域展開：このターン全6面で攻撃可能',action:'open',cd:4,source:'雷塔報酬'}

@@ -44,7 +44,7 @@ function render(){
   const apply=el('button','この5体で戦闘を開始');apply.onclick=()=>{if(active||queue.length||phase==='resolving'||tutorial)return;squad=[...draft];save.team=[...squad];for(let i=0;i<5;i++)byId('slot'+i).value=squad[i];persist();buildSquadSkills();reset();dialog.close()};content.append(apply);
  }
  if(page==='gacha'){
-  const stage=el('section',null,'summon-stage');stage.append(el('p','ELEMENTAL SUMMON'),el('h3','精霊との契約'),el('p','全15体が同確率：各1/15（約6.67%）。10連の確定枠・天井なし。','lobby-note'),el('p','1回300石。重複は欠片1個、欠片5個で未入手キャラ1体と交換。','lobby-note'));
+  const stage=el('section',null,'summon-stage'),rate=(100/T.roster.length).toFixed(2);stage.append(el('p','ELEMENTAL SUMMON'),el('h3','精霊との契約'),el('p','全'+T.roster.length+'体が同確率：各1/'+T.roster.length+'（約'+rate+'%）。10連の確定枠・天井なし。','lobby-note'),el('p','1回300石。重複は欠片1個、欠片5個で未入手キャラ1体と交換。','lobby-note'));
   const actions=el('div',null,'summon-actions');for(const n of [1,10]){const b=el('button',n+'回召喚 · '+n*300+'石');b.disabled=save.gems<n*300;b.onclick=()=>roll(n);actions.append(b)}stage.append(actions);
   const grant=el('button','テスト用：無料石＋3000');grant.onclick=()=>{save.gems=Math.min(999999,save.gems+3000);persist();render()};stage.append(grant,el('p','購入機能はありません。テスト石は何度でも補充できます。正式版の所持・価格・確率を保証しません。','lobby-note'));content.append(stage);
   const grid=el('div',null,'hero-grid lobby-result');grid.setAttribute('aria-live','polite');for(const r of results)grid.append(card(r.c,'result',r.fresh?'NEW · 新しい仲間':'重複 · 欠片＋1'));content.append(grid);
