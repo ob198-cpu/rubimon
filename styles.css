@@ -94,6 +94,9 @@ main{padding:2px 2px 10px;gap:3px}header,.board-heading{display:none!important}
 .board-shell .cube-drag-hint{position:absolute;right:auto;bottom:auto;transform:translate(-50%,-50%);margin:0;padding:8px;border-radius:50%;background:#102526cc;border:1px solid #e6ce9780;z-index:3;opacity:1;pointer-events:none;box-shadow:0 2px 10px #0006}
 .board-shell .cube-drag-hint span{display:none}.board-shell .cube-drag-hint svg{width:48px;height:40px}
 .board-shell .cube-drag-hint.is-learned{display:none}
+.board-actions{display:flex;justify-content:center;align-items:stretch;gap:8px;padding:8px 4px;flex-wrap:wrap}
+.board-actions #rescue,.board-actions #viewReset{margin:0!important;min-height:40px;padding:8px 10px!important;font-size:11px;white-space:nowrap}
+.board-actions #rescue{border-color:#b49b64;color:#f2ddae}
 .combo-celebration{position:fixed;left:50%;top:38%;z-index:60;transform:translate(-50%,-50%);pointer-events:none;opacity:0;text-align:center;width:min(92vw,460px);padding:18px 12px;background:radial-gradient(ellipse,#153b43ed,transparent 72%);color:#ffe9a4;text-shadow:0 2px 3px #000,0 0 18px #efb04b}
 .combo-celebration strong{display:block;font:bold clamp(22px,6vw,38px) Georgia,serif;letter-spacing:.04em}.combo-celebration span{display:block;margin-top:5px;font-size:18px;color:#fff}
 .combo-celebration.active{animation:combo-reveal 2s ease-out both}
