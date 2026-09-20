@@ -251,7 +251,8 @@ function refresh(){
   const groups=currentMatches(),enemy=currentEnemy();
   matched=new Set(groups.flatMap(g=>g.ids));
   byId('count').textContent='敵の行動まで '+(turnLimit-turnMoves)+' 手';
-  const technique=enemyTechnique(enemy);byId('enemySkill').textContent=technique.name+' · '+technique.damage+'ダメージ';
+  const technique=enemyTechnique(enemy),enemySkill=byId('enemySkill');enemySkill.replaceChildren();
+  const techniqueName=document.createElement('strong'),techniqueEffect=document.createElement('span');techniqueName.textContent=technique.name;techniqueEffect.textContent='効果：'+enemy.element+'属性による'+technique.damage+'ダメージ';enemySkill.append(techniqueName,techniqueEffect);
   byId('status').textContent=phase==='victory'?'ダンジョンクリア！':phase==='lost'?'敗北 … 再挑戦しよう':phase==='resolving'?'精霊たちが攻撃中':active?'回転中':groups.length?groups.length+' 列がそろった！':'仲間の属性を縦・横に3個そろえよう';
   byId('attack').disabled=!!tutorial||phase!=='ready'||!!active||queue.length>0||(turnMoves===0&&canAct());
   byId('attack').textContent=groups.some(g=>g.skill)?'攻撃判定 · 必殺技発動！':groups.length?'攻撃判定 · '+groups.length+' COMBO':'攻撃判定 · そろいなし／敵が反撃';
@@ -697,7 +698,7 @@ const guideConfirm=document.createElement('button');guideConfirm.id='guideConfir
 byId('moveGuide').querySelector('small').textContent='マウス：ホバーでガイド確認、1クリックで回転。タッチ：1回目で列選択、2回目で回転。';
 // Keep turn information next to the board and move secondary tools into settings.
 boardShell.prepend(document.querySelector('.readout'));
-const enemyInfo=document.createElement('div'),enemySkill=document.createElement('span');enemyInfo.className='enemy-weakness-info';enemySkill.id='enemySkill';byId('weakness').before(enemyInfo);enemyInfo.append(byId('weakness'),byId('count'),enemySkill);
+const enemyInfo=document.createElement('div'),enemyAttackInfo=document.createElement('div'),enemySkill=document.createElement('div');enemyInfo.className='enemy-weakness-info';enemyAttackInfo.className='enemy-attack-info';enemySkill.id='enemySkill';byId('enemyHp').before(enemyAttackInfo);enemyAttackInfo.append(byId('enemyHp'),enemySkill);byId('weakness').before(enemyInfo);enemyInfo.append(byId('weakness'),byId('count'));
 const enemyTitleRow=document.createElement('div');enemyTitleRow.className='enemy-title-row';byId('enemyName').before(enemyTitleRow);enemyTitleRow.append(byId('enemyName'),byId('damageText'));
 document.querySelector('.readout').style.display='none';
 settingsDrawer.append(viewNote,document.querySelector('.actions'),squadPanel);

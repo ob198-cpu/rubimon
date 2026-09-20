@@ -145,7 +145,8 @@ button:active:not(:disabled){transform:translateY(1px)}button:focus-visible,summ
 @media(prefers-reduced-motion:reduce){button{transition:none}}
 .enemy-weakness-info{display:flex;flex-direction:column;align-items:flex-end;gap:5px;margin-left:auto}
 .enemy-weakness-info #count{font-size:12px;font-weight:700;color:#f6d58a;white-space:nowrap}
-.enemy-weakness-info #enemySkill{font-size:9px;font-weight:600;color:#ffb49f;white-space:nowrap}
+.enemy-attack-info{display:flex;flex-direction:column;align-items:flex-start;gap:5px;min-width:0}.enemy-attack-info #enemySkill{display:flex;flex-direction:column;align-items:flex-start;gap:2px;color:#f4f7f5;font-size:12px;line-height:1.25;white-space:nowrap}.enemy-attack-info #enemySkill strong,.enemy-attack-info #enemySkill span{color:#f4f7f5;font-size:inherit}.enemy-attack-info #enemySkill strong{font-weight:700}.enemy-attack-info #enemySkill span{font-weight:500}
+@media(max-width:400px){.enemy-card .hp-caption{display:grid;grid-template-columns:1fr}.enemy-weakness-info{align-items:flex-end;margin-left:0}.enemy-attack-info #enemySkill{white-space:normal}}
 @media(max-width:850px){.enemy-card{min-height:130px;padding:7px 12px;gap:3px 12px}}
 @media(max-width:400px){.enemy-card{min-height:112px;padding:6px 10px;gap:3px 10px}}
 .enemy-title-row{grid-column:2;display:flex;align-items:flex-end;justify-content:space-between;gap:8px;min-width:0}
