@@ -1,6 +1,12 @@
 'use strict';
 const E=CubeEngine,canvas=document.getElementById('scene'),ctx=canvas.getContext('2d');
 const B=BattleRules;
+let vibrationEnabled=true;
+try{vibrationEnabled=localStorage.getItem('rubimon.vibration')!=='off'}catch{}
+function battleVibration(kind,damage){
+ if(!vibrationEnabled||damage<=0||document.hidden||typeof navigator.vibrate!=='function')return;
+ try{navigator.vibrate(kind==='hit'?[65,40,85]:[35,25,45])}catch{}
+}
 let compactBoard=false;
 function boardViewport(){return compactBoard?{w:460,h:908,x:70,y:-20}:{w:600,h:820,x:0,y:-20}}
 function boardPointer(e){const r=canvas.getBoundingClientRect(),v=boardViewport();return [(e.clientX-r.left)*v.w/r.width+v.x,(e.clientY-r.top)*v.h/r.height+v.y]}
@@ -278,6 +284,7 @@ async function resolveTurn(){
   playBattleEffects(groups,result);
   refresh();await pause(950);if(token!==roundToken)return;
   enemyHp=Math.max(0,enemyHp-result.damage);hp=Math.min(maxHp(),hp+result.heal);
+  battleVibration('attack',result.damage);
   byId('damageText').textContent=(skill?'技発動！ ':combo+' COMBO · ')+(result.damage?'-'+result.damage:'回復 +'+result.heal);
   if(result.damage){byId('monster').classList.remove('hit');void byId('monster').offsetWidth;byId('monster').classList.add('hit')}
   byId('battleLog').textContent=tutorial?groups.map(g=>g.skill?B.skills[g.element]:B.spirits[g.element].name).join(' × ')+'！':result.details.join(' ／ ')||(result.heal?'チーム回復':'該当属性の仲間がいないため攻撃なし');
@@ -298,6 +305,7 @@ async function resolveTurn(){
   const incoming=tutorial?currentEnemy().attack:T.incoming(squad,currentEnemy(),enemyTurns+1,tuning,teamImmune,teamShield);
   battleEffects.push({start:performance.now()-950,token:roundToken,counter:true,value:incoming,key:'R',skill:false,points:[]});
   hp=Math.max(0,hp-incoming);
+  battleVibration('hit',incoming);
   byId('battleLog').textContent+=' ／ 反撃 -'+incoming+(teamImmune?'（無敵）':'');
   if(hp===0){phase='lost';refresh();return}
   if(!tutorial){B.tick(state,obstacles);enemyTurns++;endTeamTurn();openFaces=false;if(enemyObstaclesEnabled&&enemyTurns%3===1){if(Q.safeHinder(state,dungeon.obstacle,obstacles,attackKeys(),attackPolicy(),3)){byId('battleLog').textContent+=' ／ 敵が妨害を発動！'}else{balanceMetrics.rejectedObstacles++;byId('battleLog').textContent+=' ／ 逃げ道を保証できない妨害は見送り'}}}
@@ -515,7 +523,7 @@ function useCharacterSkill(c){
  if(c.action==='cleanse')B.cleanse(state,obstacles,B.pools[difficulty]);
  if(c.action==='fireBoost')teamBuffs.R=1.5;
  if(c.action==='thunderBoost')teamBuffs.U=1.5;
- if(c.action==='pierce'){enemyHp=Math.max(0,enemyHp-tuning.fixed);byId('damageText').textContent='固定 −'+tuning.fixed;if(enemyHp===0)phase='victory'}
+ if(c.action==='pierce'){enemyHp=Math.max(0,enemyHp-tuning.fixed);battleVibration('attack',tuning.fixed);byId('damageText').textContent='固定 −'+tuning.fixed;if(enemyHp===0)phase='victory'}
  cooldowns[c.id]=c.cd;teamSpent.add(c.id);history=[];byId('battleLog').textContent=c.name+'：'+c.skill+(phase==='victory'?' ／ CLEAR！':'');refresh();
 }
 function previewSlot(select,detail){const c=T.roster.find(c=>c.id===select.value);detail.textContent='HP '+c.hp+' / 攻撃 '+c.atk+' / 防御 '+c.def+' / 回復 '+c.recovery+'｜固有：'+c.passive+'｜技：'+c.skill+'（'+c.cd+'T）｜想定入手：'+c.source}
@@ -563,6 +571,10 @@ const viewNote=document.createElement('small');viewNote.textContent='視点を�
 // Keep detailed rules available without reserving space on the phone battle screen.
 byId('moveGuide').querySelector('small').textContent='光る帯だけが移動対象。方向を選んで回転、選択解除で閉じます。';
 const settingsDrawer=document.createElement('details');settingsDrawer.className='settings-drawer';settingsDrawer.innerHTML='<summary>設定・操作説明・試作ツール</summary>';
+const vibrationLabel=document.createElement('label'),vibrationSelect=document.createElement('select');vibrationLabel.textContent='攻撃・被ダメージ時の振動 ';vibrationSelect.id='vibrationSetting';for(const [value,text] of [['on','ON（初期設定）'],['off','OFF']]){const option=document.createElement('option');option.value=value;option.textContent=text;vibrationSelect.append(option)}vibrationSelect.value=vibrationEnabled?'on':'off';vibrationLabel.append(vibrationSelect);settingsDrawer.append(vibrationLabel);
+const vibrationNote=document.createElement('small');vibrationNote.textContent='対応端末・ブラウザのみ振動します。設定はこの端末に保存します。';settingsDrawer.append(vibrationNote);
+vibrationSelect.onchange=()=>{vibrationEnabled=vibrationSelect.value==='on';try{localStorage.setItem('rubimon.vibration',vibrationEnabled?'on':'off')}catch{}if(!vibrationEnabled&&typeof navigator.vibrate==='function'){try{navigator.vibrate(0)}catch{}}};
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&typeof navigator.vibrate==='function'){try{navigator.vibrate(0)}catch{}}});
 const rule=document.querySelector('.rule-panel'),ruleLabel=rule.querySelector('label'),ruleNote=rule.querySelector('small');settingsDrawer.append(document.querySelector('.difficulty-settings'),ruleLabel,ruleNote,document.querySelector('.settings'),byId('controls'),byId('tutorialStart'));
 for(const d of [...panel.children].filter(el=>el.tagName==='DETAILS'&&!el.classList.contains('squad-panel')))settingsDrawer.append(d);
 const squadPanel=byId('squadSlots').parentElement;squadPanel.open=false;
