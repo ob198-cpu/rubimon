@@ -59,18 +59,21 @@ function drawSliceArrows(){
  arrowHits=[];if(tutorial)return;
  for(let axis=0;axis<3;axis++)for(let layer=-1;layer<=1;layer++){
  const face=Object.keys(E.slices).find(k=>E.slices[k].axis===axis&&E.slices[k].layer===layer);
- const anchor=axis===1?[-2.15,layer,1.6]:axis===0?[layer,-2.15,1.6]:[1.6,-2.15,layer];
  for(const dir of [1,-1]){
- // Project the actual slice's circular orbit, rather than rotating a generic glyph.
- // Its angular sign is identical to the cube animation (including middle slices).
+ // Screen-space controls: horizontal rows on the left, vertical columns below.
+ // Front columns (X) and right-face columns (Z) have opposite rotation signs.
  const sign=-(layer||1)*dir;
- const original=cubePoint(anchor),next=cubePoint(E.rotate(anchor,axis,sign*.02)),angle=Math.atan2(next[1]-original[1],next[0]-original[0]);
- // Separate targets in regular rows/columns; never let neighboring arcs intersect.
- const p=axis===1?[sign===-1?117:157,514-layer*42]:[axis===0?204+(layer+1)*42:350+(1-layer)*42,sign===-1?632:674];
+ const towardStart=axis===2?sign===1:sign===-1;
+ const angle=axis===1?(towardStart?Math.PI:0):(towardStart?-Math.PI/2:Math.PI/2);
+ const p=axis===1?[towardStart?117:159,514-layer*42]:[axis===0?204+(layer+1)*42:350+(1-layer)*42,towardStart?632:674];
  const points=[p],end=[p[0]+8*Math.cos(angle),p[1]+8*Math.sin(angle)];
  const disabled=!!active||phase!=='ready'||turnMoves>=turnLimit||!B.canRotate(state,face),lit=guideFace()===face&&previewDir===dir;
- arrowHits.push({p,points,face,dir});ctx.save();ctx.strokeStyle=lit?'#ffe4a1':'#d1cbc0';ctx.globalAlpha=disabled?.25:lit?1:.9;ctx.lineWidth=3;ctx.lineCap='round';ctx.lineJoin='round';
- ctx.fillStyle=lit?'#31535a':'#173036';ctx.beginPath();ctx.roundRect(p[0]-17,p[1]-17,34,34,7);ctx.fill();ctx.lineWidth=1;ctx.stroke();ctx.lineWidth=2.5;
+ arrowHits.push({p,points,face,dir});ctx.save();ctx.globalAlpha=disabled?.3:1;ctx.lineCap='round';ctx.lineJoin='round';
+ const finish=ctx.createLinearGradient(p[0],p[1]-17,p[0],p[1]+17);finish.addColorStop(0,lit?'#416168':'#30494c');finish.addColorStop(1,lit?'#223e45':'#142b30');ctx.fillStyle=finish;
+ ctx.shadowColor='#0005';ctx.shadowBlur=4;ctx.shadowOffsetY=2;ctx.beginPath();ctx.roundRect(p[0]-17,p[1]-17,34,34,7);ctx.fill();ctx.shadowBlur=0;ctx.shadowOffsetY=0;
+ ctx.strokeStyle=lit?'#ebc778':'#89958d';ctx.lineWidth=lit?1.6:1;ctx.stroke();
+ ctx.beginPath();ctx.moveTo(p[0]-10,p[1]-14);ctx.lineTo(p[0]+10,p[1]-14);ctx.strokeStyle='#ffffff18';ctx.stroke();
+ ctx.strokeStyle=lit?'#ffe5a3':'#eee9db';ctx.lineWidth=2.7;
  ctx.beginPath();ctx.moveTo(p[0]-8*Math.cos(angle),p[1]-8*Math.sin(angle));ctx.lineTo(...end);ctx.stroke();
  ctx.beginPath();ctx.moveTo(end[0]-8*Math.cos(angle-.55),end[1]-8*Math.sin(angle-.55));ctx.lineTo(...end);ctx.lineTo(end[0]-8*Math.cos(angle+.55),end[1]-8*Math.sin(angle+.55));ctx.stroke();ctx.restore();
  }}
