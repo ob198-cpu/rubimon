@@ -56,6 +56,7 @@ let state=B.board(E),active=null,queue=[],history=[],moves=0,hitFaces=[],ringHit
 let hp=1800,wave=0,enemyHp=B.enemies[0].hp,phase='ready',turnMoves=0,combo=0,fx=null,matched=new Set(),roundToken=0;
 let tutorial=null,skillFlash=null;
 let challengeMode=false;
+let lineChallenge=0;
 let pendingMove=null;
 let selectedLayer=null,hoverLayer=null,previewDir=0,guideCache=null;
 function guideFace(){return tutorial||active||phase!=='ready'?null:pendingMove?.face||hoverLayer||selectedLayer}
@@ -327,9 +328,10 @@ function reset(){attackChain=0;bestChain=0;battleDamage=0;spentElements.clear();
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 async function resolveTurn(){
  if(phase!=='ready'||active||queue.length||(turnMoves===0&&canAct()))return;
- history=[];phase='resolving';const token=roundToken;combo=0;let total=0,healed=0,recoveryMatched=false,attackMatched=false;refresh();
+ history=[];phase='resolving';const token=roundToken,challengeGoal=typeof lineChallenge==='number'?lineChallenge:0;combo=0;let total=0,healed=0,recoveryMatched=false,attackMatched=false,challengeShortfall=-1;refresh();
  for(let chain=0;chain<(tutorial?8:1);chain++){
   const foundGroups=currentMatches();if(!foundGroups.length)break;
+  const completedLines=foundGroups.reduce((sum,g)=>sum+(g.skill?6:1),0);if(!tutorial&&challengeGoal&&completedLines<challengeGoal){challengeShortfall=completedLines;break}
   const groups=!tutorial&&!refillAssistance?foundGroups.filter((g,i)=>!spentElements.has(g.element)&&foundGroups.findIndex(x=>x.element===g.element)===i):foundGroups;
   recoveryMatched ||= groups.some(g=>g.element==='D');
   let result=teamOutcome(groups,combo);if(!tutorial){result=T.comboBonus(result,attackChain);attackMatched ||= result.comboBonus.burst>0;attackChain=result.comboBonus.chain;bestChain=Math.max(bestChain,attackChain);battleDamage+=result.damage;showComboBonus(result.comboBonus);gravityUsed=result.usedGravity}combo+=groups.length;total+=result.damage;healed+=result.heal;
@@ -352,7 +354,7 @@ async function resolveTurn(){
   applyTemporaryConversion();refresh();if(enemyHp===0)break;
  }
  if(!tutorial&&!attackMatched&&!recoveryMatched)attackChain=0;
- byId('battleLog').textContent=combo?combo+' COMBO / '+total+' ダメージ'+(!tutorial&&attackChain>1?' / CHAIN '+attackChain:'')+(healed?' / 回復 +'+healed:''):'そろわなかった！';
+ byId('battleLog').textContent=combo?combo+' COMBO / '+total+' ダメージ'+(!tutorial&&attackChain>1?' / CHAIN '+attackChain:'')+(healed?' / 回復 +'+healed:''):challengeShortfall>=0?challengeGoal+'列チャレンジ：'+challengeShortfall+'列成立。同時に'+challengeGoal+'列そろうと攻撃！':'そろわなかった！';
  if(enemyHp===0){
   await pause(550);if(token!==roundToken)return;
   if(!tutorial||wave===2){phase='victory';byId('battleLog').textContent='CLEAR！ '+currentEnemy().name+'を撃破。'+(!tutorial?'想定報酬 '+dungeon.reward+'素材（試算のみ・所持数への加算なし）':'');endTeamTurn();refresh();if(!tutorial)showVictory();return}
@@ -626,6 +628,7 @@ canvas.before(boardShell);const boardTitle=document.createElement('div');boardTi
 const orbitToggle=document.createElement('button');orbitToggle.id='orbitToggle';orbitToggle.className='orbit-toggle';orbitToggle.textContent='2D表示 ▸ 開く';orbitToggle.setAttribute('aria-expanded','false');canvas.before(orbitToggle);
 orbitToggle.onclick=()=>{if(challengeMode&&orbitExpanded){byId('battleLog').textContent='2Dチャレンジ中は2D盤面を使って解きます。';return}orbitExpanded=!orbitExpanded;orbitToggle.textContent=orbitExpanded?'2D表示 ▾ 閉じる':'2D表示 ▸ 開く';orbitToggle.setAttribute('aria-expanded',String(orbitExpanded));resize();placeCubeTouch()};
 function setChallengeMode(on){challengeMode=!!on;if(challengeMode&&!orbitExpanded){orbitExpanded=true;orbitToggle.textContent='2D表示 ▾ 閉じる';orbitToggle.setAttribute('aria-expanded','true')}byId('battleLog').textContent=challengeMode?'2DチャレンジON：3Dパネルを隠しました。2D盤面を見てそろえよう。':'2DチャレンジOFF：3Dパネルを通常表示に戻しました。';resize();placeCubeTouch()}
+function setLineChallenge(lines){lineChallenge=lineChallenge===lines?0:lines;attackChain=0;byId('damageText').textContent='';byId('battleLog').textContent=lineChallenge?lineChallenge+'列チャレンジON：1回の判定で同時に'+lineChallenge+'列以上そろうと攻撃します。':'列チャレンジOFF：通常の1列攻撃に戻しました。'}
 const orbitToolbar=document.createElement('div');orbitToolbar.className='orbit-toolbar';orbitToggle.before(orbitToolbar);
 const colorLabel=document.createElement('label');colorLabel.className='color-count-control';colorLabel.textContent='属性 ';
 const colorSelect=document.createElement('select');colorSelect.id='colorCount';colorSelect.setAttribute('aria-label','属性の種類数');colorSelect.title='色数を変更すると戦闘を再開始します';
