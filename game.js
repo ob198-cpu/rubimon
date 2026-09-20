@@ -544,12 +544,14 @@ cubeTouch.addEventListener('pointerup',endCubeDrag);cubeTouch.addEventListener('
 cubeTouch.addEventListener('click',boardClick);
 cubeTouch.addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)||tutorial)return;e.preventDefault();viewYaw+=(e.key==='ArrowLeft'?.2:e.key==='ArrowRight'?-.2:0);viewPitch=Math.max(-1.35,Math.min(1.35,viewPitch+(e.key==='ArrowUp'?.15:e.key==='ArrowDown'?-.15:0)));updateView()});
 const viewNote=document.createElement('small');viewNote.textContent='視点を変えても矢印で操作できます。左は左右、下は上下。表示中の面に合わせて列と方向が切り替わります。';viewNote.style.cssText='display:block;text-align:center;font-size:10px;color:#a9bcb5;line-height:1.6';boardShell.append(viewNote);
+// Keep detailed rules available without reserving space on the phone battle screen.
 byId('moveGuide').querySelector('small').textContent='光る帯だけが移動対象。方向を選んで回転、選択解除で閉じます。';
 const settingsDrawer=document.createElement('details');settingsDrawer.className='settings-drawer';settingsDrawer.innerHTML='<summary>設定・操作説明・試作ツール</summary>';
 const rule=document.querySelector('.rule-panel'),ruleLabel=rule.querySelector('label'),ruleNote=rule.querySelector('small');settingsDrawer.append(document.querySelector('.difficulty-settings'),ruleLabel,ruleNote,document.querySelector('.settings'),byId('controls'),byId('tutorialStart'));
 for(const d of [...panel.children].filter(el=>el.tagName==='DETAILS'&&!el.classList.contains('squad-panel')))settingsDrawer.append(d);
 const squadPanel=byId('squadSlots').parentElement;squadPanel.open=false;
 panel.append(document.querySelector('.enemy-card'),document.querySelector('.player-hp'),rule,document.querySelector('.readout'),byId('attack'),byId('battleLog'),document.querySelector('.squad-skills'),document.querySelector('.actions'),byId('boardProof'),squadPanel,settingsDrawer);
+if(matchMedia('(max-width:600px)').matches){const detail=document.createElement('details');detail.className='mobile-battle-details';const summary=document.createElement('summary');summary.textContent='戦況・ルール';detail.append(summary);rule.before(detail);detail.append(rule,byId('boardProof'),byId('battleLog'));}
 const guideConfirm=document.createElement('button');guideConfirm.id='guideConfirm';guideConfirm.textContent='決定 · 回転';guideConfirm.disabled=true;guideConfirm.style.cssText='border-color:#d7b56c;color:#ffe5a3';guideConfirm.onclick=confirmMove;byId('guideCancel').before(guideConfirm);
 byId('moveGuide').querySelector('small').textContent='1回目で2Dガイドを表示。同じ矢印をもう一度押すか「決定」で1手回転。別の矢印は選び直し。';
 buildSquadSkills();addEventListener('resize',resize);resize();reset();requestAnimationFrame(frame);
