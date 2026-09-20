@@ -512,7 +512,8 @@ byId('party').after(document.querySelector('.squad-skills'));
 // Battle-first layout; editors stay available without covering the board.
 const panel=document.querySelector('.panel'),boardShell=document.createElement('section');boardShell.className='board-shell';
 canvas.before(boardShell);const boardTitle=document.createElement('div');boardTitle.className='board-heading';boardTitle.innerHTML='<span>THE ORBIT CHAMBER</span><strong>精霊の回転盤</strong>';boardShell.append(boardTitle,canvas,byId('moveGuide'));
-const boardHelp=document.createElement('p');boardHelp.className='board-help';boardHelp.textContent='立方体をドラッグして見回す（手数なし）・タップして層を選択';boardShell.append(boardHelp);
+// Keep internal selection controls for existing handlers, but remove the guide panel from the UI.
+byId('moveGuide').style.setProperty('display','none','important');
 const viewReset=document.createElement('button');viewReset.id='viewReset';viewReset.textContent='視点を元に戻す';viewReset.disabled=true;viewReset.style.cssText='display:block;margin:8px auto;font-size:11px';boardShell.append(viewReset);
 viewReset.onclick=()=>{pendingMove=null;viewYaw=viewHome.yaw;viewPitch=viewHome.pitch;updateView()};
 const cubeTouch=document.createElement('div');cubeTouch.setAttribute('aria-label','立方体の視点操作。ドラッグで見回す。矢印キーでも視点を変更。');cubeTouch.tabIndex=0;cubeTouch.style.cssText='position:absolute;touch-action:none;cursor:grab;user-select:none;z-index:2;border-radius:12px';boardShell.append(cubeTouch);
