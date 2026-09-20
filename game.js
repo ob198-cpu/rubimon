@@ -597,8 +597,9 @@ const orbitToolbar=document.createElement('div');orbitToolbar.className='orbit-t
 const colorLabel=document.createElement('label');colorLabel.className='color-count-control';colorLabel.textContent='属性 ';
 const colorSelect=document.createElement('select');colorSelect.id='colorCount';colorSelect.setAttribute('aria-label','属性の種類数');colorSelect.title='色数を変更すると戦闘を再開始します';
 for(let n=3;n<=11;n++){const option=document.createElement('option');option.value=n;option.textContent=n===9?'9色（ルービックキューブ）':n+'色';colorSelect.append(option)}colorSelect.value=activePool().length;
+const syncColorCountDisplay=()=>colorLabel.classList.toggle('is-nine',colorSelect.value==='9');syncColorCountDisplay();
 colorLabel.append(colorSelect);orbitToolbar.append(colorLabel,orbitToggle);
-colorSelect.onchange=()=>{if(tutorial||active||queue.length||phase==='resolving')return;const count=Number(colorSelect.value);if(!Number.isInteger(count)||count<3||count>11)return;customColorCount=count;reset()};
+colorSelect.onchange=()=>{syncColorCountDisplay();if(tutorial||active||queue.length||phase==='resolving')return;const count=Number(colorSelect.value);if(!Number.isInteger(count)||count<3||count>11)return;customColorCount=count;reset()};
 // Keep internal selection controls for existing handlers, but remove the guide panel from the UI.
 byId('moveGuide').style.setProperty('display','none','important');
 const dragHint=document.createElement('div');dragHint.className='cube-drag-hint';
