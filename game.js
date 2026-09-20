@@ -8,7 +8,8 @@ function battleVibration(kind,damage){
  try{navigator.vibrate(kind==='hit'?[65,40,85]:[35,25,45])}catch{}
 }
 let compactBoard=false;
-function boardViewport(){return compactBoard?{w:460,h:908,x:70,y:-20}:{w:600,h:820,x:0,y:-20}}
+let orbitExpanded=true;
+function boardViewport(){return compactBoard?(orbitExpanded?{w:460,h:908,x:70,y:-20}:{w:460,h:494,x:70,y:394}):(orbitExpanded?{w:600,h:820,x:0,y:-20}:{w:600,h:436,x:0,y:364})}
 function boardPointer(e){const r=canvas.getBoundingClientRect(),v=boardViewport();return [(e.clientX-r.left)*v.w/r.width+v.x,(e.clientY-r.top)*v.h/r.height+v.y]}
 const T=TeamRules, Q=BalanceRules;
 let proofCache=null,shuffleCharges=2,balanceMetrics={repairs:0,refills:0,rejectedObstacles:0};
@@ -263,7 +264,7 @@ function frame(now){
       refresh();if(m.kind==='user'&&phase==='ready')resolveTurn();
     }
   }
-  ctx.clearRect(0,-20,600,940);drawOrbits(angle);ctx.save();if(compactBoard)ctx.translate(0,30);drawCube(angle);drawGuide();ctx.restore();drawSliceArrows();
+  ctx.clearRect(0,-20,600,940);if(orbitExpanded)drawOrbits(angle);ctx.save();if(compactBoard)ctx.translate(0,30);drawCube(angle);drawGuide();ctx.restore();drawSliceArrows();
   if(fx){const t=(now-fx.start)/1100;if(t<1){ctx.save();ctx.globalAlpha=1-t;for(const p of fx.points){const x=p[0]+(540-p[0])*t,y=p[1]+(35-p[1])*t-60*Math.sin(t*Math.PI);ctx.beginPath();ctx.arc(x,y,5*(1-t)+2,0,Math.PI*2);ctx.fillStyle=fx.color;ctx.shadowColor=fx.color;ctx.shadowBlur=16;ctx.fill()}ctx.restore()}else fx=null}
   if(skillFlash){const t=(now-skillFlash.start)/2200;if(t<1){ctx.save();ctx.fillStyle='#121727df';ctx.fillRect(20,320,560,78);ctx.strokeStyle=skillFlash.color;ctx.lineWidth=2;ctx.strokeRect(20,320,560,78);ctx.textAlign='center';ctx.fillStyle='#ffe8ae';ctx.font='bold 17px sans-serif';ctx.fillText('1面完成 · SKILL',300,345);ctx.font='bold 21px sans-serif';ctx.fillStyle=skillFlash.color;ctx.fillText(skillFlash.name,300,379);ctx.restore()}else skillFlash=null}
   drawBattleEffects(now);
@@ -541,6 +542,8 @@ byId('party').after(document.querySelector('.squad-skills'));
 // Battle-first layout; editors stay available without covering the board.
 const panel=document.querySelector('.panel'),boardShell=document.createElement('section');boardShell.className='board-shell';
 canvas.before(boardShell);const boardTitle=document.createElement('div');boardTitle.className='board-heading';boardTitle.innerHTML='<span>THE ORBIT CHAMBER</span><strong>精霊の回転盤</strong>';boardShell.append(boardTitle,canvas,byId('moveGuide'));
+const orbitToggle=document.createElement('button');orbitToggle.id='orbitToggle';orbitToggle.className='orbit-toggle';orbitToggle.textContent='2D表示 ▾ 閉じる';orbitToggle.setAttribute('aria-expanded','true');canvas.before(orbitToggle);
+orbitToggle.onclick=()=>{orbitExpanded=!orbitExpanded;orbitToggle.textContent=orbitExpanded?'2D表示 ▾ 閉じる':'2D表示 ▸ 開く';orbitToggle.setAttribute('aria-expanded',String(orbitExpanded));resize();placeCubeTouch()};
 // Keep internal selection controls for existing handlers, but remove the guide panel from the UI.
 byId('moveGuide').style.setProperty('display','none','important');
 const dragHint=document.createElement('div');dragHint.className='cube-drag-hint';dragHint.innerHTML='<svg viewBox="0 0 64 48" aria-hidden="true"><path class="swipe-track" d="M8 12h48m-43-5-5 5 5 5m38-10 5 5-5 5"/><g class="swipe-finger"><path d="M26 39 18 29q-3-5 2-5l6 5V13q0-6 5-6t5 6v10q7-3 11 3l-1 12-5 7H30Z"/></g></svg><span>ドラッグで見回す<small>手数は減りません</small></span>';boardShell.append(dragHint);
