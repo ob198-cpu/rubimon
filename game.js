@@ -2,7 +2,7 @@
 const E=CubeEngine,canvas=document.getElementById('scene'),ctx=canvas.getContext('2d');
 const B=BattleRules;
 let compactBoard=false;
-function boardViewport(){return compactBoard?{w:440,h:680,x:80,y:0}:{w:600,h:700,x:0,y:0}}
+function boardViewport(){return compactBoard?{w:440,h:780,x:80,y:0}:{w:600,h:800,x:0,y:0}}
 function boardPointer(e){const r=canvas.getBoundingClientRect(),v=boardViewport();return [(e.clientX-r.left)*v.w/r.width+v.x,(e.clientY-r.top)*v.h/r.height+v.y]}
 const T=TeamRules, Q=BalanceRules;
 let proofCache=null,shuffleCharges=2,balanceMetrics={repairs:0,refills:0,rejectedObstacles:0};
@@ -90,7 +90,7 @@ function drawSliceArrows(){
  // Screen-space controls: horizontal rows on the left, vertical columns below.
  // Front columns (X) and right-face columns (Z) have opposite rotation signs.
  const control=sliceControl(axis,layer,dir),angle=control.angle;
- const p=compactBoard?(axis===1?[angle===0?172:110,454-layer*60]:[115+((control.p[0]<330?0:3)+Math.round((control.p[0]-(control.p[0]<330?204:350))/42))*74,angle<0?582:644]):control.p;
+ const p=compactBoard?(axis===1?[angle===0?172:110,484-layer*60]:[115+((control.p[0]<330?0:3)+Math.round((control.p[0]-(control.p[0]<330?204:350))/42))*74,angle<0?682:744]):[control.p[0],control.p[1]+(axis===1?30:100)];
  const points=[p],end=[p[0]+16*Math.cos(angle),p[1]+16*Math.sin(angle)];
  const disabled=!!active||phase!=='ready'||turnMoves>=turnLimit||!B.canRotate(state,face),lit=guideFace()===face&&(pendingMove?.dir||previewDir)===dir;
  arrowHits.push({p,points,face,dir});ctx.save();if(compactBoard){ctx.translate(...p);ctx.scale(1.58,1.58);ctx.translate(-p[0],-p[1])}ctx.globalAlpha=disabled?.3:1;ctx.lineCap='round';ctx.lineJoin='round';
@@ -115,7 +115,7 @@ function updateView(){
 }
 const byId=id=>document.getElementById(id);
 const add=(a,b)=>a.map((v,i)=>v+b[i]),scale=(v,k)=>v.map(x=>x*k);
-function cubePoint(v){return [cubeOrigin[0]+E.dot(v,camRight)*cubeScale,cubeOrigin[1]-E.dot(v,camUp)*cubeScale]}
+function cubePoint(v){return [cubeOrigin[0]+50+E.dot(v,camRight)*cubeScale*1.5,cubeOrigin[1]+30-E.dot(v,camUp)*cubeScale*1.5]}
 function polygon(points,fill,stroke,width=1){ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(...p):ctx.moveTo(...p));ctx.closePath();ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=width;ctx.stroke()}}
 function isMoving(p){return active&&p[E.slices[active.face].axis]===E.slices[active.face].layer}
 function transform(v,p,angle){return isMoving(p)?E.rotate(v,E.slices[active.face].axis,angle):v}
@@ -245,7 +245,7 @@ function frame(now){
       refresh();if(m.kind==='user'&&phase==='ready')resolveTurn();
     }
   }
-  ctx.clearRect(0,0,600,740);ctx.save();if(compactBoard)ctx.scale(1,.8);drawOrbits(angle);ctx.restore();ctx.save();if(compactBoard)ctx.translate(0,-60);drawCube(angle);drawGuide();ctx.restore();drawSliceArrows();
+  ctx.clearRect(0,0,600,800);ctx.save();if(compactBoard)ctx.scale(1,.8);drawOrbits(angle);ctx.restore();ctx.save();if(compactBoard)ctx.translate(0,-60);drawCube(angle);drawGuide();ctx.restore();drawSliceArrows();
   if(fx){const t=(now-fx.start)/1100;if(t<1){ctx.save();ctx.globalAlpha=1-t;for(const p of fx.points){const x=p[0]+(540-p[0])*t,y=p[1]+(35-p[1])*t-60*Math.sin(t*Math.PI);ctx.beginPath();ctx.arc(x,y,5*(1-t)+2,0,Math.PI*2);ctx.fillStyle=fx.color;ctx.shadowColor=fx.color;ctx.shadowBlur=16;ctx.fill()}ctx.restore()}else fx=null}
   if(skillFlash){const t=(now-skillFlash.start)/2200;if(t<1){ctx.save();ctx.fillStyle='#121727df';ctx.fillRect(20,320,560,78);ctx.strokeStyle=skillFlash.color;ctx.lineWidth=2;ctx.strokeRect(20,320,560,78);ctx.textAlign='center';ctx.fillStyle='#ffe8ae';ctx.font='bold 17px sans-serif';ctx.fillText('1面完成 · SKILL',300,345);ctx.font='bold 21px sans-serif';ctx.fillStyle=skillFlash.color;ctx.fillText(skillFlash.name,300,379);ctx.restore()}else skillFlash=null}
   drawBattleEffects(now);
@@ -527,7 +527,7 @@ const cubeTouch=document.createElement('div');cubeTouch.setAttribute('aria-label
 function placeCubeTouch(){
  if(getComputedStyle(boardShell).position==='static')boardShell.style.position='relative';
  const w=canvas.clientWidth,h=canvas.clientHeight;
- const v=boardViewport();Object.assign(cubeTouch.style,{left:(canvas.offsetLeft+w*((compactBoard?200:170)-v.x)/v.w)+'px',top:(canvas.offsetTop+h*(compactBoard?320:380)/v.h)+'px',width:(w*(compactBoard?230:260)/v.w)+'px',height:(h*235/v.h)+'px'});
+ const v=boardViewport();Object.assign(cubeTouch.style,{left:(canvas.offsetLeft+w*(200-v.x)/v.w)+'px',top:(canvas.offsetTop+h*(compactBoard?320:380)/v.h)+'px',width:(w*320/v.w)+'px',height:(h*335/v.h)+'px'});
 }
 new ResizeObserver(placeCubeTouch).observe(canvas);
 cubeTouch.addEventListener('pointerdown',e=>{if(tutorial||e.button!==0||cubeDrag)return;suppressCubeClick=false;cubeDrag={id:e.pointerId,x:e.clientX,y:e.clientY,yaw:viewYaw,pitch:viewPitch,moved:false};cubeTouch.setPointerCapture(e.pointerId)});
