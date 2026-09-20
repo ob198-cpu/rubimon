@@ -37,7 +37,7 @@ function refillWithoutAssistance(ids){
  state.splice(0,state.length,...fallback);
 }
 function endTeamTurn(){for(const s of state)if(s.tempOriginal!==undefined){s.face=s.tempOriginal;delete s.tempOriginal}teamConversion=null;teamBuffs={};teamImmune=false;teamShield=false;gravityUsed=false;for(const id in cooldowns)if(!teamSpent.has(id))cooldowns[id]=Math.max(0,cooldowns[id]-1);teamSpent.clear()}
-let state=B.board(E),active=null,queue=[],history=[],moves=0,hitFaces=[],ringHits=[];
+let state=B.board(E),active=null,queue=[],history=[],moves=0,hitFaces=[],ringHits=[],spentElements=new Set();
 let hp=1800,wave=0,enemyHp=B.enemies[0].hp,phase='ready',turnMoves=0,combo=0,fx=null,matched=new Set(),roundToken=0;
 let tutorial=null,skillFlash=null;
 let pendingMove=null;
@@ -299,28 +299,30 @@ function frame(now){
   requestAnimationFrame(frame);
 }
 function userMove(face,dir){if(tutorial||phase!=='ready'||active||queue.length||turnMoves>=turnLimit)return;if(!B.canRotate(state,face)){byId('battleLog').textContent='この層には固定ブロックがあります。別の面か、リベラの解除を使おう。';return}pendingMove=null;queue.push({face,dir,kind:'user'})}
-function reset(){attackChain=0;bestChain=0;battleDamage=0;victoryScreen.hidden=true;comboBanner.classList.remove('active');pendingMove=null;shuffleCharges=2;roundToken++;endTeamTurn();cooldowns={};selectedLayer=null;hoverLayer=null;previewDir=0;byId('layerChoices').replaceChildren();state=B.board(E,Math.random,activePool());skillUses={convert:2,shuffle:2,clock:2,cleanse:2,open:2};turnLimit=3;clockUsed=false;openFaces=false;obstacles={seals:[],restrict:0};enemyTurns=0;baseRule=byId('attackRule').value;active=null;queue=[];history=[];moves=0;hp=maxHp();wave=0;enemyHp=currentEnemy().hp;phase='ready';turnMoves=0;combo=0;fx=null;byId('battleLog').textContent='5体の編成で '+dungeon.name+' に挑戦。属性をそろえ、仲間の技で対策しよう。';byId('damageText').textContent='';balanceMetrics={repairs:0,refills:0,rejectedObstacles:0};certifiedStart();renderParty();refresh()}
+function reset(){attackChain=0;bestChain=0;battleDamage=0;spentElements.clear();victoryScreen.hidden=true;comboBanner.classList.remove('active');pendingMove=null;shuffleCharges=2;roundToken++;endTeamTurn();cooldowns={};selectedLayer=null;hoverLayer=null;previewDir=0;byId('layerChoices').replaceChildren();state=B.board(E,Math.random,activePool());skillUses={convert:2,shuffle:2,clock:2,cleanse:2,open:2};turnLimit=3;clockUsed=false;openFaces=false;obstacles={seals:[],restrict:0};enemyTurns=0;baseRule=byId('attackRule').value;active=null;queue=[];history=[];moves=0;hp=maxHp();wave=0;enemyHp=currentEnemy().hp;phase='ready';turnMoves=0;combo=0;fx=null;byId('battleLog').textContent='5体の編成で '+dungeon.name+' に挑戦。属性をそろえ、仲間の技で対策しよう。';byId('damageText').textContent='';balanceMetrics={repairs:0,refills:0,rejectedObstacles:0};certifiedStart();renderParty();refresh()}
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 async function resolveTurn(){
  if(phase!=='ready'||active||queue.length||(turnMoves===0&&canAct()))return;
  history=[];phase='resolving';const token=roundToken;combo=0;let total=0,healed=0,recoveryMatched=false,attackMatched=false;refresh();
  for(let chain=0;chain<(tutorial?8:1);chain++){
-  const groups=currentMatches();if(!groups.length)break;
+  const foundGroups=currentMatches();if(!foundGroups.length)break;
+  const groups=!tutorial&&!refillAssistance?foundGroups.filter((g,i)=>!spentElements.has(g.element)&&foundGroups.findIndex(x=>x.element===g.element)===i):foundGroups;
   recoveryMatched ||= groups.some(g=>g.element==='D');
   let result=teamOutcome(groups,combo);if(!tutorial){result=T.comboBonus(result,attackChain);attackMatched ||= result.comboBonus.burst>0;attackChain=result.comboBonus.chain;bestChain=Math.max(bestChain,attackChain);battleDamage+=result.damage;showComboBonus(result.comboBonus);gravityUsed=result.usedGravity}combo+=groups.length;total+=result.damage;healed+=result.heal;
   const skill=groups.find(g=>g.skill);
   if(skill)skillFlash={start:performance.now(),name:tutorial?B.skills[skill.element]:B.spirits[skill.element].element+'属性・面攻撃',color:B.spirits[skill.element].color};
-  const ids=new Set(groups.flatMap(g=>g.ids));
+  const ids=new Set(foundGroups.flatMap(g=>g.ids));
   playBattleEffects(groups,result);
   refresh();await pause(950);if(token!==roundToken)return;
   enemyHp=Math.max(0,enemyHp-result.damage);hp=Math.min(maxHp(),hp+result.heal);
   battleVibration('attack',result.damage);
-  byId('damageText').textContent=(skill?'技発動！ ':combo+' COMBO · ')+(result.damage?'-'+result.damage:'回復 +'+result.heal);
+  byId('damageText').textContent=groups.length?(skill?'技発動！ ':combo+' COMBO · ')+(result.damage?'-'+result.damage:'回復 +'+result.heal):'攻撃済み · 灰色化';
   if(result.damage){byId('monster').classList.remove('hit');void byId('monster').offsetWidth;byId('monster').classList.add('hit')}
-  byId('battleLog').textContent=tutorial?groups.map(g=>g.skill?B.skills[g.element]:B.spirits[g.element].name).join(' × ')+'！':result.details.join(' ／ ')||(result.heal?'チーム回復':'該当属性の仲間がいないため攻撃なし');
+  byId('battleLog').textContent=tutorial?groups.map(g=>g.skill?B.skills[g.element]:B.spirits[g.element].name).join(' × ')+'！':groups.length?(result.details.join(' ／ ')||(result.heal?'チーム回復':'該当属性の仲間がいないため攻撃なし')):'この属性は攻撃済みです。そろったパネルを灰色にしました。';
   if(tutorial){byId('tutorialText').textContent=skill?'9体がすべて火属性！ 「サラマンダー・インフェルノ」発動。列攻撃の5倍の威力です。':'3手目で火の精霊が1列そろいました。サラマンダーが攻撃！ 光る列と敵HPに注目してください。'}
   refresh();await pause(tutorial||skill?1800:1100);if(token!==roundToken)return;
   if(tutorial)B.refill(state,ids,Math.random,B.pools.normal);
+  else if(!refillAssistance){for(const s of state)if(ids.has(s.id)){delete s.tempOriginal;s.face='X'}for(const g of foundGroups)spentElements.add(g.element)}
   else if(refillAssistance){const budget=turnMoves>=turnLimit?3:Math.max(1,turnLimit-turnMoves);Q.refill(state,ids,activePool(),attackKeys(),attackPolicy(),difficulty==='easy'?1:Math.min(3,budget),Math.random,teamConversion,difficulty,attackChain);balanceMetrics.refills++}
   else refillWithoutAssistance(ids);
   applyTemporaryConversion();refresh();if(enemyHp===0)break;
@@ -600,8 +602,13 @@ const boardActions=document.createElement('div');boardActions.className='board-a
 boardActions.before(dragHint);
 const boardLeftActions=document.createElement('div');boardLeftActions.className='board-left-actions';boardActions.prepend(boardLeftActions);boardLeftActions.append(byId('hint'),byId('rescue'));
 orbitToolbar.append(viewReset);
-const refillToggle=document.createElement('button');refillToggle.id='refillToggle';refillToggle.textContent='補充OFF';refillToggle.title='コンボしやすい補充を停止';refillToggle.setAttribute('aria-pressed','false');orbitToolbar.append(refillToggle);
-refillToggle.onclick=()=>{refillAssistance=!refillAssistance;refillToggle.textContent=refillAssistance?'補充OFF':'補充ON';refillToggle.title=refillAssistance?'コンボしやすい補充を停止':'コンボしやすい補充を再開';refillToggle.setAttribute('aria-pressed',String(!refillAssistance));byId('battleLog').textContent=refillAssistance?'補充アシストをONにしました。次の攻撃後からコンボしやすい配置を補充します。':'補充アシストをOFFにしました。次の攻撃後から通常のランダム補充になります。'};
+const refillToggle=document.createElement('button');refillToggle.id='refillToggle';refillToggle.textContent='補充OFF';refillToggle.title='そろえたパネルを灰色にして補充を停止';refillToggle.setAttribute('aria-pressed','false');orbitToolbar.append(refillToggle);
+refillToggle.onclick=()=>{
+ refillAssistance=!refillAssistance;
+ if(refillAssistance){const ids=new Set(state.filter(s=>s.face==='X').map(s=>s.id));if(ids.size)Q.refill(state,ids,activePool(),attackKeys(),attackPolicy(),2,Math.random,teamConversion,difficulty,attackChain);spentElements.clear();applyTemporaryConversion();refresh()}
+ refillToggle.textContent=refillAssistance?'補充OFF':'補充ON';refillToggle.title=refillAssistance?'そろえたパネルを灰色にして補充を停止':'灰色パネルを補充して通常ルールへ戻す';refillToggle.setAttribute('aria-pressed',String(!refillAssistance));
+ byId('battleLog').textContent=refillAssistance?'補充をONにしました。灰色パネルを属性パネルへ戻しました。':'補充をOFFにしました。各属性は最初の成立時だけ攻撃し、そろえたパネルは灰色になります。';
+};
 viewReset.onclick=()=>{pendingMove=null;viewYaw=viewHome.yaw;viewPitch=viewHome.pitch;updateView()};
 const cubeTouch=document.createElement('div');cubeTouch.setAttribute('aria-label','立方体の視点操作。ドラッグで見回す。矢印キーでも視点を変更。');cubeTouch.tabIndex=0;cubeTouch.style.cssText='position:absolute;touch-action:none;cursor:grab;user-select:none;z-index:2;border-radius:12px';boardShell.append(cubeTouch);
 function placeCubeTouch(){

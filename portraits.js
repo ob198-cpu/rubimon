@@ -1,7 +1,7 @@
 // Original elemental glyphs; intentionally legible at the orbit's smallest size.
 function drawSpirit(ctx,key,x,y,r){
  const colors={R:['#ff8966','#bd2d39'],B:['#81e1ff','#2363bf'],F:['#a4ee9a','#28784e'],L:['#f4cd8f','#986032'],U:['#fff3a8','#c59232'],D:['#ffbfdc','#bf508b'],V:['#c6a6ff','#643895'],I:['#b8fff3','#298d99'],M:['#d4deec','#66758e']};
- colors.J=['#7e8798','#303847'];colors.H=['#fffbea','#c9bfa0'];colors.P=['#dbf472','#738926'];
+ colors.J=['#7e8798','#303847'];colors.X=['#9a9da1','#55595e'];colors.H=['#fffbea','#c9bfa0'];colors.P=['#dbf472','#738926'];
  const [light,dark]=colors[key];ctx.save();ctx.translate(x,y);ctx.scale(r/20,r/20);
  const g=ctx.createLinearGradient(-10,-18,12,19);g.addColorStop(0,light);g.addColorStop(1,dark);
  ctx.beginPath();ctx.arc(0,0,19,0,Math.PI*2);ctx.fillStyle=g;ctx.fill();ctx.strokeStyle='#ffffff90';ctx.lineWidth=1.4;ctx.stroke();
@@ -18,6 +18,7 @@ function drawSpirit(ctx,key,x,y,r){
  if(key==='H'){ctx.arc(0,0,6,0,Math.PI*2);ctx.fill();for(let i=0;i<8;i++){const a=i*Math.PI/4;ctx.beginPath();ctx.moveTo(Math.cos(a)*10,Math.sin(a)*10);ctx.lineTo(Math.cos(a)*14,Math.sin(a)*14);ctx.stroke()}}
  if(key==='P'){ctx.arc(0,-2,10,0,Math.PI*2);ctx.fill();ctx.fillRect(-6,4,12,8);ctx.fillStyle=dark;ctx.beginPath();ctx.arc(-4,-3,3,0,Math.PI*2);ctx.arc(4,-3,3,0,Math.PI*2);ctx.fill()}
  if(key==='J'){ctx.lineWidth=5;ctx.moveTo(-8,-8);ctx.lineTo(8,8);ctx.moveTo(8,-8);ctx.lineTo(-8,8);ctx.stroke()}
+ if(key==='X'){ctx.globalAlpha=.65;ctx.lineWidth=3;ctx.moveTo(-9,0);ctx.lineTo(9,0);ctx.stroke()}
  ctx.restore();
 }
 function dragonMarkup(){

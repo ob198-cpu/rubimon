@@ -11,7 +11,8 @@ const spirits={
  M:{name:'フェラム',element:'鋼',color:'#aebacb',power:195},
  H:{name:'ソル',element:'光',color:'#fff4d1',power:175},
  P:{name:'ヴェノム',element:'毒',color:'#bdde45',power:175},
- J:{name:'お邪魔石',element:'邪魔',color:'#57606e',power:0}
+ J:{name:'お邪魔石',element:'邪魔',color:'#57606e',power:0},
+ X:{name:'使用済み',element:'使用済み',color:'#666b70',power:0}
 };
 const enemies=[
  {name:'炎竜 ヴェルディス',element:'火',weak:'B',hp:1200,attack:120},
@@ -29,12 +30,12 @@ function matches(state,policy={}){
   const faceKey=Object.keys(faceSpecs).find(f=>faceSpecs[f][0]===axis&&faceSpecs[f][1]===sign);
   if(policy.faces&&!policy.faces.includes(faceKey))continue;
   const face=state.filter(s=>s.n[axis]===sign),a=(axis+1)%3,b=(axis+2)%3;
-  if(face.length===9&&face[0].face!=='J'&&face.every(s=>s.face===face[0].face&&!sealed(s,policy))){
+  if(face.length===9&&!['J','X'].includes(face[0].face)&&face.every(s=>s.face===face[0].face&&!sealed(s,policy))){
    groups.push({element:face[0].face,ids:face.map(s=>s.id),skill:true,face:faceKey});continue;
   }
   for(const direction of [a,b])for(let v=-1;v<=1;v++){
    const line=face.filter(s=>s.p[direction]===v);
-   if(line.length===3&&line[0].face!=='J'&&line.every(s=>s.face===line[0].face&&!sealed(s,policy)))groups.push({element:line[0].face,ids:line.map(s=>s.id),face:faceKey});
+   if(line.length===3&&!['J','X'].includes(line[0].face)&&line.every(s=>s.face===line[0].face&&!sealed(s,policy)))groups.push({element:line[0].face,ids:line.map(s=>s.id),face:faceKey});
   }
  }return groups;
 }
