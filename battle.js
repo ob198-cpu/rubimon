@@ -49,11 +49,16 @@ function board(E,random=Math.random,keys=pools.normal){
 function rubikBoard(E,random=Math.random,keys=pools.hard,moves=28){
  if(keys.length!==9)throw Error('9色ルービック盤面には9属性が必要です');
  const state=E.create(),faceNames=Object.keys(E.faces);
- // Each face starts with the same nine-attribute count, then only legal outer-layer turns are used.
+ // Solved target: eighteen monochrome rows, two rows (six stickers) per attribute.
+ // Starting from this target and applying only legal turns guarantees a reversible,
+ // physically attainable nine-attribute arrangement.
  for(const [faceIndex,faceName] of faceNames.entries()){
   const f=E.faces[faceName],stickers=state.filter(s=>s.n[f.axis]===f.layer);
-  stickers.sort((a,b)=>a.p[(f.axis+1)%3]-b.p[(f.axis+1)%3]||a.p[(f.axis+2)%3]-b.p[(f.axis+2)%3]);
-  stickers.forEach((s,i)=>s.face=keys[(i+faceIndex*2)%keys.length]);
+  const rowAxis=(f.axis+1)%3;
+  for(const [rowIndex,row] of [-1,0,1].entries()){
+   const key=keys[(faceIndex*3+rowIndex)%keys.length];
+   stickers.filter(s=>s.p[rowAxis]===row).forEach(s=>s.face=key);
+  }
  }
  let previous='';
  for(let i=0;i<moves;i++){
