@@ -56,7 +56,7 @@ let state=B.board(E),active=null,queue=[],history=[],moves=0,hitFaces=[],ringHit
 let hp=1800,wave=0,enemyHp=B.enemies[0].hp,phase='ready',turnMoves=0,combo=0,fx=null,matched=new Set(),roundToken=0;
 let tutorial=null,skillFlash=null;
 let challengeMode=false;
-let lineChallenge=0;
+let lineChallenge=0,lineChallengeSetup=null;
 let pendingMove=null;
 let selectedLayer=null,hoverLayer=null,previewDir=0,guideCache=null;
 function guideFace(){return tutorial||active||phase!=='ready'?null:pendingMove?.face||hoverLayer||selectedLayer}
@@ -628,7 +628,21 @@ canvas.before(boardShell);const boardTitle=document.createElement('div');boardTi
 const orbitToggle=document.createElement('button');orbitToggle.id='orbitToggle';orbitToggle.className='orbit-toggle';orbitToggle.textContent='2D表示 ▸ 開く';orbitToggle.setAttribute('aria-expanded','false');canvas.before(orbitToggle);
 orbitToggle.onclick=()=>{if(challengeMode&&orbitExpanded){byId('battleLog').textContent='2Dチャレンジ中は2D盤面を使って解きます。';return}orbitExpanded=!orbitExpanded;orbitToggle.textContent=orbitExpanded?'2D表示 ▾ 閉じる':'2D表示 ▸ 開く';orbitToggle.setAttribute('aria-expanded',String(orbitExpanded));resize();placeCubeTouch()};
 function setChallengeMode(on){challengeMode=!!on;if(challengeMode&&!orbitExpanded){orbitExpanded=true;orbitToggle.textContent='2D表示 ▾ 閉じる';orbitToggle.setAttribute('aria-expanded','true')}byId('battleLog').textContent=challengeMode?'2DチャレンジON：3Dパネルを隠しました。2D盤面を見てそろえよう。':'2DチャレンジOFF：3Dパネルを通常表示に戻しました。';resize();placeCubeTouch()}
-function setLineChallenge(lines){lineChallenge=lineChallenge===lines?0:lines;attackChain=0;byId('damageText').textContent='';byId('battleLog').textContent=lineChallenge?lineChallenge+'列チャレンジON：1回の判定で同時に'+lineChallenge+'列以上そろうと攻撃します。':'列チャレンジOFF：通常の1列攻撃に戻しました。'}
+function setLineChallenge(lines){
+ const next=lineChallenge===lines?0:lines;
+ if(!lineChallenge&&next)lineChallengeSetup={colorCount:customColorCount,rule:byId('attackRule').value};
+ lineChallenge=next;attackChain=0;byId('damageText').textContent='';
+ if(!lineChallenge){
+  if(lineChallengeSetup){customColorCount=lineChallengeSetup.colorCount;byId('attackRule').value=lineChallengeSetup.rule;lineChallengeSetup=null}
+  reset();syncColorCountDisplay();byId('battleLog').textContent='列チャレンジOFF：通常の盤面に戻しました。';refresh();return
+ }
+ // Use a legal six-colour cube with a guaranteed solution instead of leaving the normal random board unchanged.
+ customColorCount=6;const colorControl=byId('colorCount');if(colorControl){colorControl.value='6';syncColorCountDisplay()}
+ byId('attackRule').value='front';reset();
+ state=B.rubikBoard(E,Math.random,B.pools.normal,0);E.move(state,'U',1);if(lineChallenge===5)E.move(state,'R',-1);
+ history=[];proofCache=null;turnMoves=0;phase='ready';
+ byId('battleLog').textContent=lineChallenge+'列チャレンジ開始：前面で同時に'+lineChallenge+'列以上を完成させよう。'+(lineChallenge===4?'1手で完成できる専用盤面です。':'2手以内で完成できる専用盤面です。');refresh()
+}
 const orbitToolbar=document.createElement('div');orbitToolbar.className='orbit-toolbar';orbitToggle.before(orbitToolbar);
 const colorLabel=document.createElement('label');colorLabel.className='color-count-control';colorLabel.textContent='属性 ';
 const colorSelect=document.createElement('select');colorSelect.id='colorCount';colorSelect.setAttribute('aria-label','属性の種類数');colorSelect.title='色数を変更すると戦闘を再開始します';
