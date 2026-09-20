@@ -1,10 +1,14 @@
 'use strict';
 const E=CubeEngine,canvas=document.getElementById('scene'),ctx=canvas.getContext('2d');
 const B=BattleRules;
-const T=TeamRules;
+const T=TeamRules, Q=BalanceRules;
+let proofCache=null,shuffleCharges=2,balanceMetrics={repairs:0,refills:0,rejectedObstacles:0};
+function attackKeys(){return [...new Set(squad.map(id=>T.roster.find(c=>c.id===id).element))].filter(k=>k!=='D'&&(B.pools[difficulty].includes(k)||teamConversion?.[1]===k))}
+function boardProof(){const depth=difficulty==='easy'?1:Math.max(1,Math.min(3,turnLimit-turnMoves));const key=JSON.stringify([state,attackKeys(),attackPolicy(),depth]);if(proofCache?.key!==key)proofCache={key,...Q.plan(state,attackKeys(),attackPolicy(),depth)};return proofCache}
+function certifiedStart(){const result=Q.initial(B.pools[difficulty],attackKeys(),attackPolicy(),difficulty);if(!result.state){byId('battleLog').textContent='攻撃属性と出現色が合いません。編成または難易度を変更してください。';phase='setup';return false}state=result.state;proofCache=null;return true}
 let squad=['sala','undine','raika','ferrum','libera'],dungeon=T.dungeons[0],tuning={...T.defaults},cooldowns={},teamSpent=new Set(),teamBuffs={},teamImmune=false,teamShield=false,teamConversion=null,gravityUsed=false;
 function maxHp(){return tutorial?1800:T.stats(squad,tuning).hp}
-function currentEnemy(){return tutorial?B.enemies[wave]:{...dungeon,name:dungeon.bossName||dungeon.name,element:{grove:'火',armor:'鋼',abyss:'闇',storm:'風'}[dungeon.id]}}
+function currentEnemy(){return tutorial?B.enemies[wave]:{...dungeon,hp:Math.round(dungeon.hp*Q.settings[difficulty].hp),attack:Math.round(dungeon.attack*Q.settings[difficulty].attack),name:dungeon.bossName||dungeon.name,element:{grove:'火',armor:'鋼',abyss:'闇',storm:'風'}[dungeon.id]}}
 function teamOutcome(groups,offset=0){return tutorial?B.outcome(groups,currentEnemy(),offset):T.outcome(squad,groups,currentEnemy(),enemyHp,gravityUsed,tuning,teamBuffs,offset)}
 function applyTemporaryConversion(){if(!tutorial&&teamConversion)for(const s of state)if(s.face===teamConversion[0]&&s.tempOriginal===undefined){s.tempOriginal=s.face;s.face=teamConversion[1]}}
 function endTeamTurn(){for(const s of state)if(s.tempOriginal!==undefined){s.face=s.tempOriginal;delete s.tempOriginal}teamConversion=null;teamBuffs={};teamImmune=false;teamShield=false;gravityUsed=false;for(const id in cooldowns)if(!teamSpent.has(id))cooldowns[id]=Math.max(0,cooldowns[id]-1);teamSpent.clear()}
@@ -144,11 +148,11 @@ function drawBlockStatus(s,p,r){
 }
 function refresh(){
   if(!tutorial&&!active&&!queue.length&&phase==='ready'){
-   const attackKeys=[...new Set(squad.map(id=>T.roster.find(c=>c.id===id).element))].filter(k=>k!=='D'&&B.pools[difficulty].includes(k));
-   const assurance=B.ensureWinningMove(E,state,attackKeys,attackPolicy());
-   if(assurance.changed){history=[];byId('battleLog').textContent='攻撃できる手がなかったため、1手でそろう配置に調整しました。「ヒント」で確認できます。'}
-   if(!assurance.move)byId('battleLog').textContent='現在の編成・妨害では攻撃できる配置を保証できません。攻撃属性を編成するか、妨害を解除してください。';
-  }
+   const proof=boardProof();byId('boardProof').textContent=proof.moves?'検証済み：'+proof.moves.length+'手以内で攻撃可能（ヒントで手順）':'残り手数内の確実な攻撃手順は未確認。救済か技を選べます。';
+   byId('rescue').hidden=false;byId('rescue').disabled=shuffleCharges===0;
+   byId('rescue').textContent='再配置 '+shuffleCharges+' / 2';
+   byId('passTurn').hidden=!!proof.moves;
+  }else{byId('rescue').hidden=false;byId('rescue').disabled=true;byId('passTurn').hidden=true}
   updateGuide();
   const groups=currentMatches(),enemy=currentEnemy();
   matched=new Set(groups.flatMap(g=>g.ids));
@@ -218,12 +222,12 @@ function frame(now){
   requestAnimationFrame(frame);
 }
 function userMove(face,dir){if(tutorial||phase!=='ready'||active||queue.length||turnMoves>=turnLimit)return;if(!B.canRotate(state,face)){byId('battleLog').textContent='この層には固定ブロックがあります。別の面か、リベラの解除を使おう。';return}queue.push({face,dir,kind:'user'})}
-function reset(){roundToken++;endTeamTurn();cooldowns={};selectedLayer=null;hoverLayer=null;previewDir=0;byId('layerChoices').replaceChildren();state=B.board(E,Math.random,B.pools[difficulty]);skillUses={convert:2,shuffle:2,clock:2,cleanse:2,open:2};turnLimit=3;clockUsed=false;openFaces=false;obstacles={seals:[],restrict:0};enemyTurns=0;baseRule=byId('attackRule').value;active=null;queue=[];history=[];moves=0;hp=maxHp();wave=0;enemyHp=currentEnemy().hp;phase='ready';turnMoves=0;combo=0;fx=null;byId('battleLog').textContent='5体の編成で '+dungeon.name+' に挑戦。属性をそろえ、仲間の技で対策しよう。';byId('damageText').textContent='';renderParty();refresh()}
+function reset(){shuffleCharges=2;roundToken++;endTeamTurn();cooldowns={};selectedLayer=null;hoverLayer=null;previewDir=0;byId('layerChoices').replaceChildren();state=B.board(E,Math.random,B.pools[difficulty]);skillUses={convert:2,shuffle:2,clock:2,cleanse:2,open:2};turnLimit=3;clockUsed=false;openFaces=false;obstacles={seals:[],restrict:0};enemyTurns=0;baseRule=byId('attackRule').value;active=null;queue=[];history=[];moves=0;hp=maxHp();wave=0;enemyHp=currentEnemy().hp;phase='ready';turnMoves=0;combo=0;fx=null;byId('battleLog').textContent='5体の編成で '+dungeon.name+' に挑戦。属性をそろえ、仲間の技で対策しよう。';byId('damageText').textContent='';balanceMetrics={repairs:0,refills:0,rejectedObstacles:0};certifiedStart();renderParty();refresh()}
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 async function resolveTurn(){
  if(phase!=='ready'||active||queue.length||(turnMoves===0&&canAct()))return;
  history=[];phase='resolving';const token=roundToken;combo=0;let total=0,healed=0;refresh();
- for(let chain=0;chain<8;chain++){
+ for(let chain=0;chain<(tutorial?8:1);chain++){
   const groups=currentMatches();if(!groups.length)break;
   const result=teamOutcome(groups,combo);if(!tutorial)gravityUsed=result.usedGravity;combo+=groups.length;total+=result.damage;healed+=result.heal;
   const skill=groups.find(g=>g.skill);
@@ -237,7 +241,9 @@ async function resolveTurn(){
   byId('battleLog').textContent=tutorial?groups.map(g=>g.skill?B.skills[g.element]:B.spirits[g.element].name).join(' × ')+'！':result.details.join(' ／ ')||(result.heal?'チーム回復':'該当属性の仲間がいないため攻撃なし');
   if(tutorial){byId('tutorialText').textContent=skill?'9体がすべて火属性！ 「サラマンダー・インフェルノ」発動。列攻撃の5倍の威力です。':'3手目で火の精霊が1列そろいました。サラマンダーが攻撃！ 光る列と敵HPに注目してください。'}
   refresh();await pause(tutorial||skill?1800:1100);if(token!==roundToken)return;
-  B.refill(state,ids,Math.random,tutorial?B.pools.normal:B.pools[difficulty]);applyTemporaryConversion();refresh();if(enemyHp===0)break;
+  if(tutorial)B.refill(state,ids,Math.random,B.pools.normal);
+  else{const budget=turnMoves>=turnLimit?3:Math.max(1,turnLimit-turnMoves);Q.refill(state,ids,B.pools[difficulty],attackKeys(),attackPolicy(),difficulty==='easy'?1:Math.min(3,budget),Math.random,teamConversion);balanceMetrics.refills++}
+  applyTemporaryConversion();refresh();if(enemyHp===0)break;
  }
  byId('battleLog').textContent=combo?combo+' COMBO / '+total+' ダメージ'+(healed?' / 回復 +'+healed:''):'そろわなかった！';
  if(enemyHp===0){
@@ -251,7 +257,7 @@ async function resolveTurn(){
   hp=Math.max(0,hp-incoming);
   byId('battleLog').textContent+=' ／ 反撃 -'+incoming+(teamImmune?'（無敵）':'');
   if(hp===0){phase='lost';refresh();return}
-  if(!tutorial){B.tick(state,obstacles);enemyTurns++;if(enemyObstaclesEnabled&&enemyTurns%3===1){B.hinder(state,dungeon.obstacle,obstacles);byId('battleLog').textContent+=' ／ 敵が妨害を発動！'}endTeamTurn()}
+  if(!tutorial){B.tick(state,obstacles);enemyTurns++;endTeamTurn();openFaces=false;if(enemyObstaclesEnabled&&enemyTurns%3===1){if(Q.safeHinder(state,dungeon.obstacle,obstacles,attackKeys(),attackPolicy(),3)){byId('battleLog').textContent+=' ／ 敵が妨害を発動！'}else{balanceMetrics.rejectedObstacles++;byId('battleLog').textContent+=' ／ 逃げ道を保証できない妨害は見送り'}}}
  }
  history=[];turnMoves=0;turnLimit=3;clockUsed=false;openFaces=false;phase='ready';refresh();
 }
@@ -291,15 +297,20 @@ byId('attack').style.display='none';
 byId('undo').hidden=true;
 byId('undo').style.display='none';
 byId('hint').onclick=()=>{
- let best=null;
- for(const face of Object.keys(E.slices))for(const dir of [1,-1]){
-  if(!B.canRotate(state,face))continue;
-  const copy=state.map(s=>({...s,p:s.p.slice(),n:s.n.slice()}));E.move(copy,face,dir);
-  const groups=currentMatches(copy),result=teamOutcome(groups),score=result.damage+Math.min(maxHp()-hp,result.heal);
-  if(!best||score>best.score)best={face,dir,count:groups.length,score};
- }
- byId('battleLog').textContent=best?.count?E.slices[best.face].name+'面を'+(best.dir===1?'時計回り ↻':'反時計回り ↺')+'で攻撃可能な '+best.count+' 組がそろいます。':'攻撃面と封印を確認し、スキルか別の回転を試そう。';
+ const proof=boardProof();
+ byId('battleLog').textContent=proof.moves?proof.moves.map((m,i)=>(i+1)+'. '+E.slices[m.face].name+'層 '+(m.dir===1?'↻':'↺')).join(' → ')+'（途中で消去が発生しない検証済み手順）':'確実な手順は未確認です。救済で盤面を再配置できます。';
+ if(proof.moves){selectLayer(proof.moves[0].face);previewDir=proof.moves[0].dir}
 };
+byId('rescue').onclick=()=>{
+ if(tutorial||active||queue.length||phase!=='ready'||shuffleCharges===0)return;
+ // Explicit limited recovery: reset the board only, not HP, enemy turn, or cooldowns.
+ const rescuePolicy={faces:openFaces?Object.keys(E.faces):baseRule==='front'?['F']:baseRule==='visible'?['U','F','R']:Object.keys(E.faces)};
+ const result=Q.initial(B.pools[difficulty],attackKeys(),rescuePolicy,'easy');
+ if(!result.state){byId('battleLog').textContent='攻撃属性と出現色が合いません。編成・難易度を変更してください。';return}
+ state=result.state;obstacles={seals:[],restrict:0};teamConversion=null;proofCache=null;history=[];balanceMetrics.repairs++;shuffleCharges--;
+ byId('battleLog').textContent='再配置：色を再生成して妨害と一時変換を解除。HP・残り手数・技の待ち時間は維持。残り'+shuffleCharges+'回。';refresh();
+};
+byId('passTurn').onclick=()=>{if(tutorial||active||queue.length||phase!=='ready')return;turnMoves=turnLimit;resolveTurn()};
 byId('undo').onclick=()=>{if(active||queue.length||!history.length||phase!=='ready')return;const m=history[history.length-1];queue.push({face:m.face,dir:-m.dir,kind:'undo'})};
 addEventListener('keydown',e=>{if(e.target.matches('select,input,textarea')||e.ctrlKey||e.metaKey||e.altKey||e.repeat)return;const f=e.key.toUpperCase();if(E.slices[f]){e.preventDefault();userMove(f,e.shiftKey?-1:1)}});
 function inside(p,poly){let c=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const a=poly[i],b=poly[j];if((a[1]>p[1])!==(b[1]>p[1])&&p[0]<(b[0]-a[0])*(p[1]-a[1])/(b[1]-a[1])+a[0])c=!c}return c}
@@ -474,5 +485,5 @@ const settingsDrawer=document.createElement('details');settingsDrawer.className=
 const rule=document.querySelector('.rule-panel'),ruleLabel=rule.querySelector('label'),ruleNote=rule.querySelector('small');settingsDrawer.append(document.querySelector('.difficulty-settings'),ruleLabel,ruleNote,document.querySelector('.settings'),byId('controls'),byId('tutorialStart'));
 for(const d of [...panel.children].filter(el=>el.tagName==='DETAILS'&&!el.classList.contains('squad-panel')))settingsDrawer.append(d);
 const squadPanel=byId('squadSlots').parentElement;squadPanel.open=false;
-panel.append(document.querySelector('.enemy-card'),document.querySelector('.player-hp'),rule,document.querySelector('.readout'),byId('attack'),byId('battleLog'),document.querySelector('.squad-skills'),document.querySelector('.actions'),squadPanel,settingsDrawer);
+panel.append(document.querySelector('.enemy-card'),document.querySelector('.player-hp'),rule,document.querySelector('.readout'),byId('attack'),byId('battleLog'),document.querySelector('.squad-skills'),document.querySelector('.actions'),byId('boardProof'),squadPanel,settingsDrawer);
 buildSquadSkills();addEventListener('resize',resize);resize();reset();requestAnimationFrame(frame);
