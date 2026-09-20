@@ -168,6 +168,28 @@ button:active:not(:disabled){transform:translateY(1px)}button:focus-visible,summ
 .board-left-actions #immuneToggle{min-height:44px;padding:8px 10px;font-size:11px;white-space:nowrap;color:#ffadad;background:#342628;border-color:#9b5a5e}
 .board-left-actions #immuneToggle[aria-pressed="true"]{color:#baf8d8;background:#183b34;border-color:#59a68e;box-shadow:0 0 12px #59d5a633}
 @media(max-width:360px){.color-count-control{gap:3px;font-size:10px}.color-count-control select{min-width:52px;padding:6px 3px}.orbit-toolbar .orbit-toggle{padding:6px;font-size:10px}.orbit-toolbar #viewReset,.orbit-toolbar #refillToggle{padding:6px!important;font-size:10px}}
+
+/* Enemy card: keep every battle datum in one readable, aligned block. */
+@media(max-width:850px){
+ .enemy-card{grid-template-columns:128px minmax(0,1fr);grid-template-rows:auto 9px auto;column-gap:14px;row-gap:8px;padding:12px 14px;min-height:0;align-items:start}
+ .monster{grid-column:1;grid-row:1/4;width:128px;height:128px;align-self:center}
+ .enemy-title-row{grid-column:2;grid-row:1;align-items:center;min-height:24px}
+ .enemy-title-row h2{font-size:16px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .enemy-card>.bar{grid-column:2;grid-row:2;width:100%;align-self:center}
+ .enemy-card>.hp-caption{grid-column:2;grid-row:3;display:grid;grid-template-columns:minmax(0,1fr) max-content;align-items:start;gap:8px 14px;margin:0;min-width:0}
+ .enemy-attack-info{grid-column:1;display:grid;grid-template-columns:1fr;gap:5px;min-width:0}
+ .enemy-attack-info #enemyHp{font-size:11px;line-height:1.2;white-space:nowrap}
+ .enemy-attack-info #enemySkill{gap:3px;font-size:11px;line-height:1.35;white-space:normal;overflow-wrap:anywhere}
+ .enemy-weakness-info{grid-column:2;align-items:flex-end;justify-content:flex-start;gap:7px;margin:0;text-align:right}
+ .enemy-weakness-info #weakness,.enemy-weakness-info #count{font-size:11px;line-height:1.3;white-space:nowrap}
+}
+@media(max-width:400px){
+ .enemy-card{grid-template-columns:104px minmax(0,1fr);column-gap:10px;row-gap:6px;padding:10px}
+ .monster{width:104px;height:112px}
+ .enemy-title-row h2{font-size:14px}
+ .enemy-card>.hp-caption{display:grid;grid-template-columns:minmax(0,1fr) max-content;gap:6px 8px}
+ .enemy-attack-info #enemyHp,.enemy-attack-info #enemySkill,.enemy-weakness-info #weakness,.enemy-weakness-info #count{font-size:10px}
+}
 @media(max-width:600px){.board-shell{min-width:0;max-width:100%;overflow:hidden}.orbit-toolbar{grid-template-columns:repeat(3,minmax(0,1fr));width:100%}.color-count-control{grid-column:1/-1;justify-self:stretch;min-width:0}.color-count-control select{flex:1;width:100%;max-width:none}.orbit-toolbar .orbit-toggle{grid-column:1;justify-self:stretch}.orbit-toolbar #viewReset{grid-column:2;justify-self:stretch}.orbit-toolbar #refillToggle{grid-column:3;justify-self:stretch}}
 /* Keep all board toolbar controls on one row. The long Rubik label appears only inside the opened selector. */
 .color-count-control{position:relative}
