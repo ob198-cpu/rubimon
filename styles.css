@@ -159,4 +159,6 @@ button:active:not(:disabled){transform:translateY(1px)}button:focus-visible,summ
 .orbit-toolbar #refillToggle[aria-pressed="true"]{color:#9fdcc7;background:#18322f;border-color:#4f8979}
 .orbit-toolbar .orbit-toggle{white-space:nowrap;padding:6px 10px}
 .board-left-actions{max-width:100%;align-items:center}
+.board-left-actions #immuneToggle{min-height:44px;padding:8px 10px;font-size:11px;white-space:nowrap;color:#ffadad;background:#342628;border-color:#9b5a5e}
+.board-left-actions #immuneToggle[aria-pressed="true"]{color:#baf8d8;background:#183b34;border-color:#59a68e;box-shadow:0 0 12px #59d5a633}
 @media(max-width:360px){.color-count-control{gap:3px;font-size:10px}.color-count-control select{min-width:52px;padding:6px 3px}.orbit-toolbar .orbit-toggle{padding:6px;font-size:10px}.orbit-toolbar #viewReset,.orbit-toolbar #refillToggle{padding:6px!important;font-size:10px}}

@@ -22,7 +22,7 @@ let proofCache=null,shuffleCharges=2,balanceMetrics={repairs:0,refills:0,rejecte
 function attackKeys(){return [...new Set(squad.map(id=>T.roster.find(c=>c.id===id).element))].filter(k=>k!=='D'&&(activePool().includes(k)||teamConversion?.[1]===k))}
 function boardProof(){const depth=difficulty==='easy'?1:Math.max(1,Math.min(3,turnLimit-turnMoves));const key=JSON.stringify([state,attackKeys(),attackPolicy(),depth]);if(proofCache?.key!==key)proofCache={key,...Q.plan(state,attackKeys(),attackPolicy(),depth)};return proofCache}
 function certifiedStart(){const result=Q.initial(activePool(),attackKeys(),attackPolicy(),customColorCount!==null?'easy':difficulty);if(!result.state){byId('battleLog').textContent='攻撃属性と出現色が合いません。編成または難易度を変更してください。';phase='setup';return false}state=result.state;proofCache=null;return true}
-let squad=['sala','undine','raika','ferrum','libera'],dungeon=T.dungeons[0],tuning={...T.defaults},cooldowns={},teamSpent=new Set(),teamBuffs={},teamImmune=false,teamShield=false,teamConversion=null,gravityUsed=false;
+let squad=['sala','undine','raika','ferrum','libera'],dungeon=T.dungeons[0],tuning={...T.defaults},cooldowns={},teamSpent=new Set(),teamBuffs={},teamImmune=false,manualImmune=false,teamShield=false,teamConversion=null,gravityUsed=false;
 function maxHp(){return tutorial?1800:T.stats(squad,tuning).hp}
 function currentEnemy(){return tutorial?B.enemies[wave]:{...dungeon,hp:dungeon.id==='grove'?800:Math.round(dungeon.hp*Q.settings[difficulty].hp),attack:Math.round(dungeon.attack*Q.settings[difficulty].attack),name:dungeon.bossName||dungeon.name,element:{grove:'火',armor:'鋼',abyss:'闇',storm:'風'}[dungeon.id]}}
 function teamOutcome(groups,offset=0){return tutorial?B.outcome(groups,currentEnemy(),offset):T.outcome(squad,groups,currentEnemy(),enemyHp,gravityUsed,tuning,teamBuffs,offset)}
@@ -238,6 +238,7 @@ function refresh(){
   byId('undo').disabled=!!tutorial||!!active||!history.length||phase!=='ready';
   byId('hint').disabled=!!tutorial||!!active||phase!=='ready'||turnMoves>=turnLimit;
   if(byId('refillToggle'))byId('refillToggle').disabled=!!tutorial||!!active||phase==='resolving';
+  if(byId('immuneToggle'))byId('immuneToggle').disabled=!!tutorial||!!active||phase==='resolving';
   byId('tutorialStart').disabled=!!active||phase!=='ready';
   const locked=!!tutorial||!!active||queue.length>0||phase!=='ready';
   byId('convertSkill').disabled=locked||skillUses.convert===0||!state.some(s=>s.face==='R');
@@ -267,7 +268,7 @@ function refresh(){
   if(obstacles.seals.length)notices.push('前面上段の封印・残り'+obstacles.seals[0].turns+'ターン');
   if(obstacles.restrict)notices.push('前面以外の攻撃禁止・残り'+obstacles.restrict+'ターン');
   byId('obstacleStatus').textContent=notices.length?notices.join(' ／ '):'妨害なし';
-  byId('enemyIntent').textContent=tutorial?'デモでは敵の妨害は発生しません':'敵防御 '+enemy.def+' ／ 次の反撃 '+T.incoming(squad,enemy,enemyTurns+1,tuning,teamImmune,teamShield)+' ／ 割合耐性 '+Math.round((1-enemy.gravity)*100)+'%';
+  byId('enemyIntent').textContent=tutorial?'デモでは敵の妨害は発生しません':'敵防御 '+enemy.def+' ／ 次の反撃 '+T.incoming(squad,enemy,enemyTurns+1,tuning,teamImmune||manualImmune,teamShield)+' ／ 割合耐性 '+Math.round((1-enemy.gravity)*100)+'%';
   byId('stage').textContent=tutorial?'DEMO':'DUNGEON · '+dungeon.name;
   byId('enemyName').textContent=enemy.name;byId('enemyElement').textContent=enemy.element+'属性';
   byId('enemyHp').textContent=enemyHp+' / '+enemy.hp;byId('enemyBar').style.width=100*enemyHp/enemy.hp+'%';
@@ -335,11 +336,11 @@ async function resolveTurn(){
   wave++;enemyTurns=0;B.cleanse(state,obstacles,activePool());enemyHp=B.enemies[wave].hp;hp=Math.min(1800,hp+250);byId('battleLog').textContent='次の敵が現れた！ HP +250・妨害解除';
  }else{
   if(turnMoves<turnLimit){phase='ready';refresh();return}
-  const incoming=tutorial?currentEnemy().attack:T.incoming(squad,currentEnemy(),enemyTurns+1,tuning,teamImmune,teamShield);
+  const incoming=tutorial?currentEnemy().attack:T.incoming(squad,currentEnemy(),enemyTurns+1,tuning,teamImmune||manualImmune,teamShield);
   battleEffects.push({start:performance.now()-950,token:roundToken,counter:true,value:incoming,key:'R',skill:false,points:[]});
   hp=Math.max(0,hp-incoming);
   battleVibration('hit',incoming);
-  byId('battleLog').textContent+=' ／ 反撃 -'+incoming+(teamImmune?'（無敵）':'');
+  byId('battleLog').textContent+=' ／ 反撃 -'+incoming+((teamImmune||manualImmune)?'（無敵）':'');
   if(hp===0){phase='lost';refresh();return}
   if(!tutorial){B.tick(state,obstacles);enemyTurns++;endTeamTurn();openFaces=false;if(enemyObstaclesEnabled&&enemyTurns%3===1){if(Q.safeHinder(state,dungeon.obstacle,obstacles,attackKeys(),attackPolicy(),3)){byId('battleLog').textContent+=' ／ 敵が妨害を発動！'}else{balanceMetrics.rejectedObstacles++;byId('battleLog').textContent+=' ／ 逃げ道を保証できない妨害は見送り'}}}
  }
@@ -601,6 +602,8 @@ const viewReset=document.createElement('button');viewReset.id='viewReset';viewRe
 const boardActions=document.createElement('div');boardActions.className='board-actions';viewReset.before(boardActions);boardActions.append(byId('rescue'),viewReset);
 boardActions.before(dragHint);
 const boardLeftActions=document.createElement('div');boardLeftActions.className='board-left-actions';boardActions.prepend(boardLeftActions);boardLeftActions.append(byId('hint'),byId('rescue'));
+const immuneToggle=document.createElement('button');immuneToggle.id='immuneToggle';immuneToggle.textContent='無敵OFF';immuneToggle.title='自分の無敵をONにする';immuneToggle.setAttribute('aria-pressed','false');boardLeftActions.append(immuneToggle);
+immuneToggle.onclick=()=>{manualImmune=!manualImmune;immuneToggle.textContent=manualImmune?'無敵ON':'無敵OFF';immuneToggle.title=manualImmune?'自分の無敵をOFFにする':'自分の無敵をONにする';immuneToggle.setAttribute('aria-pressed',String(manualImmune));byId('battleLog').textContent=manualImmune?'無敵をONにしました。敵の攻撃ダメージは0になります。':'無敵をOFFにしました。敵の攻撃ダメージを受けます。';refresh()};
 orbitToolbar.append(viewReset);
 const refillToggle=document.createElement('button');refillToggle.id='refillToggle';refillToggle.textContent='補充OFF';refillToggle.title='そろえたパネルを灰色にして補充を停止';refillToggle.setAttribute('aria-pressed','false');orbitToolbar.append(refillToggle);
 refillToggle.onclick=()=>{
