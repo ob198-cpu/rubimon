@@ -119,7 +119,13 @@ function drawSliceArrows(){
  const p=compactBoard?(axis===1?[angle===0?174:116,564-layer*58]:[columnX[rank],angle<0?746:804]):[axis===1?(angle===0?179:141):columnX[rank],control.p[1]+(axis===1?20:76)];
  const points=[p],end=[p[0]+13*Math.cos(angle),p[1]+13*Math.sin(angle)];
  const disabled=!!active||phase!=='ready'||turnMoves>=turnLimit||!B.canRotate(state,face),lit=guideFace()===face&&(pendingMove?.dir||previewDir)===dir;
- if(arrowGuideActive){ctx.save();ctx.strokeStyle='#8ff6ff';ctx.lineWidth=1.7;ctx.shadowColor='#62eaf5';ctx.shadowBlur=7;ctx.globalAlpha=.62;ctx.beginPath();ctx.moveTo(...control.anchor);ctx.lineTo(...p);ctx.stroke();ctx.restore()}
+ if(arrowGuideActive){
+  const anchor=[control.anchor[0],control.anchor[1]+(compactBoard?30:0)];
+  const dx=anchor[0]-p[0],dy=anchor[1]-p[1],half=17*(compactBoard?1.58:1);
+  const edgeScale=half/Math.max(Math.abs(dx),Math.abs(dy),1);
+  const start=[p[0]+dx*edgeScale,p[1]+dy*edgeScale];
+  ctx.save();ctx.strokeStyle='#8ff6ff';ctx.lineWidth=lit?2:1.35;ctx.shadowColor='#62eaf5';ctx.shadowBlur=lit?5:0;ctx.globalAlpha=lit?.9:.55;ctx.beginPath();ctx.moveTo(...start);ctx.lineTo(...anchor);ctx.stroke();ctx.beginPath();ctx.arc(...anchor,2.5,0,Math.PI*2);ctx.fillStyle='#8ff6ff';ctx.fill();ctx.restore();
+ }
  arrowHits.push({p,points,face,dir});ctx.save();if(compactBoard){ctx.translate(...p);ctx.scale(1.58,1.58);ctx.translate(-p[0],-p[1])}ctx.globalAlpha=disabled?.3:1;ctx.lineCap='round';ctx.lineJoin='round';
  const finish=ctx.createLinearGradient(p[0],p[1]-17,p[0],p[1]+17);finish.addColorStop(0,lit?'#416168':'#30494c');finish.addColorStop(1,lit?'#223e45':'#142b30');ctx.fillStyle=finish;
  ctx.shadowColor='#0005';ctx.shadowBlur=4;ctx.shadowOffsetY=2;ctx.beginPath();ctx.roundRect(p[0]-17,p[1]-17,34,34,7);ctx.fill();ctx.shadowBlur=0;ctx.shadowOffsetY=0;
@@ -390,7 +396,7 @@ function confirmMove(){if(!pendingMove)return;const m=pendingMove;if(m.board!==J
 function chooseMove(face,dir){
  if(tutorial||active||queue.length||phase!=='ready'||turnMoves>=turnLimit||!B.canRotate(state,face))return;
  if(pendingMove?.face===face&&pendingMove.dir===dir){guidedArrowKey=null;arrowGuideActive=false;dragHint.classList.remove('arrow-step');dragHint.classList.add('is-complete');confirmMove();return}
- arrowGuideActive=false;guidedArrowKey=face+':'+dir;dragHint.innerHTML=secondTapHintMarkup;dragHint.classList.add('arrow-step');requestAnimationFrame(placeCubeTouch);
+ arrowGuideActive=!dragHint.classList.contains('is-complete');guidedArrowKey=face+':'+dir;dragHint.innerHTML=secondTapHintMarkup;dragHint.classList.add('arrow-step');requestAnimationFrame(placeCubeTouch);
  selectLayer(face);pendingMove={face,dir,board:JSON.stringify(state)};previewDir=dir;updateGuide();
  byId('guideText').textContent=E.slices[face].name+'層：'+(dir===1?'↻':'↺')+' をプレビュー中。同じ矢印を再タップ、または決定。';
 }
