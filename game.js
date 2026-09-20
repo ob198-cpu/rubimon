@@ -8,7 +8,7 @@ function battleVibration(kind,damage){
  try{navigator.vibrate(kind==='hit'?[65,40,85]:[35,25,45])}catch{}
 }
 let compactBoard=false;
-let orbitExpanded=true;
+let orbitExpanded=false;
 let customColorCount=null;
 const colorOrder=['R','B','D','U','F','L','V','I','M','H','P'];
 function activePool(){return customColorCount===null?B.pools[difficulty]:colorOrder.slice(0,customColorCount)}
@@ -561,7 +561,7 @@ byId('party').after(document.querySelector('.squad-skills'));
 // Battle-first layout; editors stay available without covering the board.
 const panel=document.querySelector('.panel'),boardShell=document.createElement('section');boardShell.className='board-shell';
 canvas.before(boardShell);const boardTitle=document.createElement('div');boardTitle.className='board-heading';boardTitle.innerHTML='<span>THE ORBIT CHAMBER</span><strong>精霊の回転盤</strong>';boardShell.append(boardTitle,canvas,byId('moveGuide'));
-const orbitToggle=document.createElement('button');orbitToggle.id='orbitToggle';orbitToggle.className='orbit-toggle';orbitToggle.textContent='2D表示 ▾ 閉じる';orbitToggle.setAttribute('aria-expanded','true');canvas.before(orbitToggle);
+const orbitToggle=document.createElement('button');orbitToggle.id='orbitToggle';orbitToggle.className='orbit-toggle';orbitToggle.textContent='2D表示 ▸ 開く';orbitToggle.setAttribute('aria-expanded','false');canvas.before(orbitToggle);
 orbitToggle.onclick=()=>{orbitExpanded=!orbitExpanded;orbitToggle.textContent=orbitExpanded?'2D表示 ▾ 閉じる':'2D表示 ▸ 開く';orbitToggle.setAttribute('aria-expanded',String(orbitExpanded));resize();placeCubeTouch()};
 const orbitToolbar=document.createElement('div');orbitToolbar.className='orbit-toolbar';orbitToggle.before(orbitToolbar);
 const colorLabel=document.createElement('label');colorLabel.className='color-count-control';colorLabel.textContent='属性 ';
