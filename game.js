@@ -111,7 +111,7 @@ function showVictory(){byId('victoryEnemy').textContent=currentEnemy().name+' æ’
 document.getElementById('victoryRetry').onclick=()=>{victoryScreen.hidden=true;reset()};document.getElementById('victoryClose').onclick=()=>{victoryScreen.hidden=true};
 const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
 const cubeOrigin=[300,510],cubeScale=46;
-let arrowHits=[],guidedArrowKey=null,arrowGuideActive=false,arrowsUnlocked=false,viewArrowCueKey=null,viewArrowCueTimer=0;
+let arrowHits=[],guidedArrowKey=null,arrowGuideActive=false,arrowsUnlocked=false;
 function sliceControl(axis,layer,dir){
  // Identify which visible side is on screen-left, then map its columns.
  const sx=camera[0]>=0?1:-1,sz=camera[2]>=0?1:-1;
@@ -145,7 +145,7 @@ function drawSliceArrows(){
  const rank=columns.findIndex(c=>c.axis===axis&&c.layer===layer);
  const p=compactBoard?(axis===1?[angle===0?174:116,564-layer*58]:[columnX[rank],angle<0?746:804]):[axis===1?(angle===0?179:141):columnX[rank],control.p[1]+(axis===1?20:76)];
  const points=[p],end=[p[0]+13*Math.cos(angle),p[1]+13*Math.sin(angle)];
- const disabled=!arrowsUnlocked||!!active||phase!=='ready'||turnMoves>=turnLimit||!B.canRotate(state,face),lit=(guideFace()===face&&(pendingMove?.dir||previewDir)===dir)||viewArrowCueKey===face+':'+dir;
+ const disabled=!arrowsUnlocked||!!active||phase!=='ready'||turnMoves>=turnLimit||!B.canRotate(state,face),lit=guideFace()===face&&(pendingMove?.dir||previewDir)===dir;
  if(arrowGuideActive&&(axis===1?angle===0:angle<0)){
   const anchor=[control.anchor[0],control.anchor[1]+(compactBoard?30:0)];
   const dx=anchor[0]-p[0],dy=anchor[1]-p[1],half=17*(compactBoard?1.58:1);
@@ -687,21 +687,12 @@ function placeCubeTouch(){
 }
 function showArrowHint(){if(dragHint.classList.contains('is-complete')||pendingMove)return;const target=arrowHits.find(a=>a.p[0]<220&&B.canRotate(state,a.face));if(!target)return;guidedArrowKey=target.face+':'+target.dir;arrowGuideActive=true;dragHint.innerHTML=arrowHintMarkup;dragHint.classList.add('arrow-step');canvas.before(dragHint);requestAnimationFrame(()=>{placeCubeTouch();arrowsUnlocked=true})}
 new ResizeObserver(placeCubeTouch).observe(canvas);
-function clearViewArrowCue(){viewArrowCueKey=null;if(viewArrowCueTimer){clearTimeout(viewArrowCueTimer);viewArrowCueTimer=0}}
-function cueArrowForCurrentView(){
- clearViewArrowCue();
- const available=arrowHits.filter(a=>B.canRotate(state,a.face));if(!available.length)return;
- // Prefer the control nearest the cube so the connection stays obvious on a phone.
- available.sort((a,b)=>Math.hypot(a.p[0]-300,a.p[1]-570)-Math.hypot(b.p[0]-300,b.p[1]-570));
- viewArrowCueKey=available[0].face+':'+available[0].dir;
- viewArrowCueTimer=setTimeout(clearViewArrowCue,2400);
-}
 cubeTouch.addEventListener('pointerdown',e=>{
  if(tutorial||e.button!==0)return;
  // Recover from an interrupted iOS pointer sequence instead of leaving dragging locked.
  if(cubeDrag&&cubeDrag.id!==e.pointerId)cubeDrag=null;
  if(cubeDrag)return;
- clearViewArrowCue();suppressCubeClick=false;pendingMove=null;selectedLayer=null;hoverLayer=null;previewDir=0;
+ suppressCubeClick=false;pendingMove=null;selectedLayer=null;hoverLayer=null;previewDir=0;
  cubeDrag={id:e.pointerId,x:e.clientX,y:e.clientY,yaw:viewYaw,pitch:viewPitch,moved:false};
  try{cubeTouch.setPointerCapture(e.pointerId)}catch(_){/* Safari can finish a gesture before capture. */}
 });
@@ -717,7 +708,7 @@ function endCubeDrag(e){
  if(!cubeDrag||e.pointerId!==cubeDrag.id)return;
  const moved=cubeDrag.moved;suppressCubeClick=moved;cubeDrag=null;cubeTouch.style.cursor='grab';
  try{if(cubeTouch.hasPointerCapture(e.pointerId))cubeTouch.releasePointerCapture(e.pointerId)}catch(_){}
- if(moved)requestAnimationFrame(()=>requestAnimationFrame(()=>{showArrowHint();cueArrowForCurrentView()}));
+ if(moved)requestAnimationFrame(()=>requestAnimationFrame(showArrowHint));
  setTimeout(()=>{suppressCubeClick=false},350)
 }
 cubeTouch.addEventListener('pointerup',endCubeDrag);cubeTouch.addEventListener('pointercancel',endCubeDrag);cubeTouch.addEventListener('lostpointercapture',endCubeDrag);
