@@ -638,7 +638,7 @@ function placeCubeTouch(){
   :[358,compactBoard?560:530];
  Object.assign(dragHint.style,{left:(canvas.offsetLeft+w*(hintPoint[0]-v.x)/v.w)+'px',top:(canvas.offsetTop+h*(hintPoint[1]-v.y)/v.h)+'px'});
 }
-function showArrowHint(){if(dragHint.classList.contains('is-complete')||pendingMove)return;const target=arrowHits.find(a=>a.p[0]<220&&B.canRotate(state,a.face));if(!target)return;guidedArrowKey=target.face+':'+target.dir;arrowGuideActive=true;dragHint.innerHTML=arrowHintMarkup;dragHint.classList.add('arrow-step');requestAnimationFrame(()=>{placeCubeTouch();dragHint.scrollIntoView({block:'nearest',behavior:'smooth'});arrowsUnlocked=true})}
+function showArrowHint(){if(dragHint.classList.contains('is-complete')||pendingMove)return;const target=arrowHits.find(a=>a.p[0]<220&&B.canRotate(state,a.face));if(!target)return;guidedArrowKey=target.face+':'+target.dir;arrowGuideActive=true;dragHint.innerHTML=arrowHintMarkup;dragHint.classList.add('arrow-step');canvas.before(dragHint);requestAnimationFrame(()=>{placeCubeTouch();arrowsUnlocked=true})}
 new ResizeObserver(placeCubeTouch).observe(canvas);
 cubeTouch.addEventListener('pointerdown',e=>{if(tutorial||e.button!==0||cubeDrag)return;suppressCubeClick=false;cubeDrag={id:e.pointerId,x:e.clientX,y:e.clientY,yaw:viewYaw,pitch:viewPitch,moved:false};cubeTouch.setPointerCapture(e.pointerId)});
 cubeTouch.addEventListener('pointermove',e=>{
