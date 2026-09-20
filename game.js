@@ -15,9 +15,12 @@ function endTeamTurn(){for(const s of state)if(s.tempOriginal!==undefined){s.fac
 let state=B.board(E),active=null,queue=[],history=[],moves=0,hitFaces=[],ringHits=[];
 let hp=1800,wave=0,enemyHp=B.enemies[0].hp,phase='ready',turnMoves=0,combo=0,fx=null,matched=new Set(),roundToken=0;
 let tutorial=null,skillFlash=null;
+let pendingMove=null;
 let selectedLayer=null,hoverLayer=null,previewDir=0,guideCache=null;
-function guideFace(){return tutorial||active||phase!=='ready'?null:hoverLayer||selectedLayer}
+function guideFace(){return tutorial||active||phase!=='ready'?null:pendingMove?.face||hoverLayer||selectedLayer}
 function updateGuide(){
+ if(pendingMove&&pendingMove.board!==JSON.stringify(state))pendingMove=null;
+ const confirm=byId('guideConfirm');if(confirm)confirm.disabled=!pendingMove||!!active||!!tutorial||phase!=='ready'||queue.length>0||turnMoves>=turnLimit||!B.canRotate(state,pendingMove.face);
  byId('moveGuide').hidden=!selectedLayer||!!tutorial;
  const f=guideFace(),blocked=f&&!B.canRotate(state,f),busy=!!tutorial||!!active||phase!=='ready'||turnMoves>=turnLimit||queue.length>0;
  byId('guideText').textContent=f?E.slices[f].name+'層 '+f+(blocked?' · 固定中：回転できません':busy?' · 残り手数や進行状態を確認':' · 水色のブロックが一緒に動きます'):'円の線・玉・キューブをタッチして回す層を選択';
@@ -25,14 +28,15 @@ function updateGuide(){
  byId('guideCancel').disabled=!selectedLayer;
  document.querySelectorAll('[data-layer]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.layer===selectedLayer)));
 }
-function selectLayer(face,choices=[face]){selectedLayer=face;hoverLayer=null;previewDir=0;byId('layerChoices').replaceChildren();for(const f of choices){const b=document.createElement('button');b.dataset.layer=f;b.textContent=E.slices[f].name+'層 '+f;b.onclick=()=>{selectedLayer=f;hoverLayer=null;updateGuide()};byId('layerChoices').append(b)}updateGuide()}
+function selectLayer(face,choices=[face]){pendingMove=null;selectedLayer=face;hoverLayer=null;previewDir=0;byId('layerChoices').replaceChildren();for(const f of choices){const b=document.createElement('button');b.dataset.layer=f;b.textContent=E.slices[f].name+'層 '+f;b.onclick=()=>{pendingMove=null;selectedLayer=f;hoverLayer=null;updateGuide()};byId('layerChoices').append(b)}updateGuide()}
 function drawGuide(part='cube'){
  const face=guideFace();if(!face)return;const f=E.slices[face],color=B.canRotate(state,face)?'#83f5ff':'#ff8ca7';
  ctx.save();ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=2.5;
  if(part==='orbit'){
+ const direction=pendingMove?.dir||previewDir;
  const center=E.centers[f.axis];ctx.beginPath();ctx.arc(...center,E.radius(f.layer),0,Math.PI*2);ctx.stroke();
- if(previewDir){
- const icons=state.map(E.orbit),markers=[],radius=E.radius(f.layer),sign=E.orbitDirection(face,previewDir);
+ if(direction){
+ const icons=state.map(E.orbit),markers=[],radius=E.radius(f.layer),sign=E.orbitDirection(face,direction);
  // Keep direction markers outside the icons' protected area.
  for(let t=0;t<Math.PI*2;t+=Math.PI/12){
  const p=[center[0]+radius*Math.cos(t),center[1]+radius*Math.sin(t)];
@@ -84,7 +88,7 @@ function drawSliceArrows(){
  // Front columns (X) and right-face columns (Z) have opposite rotation signs.
  const {p,angle}=sliceControl(axis,layer,dir);
  const points=[p],end=[p[0]+8*Math.cos(angle),p[1]+8*Math.sin(angle)];
- const disabled=!!active||phase!=='ready'||turnMoves>=turnLimit||!B.canRotate(state,face),lit=guideFace()===face&&previewDir===dir;
+ const disabled=!!active||phase!=='ready'||turnMoves>=turnLimit||!B.canRotate(state,face),lit=guideFace()===face&&(pendingMove?.dir||previewDir)===dir;
  arrowHits.push({p,points,face,dir});ctx.save();ctx.globalAlpha=disabled?.3:1;ctx.lineCap='round';ctx.lineJoin='round';
  const finish=ctx.createLinearGradient(p[0],p[1]-17,p[0],p[1]+17);finish.addColorStop(0,lit?'#416168':'#30494c');finish.addColorStop(1,lit?'#223e45':'#142b30');ctx.fillStyle=finish;
  ctx.shadowColor='#0005';ctx.shadowBlur=4;ctx.shadowOffsetY=2;ctx.beginPath();ctx.roundRect(p[0]-17,p[1]-17,34,34,7);ctx.fill();ctx.shadowBlur=0;ctx.shadowOffsetY=0;
@@ -242,8 +246,8 @@ function frame(now){
   drawBattleEffects(now);
   requestAnimationFrame(frame);
 }
-function userMove(face,dir){if(tutorial||phase!=='ready'||active||queue.length||turnMoves>=turnLimit)return;if(!B.canRotate(state,face)){byId('battleLog').textContent='この層には固定ブロックがあります。別の面か、リベラの解除を使おう。';return}queue.push({face,dir,kind:'user'})}
-function reset(){shuffleCharges=2;roundToken++;endTeamTurn();cooldowns={};selectedLayer=null;hoverLayer=null;previewDir=0;byId('layerChoices').replaceChildren();state=B.board(E,Math.random,B.pools[difficulty]);skillUses={convert:2,shuffle:2,clock:2,cleanse:2,open:2};turnLimit=3;clockUsed=false;openFaces=false;obstacles={seals:[],restrict:0};enemyTurns=0;baseRule=byId('attackRule').value;active=null;queue=[];history=[];moves=0;hp=maxHp();wave=0;enemyHp=currentEnemy().hp;phase='ready';turnMoves=0;combo=0;fx=null;byId('battleLog').textContent='5体の編成で '+dungeon.name+' に挑戦。属性をそろえ、仲間の技で対策しよう。';byId('damageText').textContent='';balanceMetrics={repairs:0,refills:0,rejectedObstacles:0};certifiedStart();renderParty();refresh()}
+function userMove(face,dir){if(tutorial||phase!=='ready'||active||queue.length||turnMoves>=turnLimit)return;if(!B.canRotate(state,face)){byId('battleLog').textContent='この層には固定ブロックがあります。別の面か、リベラの解除を使おう。';return}pendingMove=null;queue.push({face,dir,kind:'user'})}
+function reset(){pendingMove=null;shuffleCharges=2;roundToken++;endTeamTurn();cooldowns={};selectedLayer=null;hoverLayer=null;previewDir=0;byId('layerChoices').replaceChildren();state=B.board(E,Math.random,B.pools[difficulty]);skillUses={convert:2,shuffle:2,clock:2,cleanse:2,open:2};turnLimit=3;clockUsed=false;openFaces=false;obstacles={seals:[],restrict:0};enemyTurns=0;baseRule=byId('attackRule').value;active=null;queue=[];history=[];moves=0;hp=maxHp();wave=0;enemyHp=currentEnemy().hp;phase='ready';turnMoves=0;combo=0;fx=null;byId('battleLog').textContent='5体の編成で '+dungeon.name+' に挑戦。属性をそろえ、仲間の技で対策しよう。';byId('damageText').textContent='';balanceMetrics={repairs:0,refills:0,rejectedObstacles:0};certifiedStart();renderParty();refresh()}
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 async function resolveTurn(){
  if(phase!=='ready'||active||queue.length||(turnMoves===0&&canAct()))return;
@@ -285,7 +289,7 @@ async function resolveTurn(){
 for(const [face,f] of Object.entries(E.faces)){
   const group=document.createElement('div');group.className='face-control';
   const label=document.createElement('span');label.innerHTML='<i style="background:'+f.color+'"></i>'+f.name+' '+face;group.append(label);
-  for(const dir of [1,-1]){const b=document.createElement('button');b.textContent=dir===1?'↻':'↺';b.dataset.face=face;b.setAttribute('aria-label',f.name+'面を'+(dir===1?'時計回り':'反時計回り'));b.onclick=()=>userMove(face,dir);group.append(b)}byId('controls').append(group);
+  for(const dir of [1,-1]){const b=document.createElement('button');b.textContent=dir===1?'↻':'↺';b.dataset.face=face;b.setAttribute('aria-label',f.name+'面を'+(dir===1?'時計回り':'反時計回り'));b.onclick=()=>chooseMove(face,dir);group.append(b)}byId('controls').append(group);
 }
 byId('reset').onclick=()=>{if(tutorial)endTutorial();reset()};
 byId('applyDifficulty').onclick=()=>{if(tutorial||active||phase==='resolving')return;difficulty=byId('difficulty').value;reset()};
@@ -341,12 +345,19 @@ function pickLayers(e){const r=canvas.getBoundingClientRect(),p=[(e.clientX-r.le
  if(sticker){const faces=Object.keys(E.faces).filter(f=>sticker.p[E.slices[f].axis]===E.slices[f].layer);faces.sort((a,b)=>(sticker.n[E.slices[b].axis]===E.slices[b].layer)-(sticker.n[E.slices[a].axis]===E.slices[a].layer));return faces}
  let near=null,distance=12;for(const ring of ringHits)for(const q of ring.points){const d=Math.hypot(p[0]-q[0],p[1]-q[1]);if(d<distance){near=ring.face;distance=d}}return near?[near]:[];
 }
-function boardClick(e){if(suppressCubeClick){suppressCubeClick=false;return}if(tutorial||active||phase!=='ready')return;const arrow=arrowAt(e);if(arrow){selectLayer(arrow.face);previewDir=arrow.dir;userMove(arrow.face,arrow.dir);return}const faces=pickLayers(e);if(faces.length)selectLayer(faces[0],faces)}
+function confirmMove(){if(!pendingMove)return;const m=pendingMove;if(m.board!==JSON.stringify(state)){pendingMove=null;updateGuide();return}userMove(m.face,m.dir);updateGuide()}
+function chooseMove(face,dir){
+ if(tutorial||active||queue.length||phase!=='ready'||turnMoves>=turnLimit||!B.canRotate(state,face))return;
+ if(pendingMove?.face===face&&pendingMove.dir===dir){confirmMove();return}
+ selectLayer(face);pendingMove={face,dir,board:JSON.stringify(state)};previewDir=dir;updateGuide();
+ byId('guideText').textContent=E.slices[face].name+'層：'+(dir===1?'↻':'↺')+' をプレビュー中。同じ矢印を再タップ、または決定。';
+}
+function boardClick(e){if(suppressCubeClick){suppressCubeClick=false;return}if(tutorial||active||phase!=='ready')return;const arrow=arrowAt(e);if(arrow){chooseMove(arrow.face,arrow.dir);return}const faces=pickLayers(e);if(faces.length)selectLayer(faces[0],faces)}
 canvas.addEventListener('click',boardClick);
 canvas.addEventListener('pointermove',e=>{if(e.pointerType==='touch')return;const arrow=arrowAt(e);if(arrow){hoverLayer=arrow.face;previewDir=arrow.dir;updateGuide();return}previewDir=0;hoverLayer=selectedLayer?null:pickLayers(e)[0]||null;updateGuide()});
 canvas.addEventListener('pointerleave',()=>{hoverLayer=null;previewDir=0;updateGuide()});
-for(const [id,dir] of [['guideCW',1],['guideCCW',-1]]){const b=byId(id);b.onclick=()=>{if(selectedLayer)userMove(selectedLayer,dir)};b.onpointerenter=b.onfocus=()=>{previewDir=dir};b.onpointerleave=b.onblur=()=>{previewDir=0}}
-byId('guideCancel').onclick=()=>{selectedLayer=null;hoverLayer=null;previewDir=0;byId('layerChoices').replaceChildren();updateGuide()};
+for(const [id,dir] of [['guideCW',1],['guideCCW',-1]]){const b=byId(id);b.onclick=()=>{if(selectedLayer)chooseMove(selectedLayer,dir)};b.onpointerenter=b.onfocus=()=>{previewDir=dir};b.onpointerleave=b.onblur=()=>{previewDir=0}}
+byId('guideCancel').onclick=()=>{pendingMove=null;selectedLayer=null;hoverLayer=null;previewDir=0;byId('layerChoices').replaceChildren();updateGuide()};
 document.querySelectorAll('[data-face]').forEach(b=>{b.onpointerenter=b.onfocus=()=>{hoverLayer=b.dataset.face;previewDir=b.textContent==='↻'?1:-1;updateGuide()};b.onpointerleave=b.onblur=()=>{hoverLayer=null;previewDir=0;updateGuide()}});
 addEventListener('keydown',e=>{if(e.key==='Escape')byId('guideCancel').click()});
 function startTutorial(){
@@ -503,7 +514,7 @@ const panel=document.querySelector('.panel'),boardShell=document.createElement('
 canvas.before(boardShell);const boardTitle=document.createElement('div');boardTitle.className='board-heading';boardTitle.innerHTML='<span>THE ORBIT CHAMBER</span><strong>精霊の回転盤</strong>';boardShell.append(boardTitle,canvas,byId('moveGuide'));
 const boardHelp=document.createElement('p');boardHelp.className='board-help';boardHelp.textContent='立方体をドラッグして見回す（手数なし）・タップして層を選択';boardShell.append(boardHelp);
 const viewReset=document.createElement('button');viewReset.id='viewReset';viewReset.textContent='視点を元に戻す';viewReset.disabled=true;viewReset.style.cssText='display:block;margin:8px auto;font-size:11px';boardShell.append(viewReset);
-viewReset.onclick=()=>{viewYaw=viewHome.yaw;viewPitch=viewHome.pitch;updateView()};
+viewReset.onclick=()=>{pendingMove=null;viewYaw=viewHome.yaw;viewPitch=viewHome.pitch;updateView()};
 const cubeTouch=document.createElement('div');cubeTouch.setAttribute('aria-label','立方体の視点操作。ドラッグで見回す。矢印キーでも視点を変更。');cubeTouch.tabIndex=0;cubeTouch.style.cssText='position:absolute;touch-action:none;cursor:grab;user-select:none;z-index:2;border-radius:12px';boardShell.append(cubeTouch);
 function placeCubeTouch(){
  if(getComputedStyle(boardShell).position==='static')boardShell.style.position='relative';
@@ -516,7 +527,7 @@ cubeTouch.addEventListener('pointermove',e=>{
  if(!cubeDrag||e.pointerId!==cubeDrag.id)return;
  const dx=e.clientX-cubeDrag.x,dy=e.clientY-cubeDrag.y;
  if(!cubeDrag.moved&&Math.hypot(dx,dy)<6)return;
- cubeDrag.moved=true;cubeTouch.style.cursor='grabbing';
+ pendingMove=null;cubeDrag.moved=true;cubeTouch.style.cursor='grabbing';
  viewYaw=cubeDrag.yaw-dx*.009;viewPitch=Math.max(-1.35,Math.min(1.35,cubeDrag.pitch+dy*.009));
  hoverLayer=null;previewDir=0;updateView();
 });
@@ -531,4 +542,6 @@ const rule=document.querySelector('.rule-panel'),ruleLabel=rule.querySelector('l
 for(const d of [...panel.children].filter(el=>el.tagName==='DETAILS'&&!el.classList.contains('squad-panel')))settingsDrawer.append(d);
 const squadPanel=byId('squadSlots').parentElement;squadPanel.open=false;
 panel.append(document.querySelector('.enemy-card'),document.querySelector('.player-hp'),rule,document.querySelector('.readout'),byId('attack'),byId('battleLog'),document.querySelector('.squad-skills'),document.querySelector('.actions'),byId('boardProof'),squadPanel,settingsDrawer);
+const guideConfirm=document.createElement('button');guideConfirm.id='guideConfirm';guideConfirm.textContent='決定 · 回転';guideConfirm.disabled=true;guideConfirm.style.cssText='border-color:#d7b56c;color:#ffe5a3';guideConfirm.onclick=confirmMove;byId('guideCancel').before(guideConfirm);
+byId('moveGuide').querySelector('small').textContent='1回目で2Dガイドを表示。同じ矢印をもう一度押すか「決定」で1手回転。別の矢印は選び直し。';
 buildSquadSkills();addEventListener('resize',resize);resize();reset();requestAnimationFrame(frame);
