@@ -197,7 +197,7 @@ function drawOrbits(angle){
     // An opaque backing keeps every orbit/selection line behind the symbol.
     ctx.save();ctx.beginPath();ctx.arc(...p,11,0,Math.PI*2);ctx.fillStyle='#152f34';ctx.fill();
     if(matched.has(s.id)&&!active){ctx.beginPath();ctx.arc(...p,10.7,0,Math.PI*2);ctx.strokeStyle='#ffe9a4';ctx.lineWidth=1.5;ctx.stroke()}
-    drawSpirit(ctx,s.face,p[0],p[1],compactBoard?11:10);
+    drawPanelSpirit(s,p[0],p[1],compactBoard?11:10);
     drawBlockStatus(s,p,11);
     ctx.restore();
   }
@@ -222,7 +222,11 @@ function drawCube(angle){
     polygons.push({points:corners.map(cubePoint),depth:E.dot(transform(center,s.p,angle),camera)+.003,fill:B.spirits[s.face].color,stroke:matched.has(s.id)?'#fff6ba':'#c8d0c477',normal:s.n,spirit:s.face,sticker:s});
   }
   polygons.sort((a,b)=>a.depth-b.depth);
-  for(const p of polygons){polygon(p.points,p.fill,p.stroke,.8);if(p.normal){hitFaces.push(p);const c=p.points.reduce((a,v)=>[a[0]+v[0]/4,a[1]+v[1]/4],[0,0]);drawSpirit(ctx,p.spirit,c[0],c[1],11);drawBlockStatus(p.sticker,c,14)}}
+  for(const p of polygons){polygon(p.points,p.fill,p.stroke,.8);if(p.normal){hitFaces.push(p);const c=p.points.reduce((a,v)=>[a[0]+v[0]/4,a[1]+v[1]/4],[0,0]);drawPanelSpirit(p.sticker,c[0],c[1],11);drawBlockStatus(p.sticker,c,14)}}
+}
+function drawPanelSpirit(sticker,x,y,r){
+ if(sticker.face!=='X'||!sticker.spentOriginal){drawSpirit(ctx,sticker.face,x,y,r);return}
+ ctx.save();ctx.filter='grayscale(1)';ctx.globalAlpha=.72;drawSpirit(ctx,sticker.spentOriginal,x,y,r);ctx.restore();
 }
 function drawBlockStatus(s,p,r){
  if(active)return;ctx.save();
@@ -332,7 +336,7 @@ async function resolveTurn(){
   if(tutorial){byId('tutorialText').textContent=skill?'9体がすべて火属性！ 「サラマンダー・インフェルノ」発動。列攻撃の5倍の威力です。':'3手目で火の精霊が1列そろいました。サラマンダーが攻撃！ 光る列と敵HPに注目してください。'}
   refresh();await pause(tutorial||skill?1800:1100);if(token!==roundToken)return;
   if(tutorial)B.refill(state,ids,Math.random,B.pools.normal);
-  else if(!refillAssistance){for(const s of state)if(ids.has(s.id)){delete s.tempOriginal;s.face='X'}for(const g of foundGroups)spentElements.add(g.element)}
+  else if(!refillAssistance){for(const s of state)if(ids.has(s.id)){s.spentOriginal=s.face;delete s.tempOriginal;s.face='X'}for(const g of foundGroups)spentElements.add(g.element)}
   else if(refillAssistance){const budget=turnMoves>=turnLimit?3:Math.max(1,turnLimit-turnMoves);Q.refill(state,ids,activePool(),attackKeys(),attackPolicy(),difficulty==='easy'?1:Math.min(3,budget),Math.random,teamConversion,difficulty,attackChain);balanceMetrics.refills++}
   else refillWithoutAssistance(ids);
   applyTemporaryConversion();refresh();if(enemyHp===0)break;
@@ -618,7 +622,7 @@ orbitToolbar.append(viewReset);
 const refillToggle=document.createElement('button');refillToggle.id='refillToggle';refillToggle.textContent='補充OFF';refillToggle.title='補充OFF：そろえたパネルは灰色になります';refillToggle.setAttribute('aria-pressed','false');orbitToolbar.append(refillToggle);
 refillToggle.onclick=()=>{
  refillAssistance=!refillAssistance;
- if(refillAssistance){const ids=new Set(state.filter(s=>s.face==='X').map(s=>s.id));if(ids.size)Q.refill(state,ids,activePool(),attackKeys(),attackPolicy(),2,Math.random,teamConversion,difficulty,attackChain);spentElements.clear();applyTemporaryConversion();refresh()}
+ if(refillAssistance){const used=state.filter(s=>s.face==='X'),ids=new Set(used.map(s=>s.id));if(ids.size)Q.refill(state,ids,activePool(),attackKeys(),attackPolicy(),2,Math.random,teamConversion,difficulty,attackChain);for(const s of used)delete s.spentOriginal;spentElements.clear();applyTemporaryConversion();refresh()}
  refillToggle.textContent=refillAssistance?'補充ON':'補充OFF';refillToggle.title=refillAssistance?'補充ON：コンボしやすい属性を補充します':'補充OFF：そろえたパネルは灰色になります';refillToggle.setAttribute('aria-pressed',String(refillAssistance));
  byId('battleLog').textContent=refillAssistance?'補充をONにしました。灰色パネルを属性パネルへ戻しました。':'補充をOFFにしました。各属性は最初の成立時だけ攻撃し、そろえたパネルは灰色になります。';
 };
