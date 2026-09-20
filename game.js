@@ -389,8 +389,8 @@ function pickLayers(e){const p=boardPointer(e);let sticker;
 function confirmMove(){if(!pendingMove)return;const m=pendingMove;if(m.board!==JSON.stringify(state)){pendingMove=null;updateGuide();return}userMove(m.face,m.dir);updateGuide()}
 function chooseMove(face,dir){
  if(tutorial||active||queue.length||phase!=='ready'||turnMoves>=turnLimit||!B.canRotate(state,face))return;
- guidedArrowKey=null;arrowGuideActive=false;dragHint.classList.remove('arrow-step');dragHint.classList.add('is-complete');
- if(pendingMove?.face===face&&pendingMove.dir===dir){confirmMove();return}
+ if(pendingMove?.face===face&&pendingMove.dir===dir){guidedArrowKey=null;arrowGuideActive=false;dragHint.classList.remove('arrow-step');dragHint.classList.add('is-complete');confirmMove();return}
+ arrowGuideActive=false;guidedArrowKey=face+':'+dir;dragHint.innerHTML=secondTapHintMarkup;dragHint.classList.add('arrow-step');requestAnimationFrame(placeCubeTouch);
  selectLayer(face);pendingMove={face,dir,board:JSON.stringify(state)};previewDir=dir;updateGuide();
  byId('guideText').textContent=E.slices[face].name+'層：'+(dir===1?'↻':'↺')+' をプレビュー中。同じ矢印を再タップ、または決定。';
 }
@@ -567,7 +567,9 @@ colorSelect.onchange=()=>{if(tutorial||active||queue.length||phase==='resolving'
 byId('moveGuide').style.setProperty('display','none','important');
 const dragHint=document.createElement('div');dragHint.className='cube-drag-hint';
 const dragHintMarkup='<svg viewBox="0 0 64 48" aria-hidden="true"><path class="swipe-track" d="M8 12h48m-43-5-5 5 5 5m38-10 5 5-5 5"/><g class="swipe-finger"><path d="M26 39 18 29q-3-5 2-5l6 5V13q0-6 5-6t5 6v10q7-3 11 3l-1 12-5 7H30Z"/></g></svg><span>ドラッグで見回す<small>手数は減りません</small></span>';
-const arrowHintMarkup='<svg viewBox="0 0 64 48" aria-hidden="true"><path class="tap-ring" d="M9 24h20m-7-7 7 7-7 7"/><g class="tap-finger"><path d="M36 42 27 32q-3-5 2-6l5 5V15q0-6 5-6t5 6v9q8-2 10 5l-2 10-6 6Z"/></g></svg><span>矢印をタップすると<small>1回目で列を選択<br>二回目のタップで回転するよ</small></span>';
+const tapHintIcon='<svg viewBox="0 0 64 48" aria-hidden="true"><path class="tap-ring" d="M9 24h20m-7-7 7 7-7 7"/><g class="tap-finger"><path d="M36 42 27 32q-3-5 2-6l5 5V15q0-6 5-6t5 6v9q8-2 10 5l-2 10-6 6Z"/></g></svg>';
+const arrowHintMarkup=tapHintIcon+'<span>矢印をタップすると<small>１回目で列を選択</small></span>';
+const secondTapHintMarkup=tapHintIcon+'<span>二回目のタップで回転するよ</span>';
 dragHint.innerHTML=dragHintMarkup;boardShell.append(dragHint);
 const viewReset=document.createElement('button');viewReset.id='viewReset';viewReset.textContent='視点を元に戻す';viewReset.disabled=true;viewReset.style.cssText='display:block;margin:8px auto;font-size:11px';boardShell.append(viewReset);
 const boardActions=document.createElement('div');boardActions.className='board-actions';viewReset.before(boardActions);boardActions.append(byId('rescue'),viewReset);
@@ -579,7 +581,9 @@ function placeCubeTouch(){
  const w=canvas.clientWidth,h=canvas.clientHeight;
  const v=boardViewport();Object.assign(cubeTouch.style,{left:(canvas.offsetLeft+w*(202-v.x)/v.w)+'px',top:(canvas.offsetTop+h*((compactBoard?404:374)-v.y)/v.h)+'px',width:(w*312/v.w)+'px',height:(h*312/v.h)+'px'});
  const arrowTarget=dragHint.classList.contains('arrow-step')&&arrowHits.find(a=>a.face+':'+a.dir===guidedArrowKey);
- const hintPoint=arrowTarget?[arrowTarget.p[0]-42,arrowTarget.p[1]]:[358,compactBoard?560:530];
+ const hintPoint=arrowTarget
+  ?(arrowTarget.p[0]<220?[arrowTarget.p[0]+92,arrowTarget.p[1]]:[arrowTarget.p[0],arrowTarget.p[1]-58])
+  :[358,compactBoard?560:530];
  Object.assign(dragHint.style,{left:(canvas.offsetLeft+w*(hintPoint[0]-v.x)/v.w)+'px',top:(canvas.offsetTop+h*(hintPoint[1]-v.y)/v.h)+'px'});
 }
 function showArrowHint(){if(dragHint.classList.contains('is-complete'))return;const target=arrowHits.find(a=>a.p[0]<220&&B.canRotate(state,a.face));if(!target)return;guidedArrowKey=target.face+':'+target.dir;arrowGuideActive=true;dragHint.innerHTML=arrowHintMarkup;dragHint.classList.add('arrow-step');requestAnimationFrame(placeCubeTouch)}
