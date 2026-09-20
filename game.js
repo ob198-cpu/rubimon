@@ -2,7 +2,7 @@
 const E=CubeEngine,canvas=document.getElementById('scene'),ctx=canvas.getContext('2d');
 const B=BattleRules;
 let compactBoard=false;
-function boardViewport(){return compactBoard?{w:440,h:750,x:80,y:0}:{w:600,h:780,x:0,y:0}}
+function boardViewport(){return compactBoard?{w:440,h:778,x:80,y:0}:{w:600,h:800,x:0,y:0}}
 function boardPointer(e){const r=canvas.getBoundingClientRect(),v=boardViewport();return [(e.clientX-r.left)*v.w/r.width+v.x,(e.clientY-r.top)*v.h/r.height+v.y]}
 const T=TeamRules, Q=BalanceRules;
 let proofCache=null,shuffleCharges=2,balanceMetrics={repairs:0,refills:0,rejectedObstacles:0};
@@ -77,7 +77,9 @@ function sliceControl(axis,layer,dir){
  const sign=-(layer||1)*dir,component=axis===1?0:1;
  const towardStart=(b[component]-a[component])*sign<0;
  const column=camRight[axis]>=0?layer+1:1-layer;
+ const edge=[...pivot];if(axis!==1)edge[1]=-1.5;else{const other=normalAxis===0?2:0;edge[other]=camRight[other]>=0?-1.5:1.5}
  return {
+  anchor:cubePoint(edge),
   p:axis===1?[towardStart?117:159,514-layer*42]:[(axis===leftAxis?204:350)+column*42,towardStart?632:674],
   angle:axis===1?(towardStart?Math.PI:0):(towardStart?-Math.PI/2:Math.PI/2)
  };
@@ -90,9 +92,10 @@ function drawSliceArrows(){
  // Screen-space controls: horizontal rows on the left, vertical columns below.
  // Front columns (X) and right-face columns (Z) have opposite rotation signs.
  const control=sliceControl(axis,layer,dir),angle=control.angle;
- const p=compactBoard?(axis===1?[angle===0?172:110,474-layer*60]:[115+((control.p[0]<330?0:3)+Math.round((control.p[0]-(control.p[0]<330?204:350))/42))*74,angle<0?654:716]):[control.p[0],control.p[1]+(axis===1?20:80)];
+ const p=compactBoard?(axis===1?[angle===0?172:110,474-layer*60]:[183+((control.p[0]<330?0:3)+Math.round((control.p[0]-(control.p[0]<330?204:350))/42))*62,angle<0?666:732]):[control.p[0]+(axis===1?0:40),control.p[1]+(axis===1?20:92)];
  const points=[p],end=[p[0]+13*Math.cos(angle),p[1]+13*Math.sin(angle)];
  const disabled=!!active||phase!=='ready'||turnMoves>=turnLimit||!B.canRotate(state,face),lit=guideFace()===face&&(pendingMove?.dir||previewDir)===dir;
+ if(lit){const a=[control.anchor[0],control.anchor[1]-(compactBoard?60:0)],half=compactBoard?29:19;ctx.save();ctx.strokeStyle='#ebc778';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(...a);if(axis===1){ctx.lineTo(204,a[1]);ctx.lineTo(204,p[1]);ctx.lineTo(p[0]+half,p[1])}else{ctx.lineTo(a[0],p[1]-half-10);ctx.lineTo(p[0],p[1]-half)}ctx.stroke();ctx.beginPath();ctx.arc(...a,3,0,Math.PI*2);ctx.fillStyle='#ebc778';ctx.fill();ctx.restore()}
  arrowHits.push({p,points,face,dir});ctx.save();if(compactBoard){ctx.translate(...p);ctx.scale(1.58,1.58);ctx.translate(-p[0],-p[1])}ctx.globalAlpha=disabled?.3:1;ctx.lineCap='round';ctx.lineJoin='round';
  const finish=ctx.createLinearGradient(p[0],p[1]-17,p[0],p[1]+17);finish.addColorStop(0,lit?'#416168':'#30494c');finish.addColorStop(1,lit?'#223e45':'#142b30');ctx.fillStyle=finish;
  ctx.shadowColor='#0005';ctx.shadowBlur=4;ctx.shadowOffsetY=2;ctx.beginPath();ctx.roundRect(p[0]-17,p[1]-17,34,34,7);ctx.fill();ctx.shadowBlur=0;ctx.shadowOffsetY=0;
