@@ -9,15 +9,18 @@ function battleVibration(kind,damage){
 }
 let compactBoard=false;
 let orbitExpanded=true;
+let customColorCount=null;
+const colorOrder=['R','B','D','U','F','L','V','I','M','H','P'];
+function activePool(){return customColorCount===null?B.pools[difficulty]:colorOrder.slice(0,customColorCount)}
 function boardViewport(){return compactBoard?(orbitExpanded?{w:460,h:908,x:70,y:-20}:{w:460,h:494,x:70,y:394}):(orbitExpanded?{w:600,h:820,x:0,y:-20}:{w:600,h:436,x:0,y:364})}
 function boardPointer(e){const r=canvas.getBoundingClientRect(),v=boardViewport();return [(e.clientX-r.left)*v.w/r.width+v.x,(e.clientY-r.top)*v.h/r.height+v.y]}
 function orbitDisplayScale(){return compactBoard?.8:.86}
 function orbitDisplayPoint([x,y]){const scale=orbitDisplayScale();return [300+(x-300)*scale,250+(y-250)*scale]}
 const T=TeamRules, Q=BalanceRules;
 let proofCache=null,shuffleCharges=2,balanceMetrics={repairs:0,refills:0,rejectedObstacles:0};
-function attackKeys(){return [...new Set(squad.map(id=>T.roster.find(c=>c.id===id).element))].filter(k=>k!=='D'&&(B.pools[difficulty].includes(k)||teamConversion?.[1]===k))}
+function attackKeys(){return [...new Set(squad.map(id=>T.roster.find(c=>c.id===id).element))].filter(k=>k!=='D'&&(activePool().includes(k)||teamConversion?.[1]===k))}
 function boardProof(){const depth=difficulty==='easy'?1:Math.max(1,Math.min(3,turnLimit-turnMoves));const key=JSON.stringify([state,attackKeys(),attackPolicy(),depth]);if(proofCache?.key!==key)proofCache={key,...Q.plan(state,attackKeys(),attackPolicy(),depth)};return proofCache}
-function certifiedStart(){const result=Q.initial(B.pools[difficulty],attackKeys(),attackPolicy(),difficulty);if(!result.state){byId('battleLog').textContent='攻撃属性と出現色が合いません。編成または難易度を変更してください。';phase='setup';return false}state=result.state;proofCache=null;return true}
+function certifiedStart(){const result=Q.initial(activePool(),attackKeys(),attackPolicy(),customColorCount!==null?'easy':difficulty);if(!result.state){byId('battleLog').textContent='攻撃属性と出現色が合いません。編成または難易度を変更してください。';phase='setup';return false}state=result.state;proofCache=null;return true}
 let squad=['sala','undine','raika','ferrum','libera'],dungeon=T.dungeons[0],tuning={...T.defaults},cooldowns={},teamSpent=new Set(),teamBuffs={},teamImmune=false,teamShield=false,teamConversion=null,gravityUsed=false;
 function maxHp(){return tutorial?1800:T.stats(squad,tuning).hp}
 function currentEnemy(){return tutorial?B.enemies[wave]:{...dungeon,hp:dungeon.id==='grove'?800:Math.round(dungeon.hp*Q.settings[difficulty].hp),attack:Math.round(dungeon.attack*Q.settings[difficulty].attack),name:dungeon.bossName||dungeon.name,element:{grove:'火',armor:'鋼',abyss:'闇',storm:'風'}[dungeon.id]}}
@@ -231,9 +234,10 @@ function refresh(){
   byId('openSkill').textContent='アストラ：全6面解放（残り'+skillUses.open+'）';
   byId('difficulty').disabled=!!tutorial||!!active||phase==='resolving';
   byId('applyDifficulty').disabled=byId('difficulty').disabled;
+  const colorSelect=byId('colorCount');if(colorSelect){colorSelect.disabled=!!tutorial||!!active||!!queue.length||phase==='resolving';colorSelect.value=String(activePool().length)}
   byId('attackRule').disabled=byId('difficulty').disabled;
   byId('enemyObstacles').disabled=locked;
-  byId('difficultyInfo').textContent=tutorial?'デモは専用の6色盤面':difficulty.toUpperCase()+' · '+B.pools[difficulty].length+'色で対戦中';
+  byId('difficultyInfo').textContent=tutorial?'デモは専用の6色盤面':difficulty.toUpperCase()+' · '+activePool().length+'色で対戦中';
   document.querySelectorAll('[data-face]').forEach(b=>{const blocked=!B.canRotate(state,b.dataset.face);b.disabled=locked||turnMoves>=turnLimit||blocked;b.title=blocked?'固定ブロックがあるため回転できません':''});
   document.querySelectorAll('[data-obstacle]').forEach(b=>b.disabled=locked);
   const policy=attackPolicy(),faceNames=(policy.faces||Object.keys(E.faces)).map(f=>E.slices[f].name).join('・');
@@ -277,7 +281,7 @@ function frame(now){
   requestAnimationFrame(frame);
 }
 function userMove(face,dir){if(tutorial||phase!=='ready'||active||queue.length||turnMoves>=turnLimit)return;if(!B.canRotate(state,face)){byId('battleLog').textContent='この層には固定ブロックがあります。別の面か、リベラの解除を使おう。';return}pendingMove=null;queue.push({face,dir,kind:'user'})}
-function reset(){attackChain=0;bestChain=0;battleDamage=0;victoryScreen.hidden=true;comboBanner.classList.remove('active');pendingMove=null;shuffleCharges=2;roundToken++;endTeamTurn();cooldowns={};selectedLayer=null;hoverLayer=null;previewDir=0;byId('layerChoices').replaceChildren();state=B.board(E,Math.random,B.pools[difficulty]);skillUses={convert:2,shuffle:2,clock:2,cleanse:2,open:2};turnLimit=3;clockUsed=false;openFaces=false;obstacles={seals:[],restrict:0};enemyTurns=0;baseRule=byId('attackRule').value;active=null;queue=[];history=[];moves=0;hp=maxHp();wave=0;enemyHp=currentEnemy().hp;phase='ready';turnMoves=0;combo=0;fx=null;byId('battleLog').textContent='5体の編成で '+dungeon.name+' に挑戦。属性をそろえ、仲間の技で対策しよう。';byId('damageText').textContent='';balanceMetrics={repairs:0,refills:0,rejectedObstacles:0};certifiedStart();renderParty();refresh()}
+function reset(){attackChain=0;bestChain=0;battleDamage=0;victoryScreen.hidden=true;comboBanner.classList.remove('active');pendingMove=null;shuffleCharges=2;roundToken++;endTeamTurn();cooldowns={};selectedLayer=null;hoverLayer=null;previewDir=0;byId('layerChoices').replaceChildren();state=B.board(E,Math.random,activePool());skillUses={convert:2,shuffle:2,clock:2,cleanse:2,open:2};turnLimit=3;clockUsed=false;openFaces=false;obstacles={seals:[],restrict:0};enemyTurns=0;baseRule=byId('attackRule').value;active=null;queue=[];history=[];moves=0;hp=maxHp();wave=0;enemyHp=currentEnemy().hp;phase='ready';turnMoves=0;combo=0;fx=null;byId('battleLog').textContent='5体の編成で '+dungeon.name+' に挑戦。属性をそろえ、仲間の技で対策しよう。';byId('damageText').textContent='';balanceMetrics={repairs:0,refills:0,rejectedObstacles:0};certifiedStart();renderParty();refresh()}
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 async function resolveTurn(){
  if(phase!=='ready'||active||queue.length||(turnMoves===0&&canAct()))return;
@@ -299,7 +303,7 @@ async function resolveTurn(){
   if(tutorial){byId('tutorialText').textContent=skill?'9体がすべて火属性！ 「サラマンダー・インフェルノ」発動。列攻撃の5倍の威力です。':'3手目で火の精霊が1列そろいました。サラマンダーが攻撃！ 光る列と敵HPに注目してください。'}
   refresh();await pause(tutorial||skill?1800:1100);if(token!==roundToken)return;
   if(tutorial)B.refill(state,ids,Math.random,B.pools.normal);
-  else{const budget=turnMoves>=turnLimit?3:Math.max(1,turnLimit-turnMoves);Q.refill(state,ids,B.pools[difficulty],attackKeys(),attackPolicy(),difficulty==='easy'?1:Math.min(3,budget),Math.random,teamConversion,difficulty,attackChain);balanceMetrics.refills++}
+  else{const budget=turnMoves>=turnLimit?3:Math.max(1,turnLimit-turnMoves);Q.refill(state,ids,activePool(),attackKeys(),attackPolicy(),difficulty==='easy'?1:Math.min(3,budget),Math.random,teamConversion,difficulty,attackChain);balanceMetrics.refills++}
   applyTemporaryConversion();refresh();if(enemyHp===0)break;
  }
  if(!tutorial&&!attackMatched&&!recoveryMatched)attackChain=0;
@@ -307,7 +311,7 @@ async function resolveTurn(){
  if(enemyHp===0){
   await pause(550);if(token!==roundToken)return;
   if(!tutorial||wave===2){phase='victory';byId('battleLog').textContent='CLEAR！ '+currentEnemy().name+'を撃破。'+(!tutorial?'想定報酬 '+dungeon.reward+'素材（試算のみ・所持数への加算なし）':'');endTeamTurn();refresh();if(!tutorial)showVictory();return}
-  wave++;enemyTurns=0;B.cleanse(state,obstacles,B.pools[difficulty]);enemyHp=B.enemies[wave].hp;hp=Math.min(1800,hp+250);byId('battleLog').textContent='次の敵が現れた！ HP +250・妨害解除';
+  wave++;enemyTurns=0;B.cleanse(state,obstacles,activePool());enemyHp=B.enemies[wave].hp;hp=Math.min(1800,hp+250);byId('battleLog').textContent='次の敵が現れた！ HP +250・妨害解除';
  }else{
   if(turnMoves<turnLimit){phase='ready';refresh();return}
   const incoming=tutorial?currentEnemy().attack:T.incoming(squad,currentEnemy(),enemyTurns+1,tuning,teamImmune,teamShield);
@@ -326,14 +330,14 @@ for(const [face,f] of Object.entries(E.faces)){
   for(const dir of [1,-1]){const b=document.createElement('button');b.textContent=dir===1?'↻':'↺';b.dataset.face=face;b.setAttribute('aria-label',f.name+'面を'+(dir===1?'時計回り':'反時計回り'));b.onclick=()=>chooseMove(face,dir);group.append(b)}byId('controls').append(group);
 }
 byId('reset').onclick=()=>{if(tutorial)endTutorial();reset()};
-byId('applyDifficulty').onclick=()=>{if(tutorial||active||phase==='resolving')return;difficulty=byId('difficulty').value;reset()};
+byId('applyDifficulty').onclick=()=>{if(tutorial||active||phase==='resolving')return;difficulty=byId('difficulty').value;customColorCount=null;reset()};
 function useBoardSkill(kind){
  if(tutorial||active||queue.length||phase!=='ready'||!skillUses[kind])return;
  let text;
  if(kind==='convert'){const count=B.convert(state,'R','B');if(!count)return;text='ウンディーネの色変換！ 赤'+count+'個を青に変えた。'}
  else if(kind==='shuffle'){B.shuffle(state);text='シルフの旋風！ 固定・お邪魔以外の属性をシャッフル。'}
  else if(kind==='clock'){if(clockUsed)return;turnLimit+=2;clockUsed=true;text='クロノの時渡り！ このターンは5手まで動かせます。'}
- else if(kind==='cleanse'){if(!obstructed())return;B.cleanse(state,obstacles,B.pools[difficulty]);text='リベラの解呪！ 固定・お邪魔・列封印・敵の面制限を解除。'}
+ else if(kind==='cleanse'){if(!obstructed())return;B.cleanse(state,obstacles,activePool());text='リベラの解呪！ 固定・お邪魔・列封印・敵の面制限を解除。'}
  else if(kind==='open'){if(openFaces)return;openFaces=true;text='アストラの領域展開！ このターンは全6面で攻撃可能。列封印は解除されません。'}
  skillUses[kind]--;history=[];byId('battleLog').textContent=text;refresh();
  canvas.classList.remove('board-change');void canvas.offsetWidth;canvas.classList.add('board-change');
@@ -347,7 +351,7 @@ document.querySelectorAll('[data-obstacle]').forEach(b=>b.onclick=()=>{if(tutori
 byId('enemyObstacles').onchange=()=>{
  if(tutorial||active||queue.length||phase!=='ready'){byId('enemyObstacles').value=enemyObstaclesEnabled?'on':'off';return}
  enemyObstaclesEnabled=byId('enemyObstacles').value==='on';
- if(!enemyObstaclesEnabled){B.cleanse(state,obstacles,B.pools[difficulty]);applyTemporaryConversion();history=[]}
+ if(!enemyObstaclesEnabled){B.cleanse(state,obstacles,activePool());applyTemporaryConversion();history=[]}
  byId('battleLog').textContent=enemyObstaclesEnabled?'敵の妨害：ON。敵ごとの妨害が発生します。':'敵の妨害：OFF。現在の妨害も解除しました。通常攻撃は継続します。';
  refresh();
 };
@@ -364,7 +368,7 @@ byId('rescue').onclick=()=>{
  if(tutorial||active||queue.length||phase!=='ready'||shuffleCharges===0)return;
  // Explicit limited recovery: reset the board only, not HP, enemy turn, or cooldowns.
  const rescuePolicy={faces:openFaces?Object.keys(E.faces):baseRule==='front'?['F']:baseRule==='visible'?['U','F','R']:Object.keys(E.faces)};
- const result=Q.initial(B.pools[difficulty],attackKeys(),rescuePolicy,'easy');
+ const result=Q.initial(activePool(),attackKeys(),rescuePolicy,'easy');
  if(!result.state){byId('battleLog').textContent='攻撃属性と出現色が合いません。編成・難易度を変更してください。';return}
  state=result.state;obstacles={seals:[],restrict:0};teamConversion=null;proofCache=null;history=[];balanceMetrics.repairs++;shuffleCharges--;
  byId('battleLog').textContent='再配置：色を再生成して妨害と一時変換を解除。HP・残り手数・技の待ち時間・チェインは維持。残り'+shuffleCharges+'回。';refresh();
@@ -509,12 +513,12 @@ function drawBattleEffects(now){
 }
 function resize(){compactBoard=matchMedia('(max-width:600px)').matches;E.setOrbitSpacing(compactBoard?28:22);guideCache=null;const dpr=Math.min(devicePixelRatio||1,2),v=boardViewport();canvas.width=v.w*dpr;canvas.height=v.h*dpr;canvas.style.aspectRatio=v.w+'/'+v.h;ctx.setTransform(dpr,0,0,dpr,-v.x*dpr,-v.y*dpr)}
 byId('monster').innerHTML='<img class="enemy-sprite" src="enemy-dragon.png" width="1254" height="1254" alt="赤い鱗と黄金の角・鎧を持つドラゴン" decoding="async" draggable="false">';
-function renderParty(){byId('party').replaceChildren();const keys=tutorial?B.pools.normal:B.pools[difficulty];byId('party').style.gridTemplateColumns='repeat('+keys.length+',minmax(0,1fr))';for(const key of keys){const s=B.spirits[key],card=document.createElement('div'),portrait=document.createElement('canvas');portrait.width=80;portrait.height=80;portrait.style.width='40px';portrait.style.height='40px';portrait.setAttribute('aria-label',s.element+'属性');drawSpirit(portrait.getContext('2d'),key,40,40,31);card.append(portrait);const name=document.createElement('span');name.textContent=s.element;card.title=s.element+'属性 / '+s.name;card.append(name);byId('party').append(card)}}
+function renderParty(){byId('party').replaceChildren();const keys=tutorial?B.pools.normal:activePool();byId('party').style.gridTemplateColumns='repeat('+keys.length+',minmax(0,1fr))';for(const key of keys){const s=B.spirits[key],card=document.createElement('div'),portrait=document.createElement('canvas');portrait.width=80;portrait.height=80;portrait.style.width='40px';portrait.style.height='40px';portrait.setAttribute('aria-label',s.element+'属性');drawSpirit(portrait.getContext('2d'),key,40,40,31);card.append(portrait);const name=document.createElement('span');name.textContent=s.element;card.title=s.element+'属性 / '+s.name;card.append(name);byId('party').append(card)}}
 const renderAttributeParty=renderParty;
 renderParty=function(){if(tutorial){renderAttributeParty();return}byId('party').replaceChildren();byId('party').style.gridTemplateColumns='repeat(5,minmax(0,1fr))';for(const c of T.members(squad)){const card=document.createElement('div'),icon=document.createElement('canvas');icon.width=80;icon.height=80;icon.style.width='40px';drawSpirit(icon.getContext('2d'),c.element,40,40,31);const label=document.createElement('span');label.textContent=c.name;card.title=c.passive;card.append(icon,label);byId('party').append(card)}};
 function refreshSquad(){
  const stats=T.stats(squad,tuning);byId('squadStats').textContent='適用中：HP '+stats.hp+' ／ 防御 '+stats.def+' ／ 回復 '+stats.recovery+' ／ 雷加算＋'+stats.thunder+' ／ 同属性1体追加につき＋'+tuning.synergy+'％';
- const absent=[...new Set(stats.chars.map(c=>c.element))].filter(e=>!B.pools[difficulty].includes(e));byId('dungeonTip').textContent=dungeon.tip+(absent.length?' ⚠ 現在の色数に '+absent.map(e=>B.spirits[e].element).join('・')+' がありません。技の変換またはHardを使ってください。':'');
+ const absent=[...new Set(stats.chars.map(c=>c.element))].filter(e=>!activePool().includes(e));byId('dungeonTip').textContent=dungeon.tip+(absent.length?' ⚠ 現在の色数に '+absent.map(e=>B.spirits[e].element).join('・')+' がありません。技の変換またはHardを使ってください。':'');
  for(const b of byId('squadSkills').querySelectorAll('button')){const c=T.roster.find(c=>c.id===b.dataset.char),wait=cooldowns[c.id]||0;b.disabled=!!tutorial||!!active||!!queue.length||phase!=='ready'||wait>0;b.style.setProperty('--element',B.spirits[c.element].color);b.title=c.passive+' ／ '+c.skill+' ／ 再使用'+c.cd+'ターン';b.innerHTML='<span class="skill-name">'+c.name+'<em>'+B.spirits[c.element].element+'</em></span><span class="skill-description">'+c.skill+'</span><span class="skill-ready">'+(wait?'あと '+wait+' ターン':'発動する')+'</span>'}
  byId('applySquad').disabled=!!tutorial||!!active||phase==='resolving';
 }
@@ -529,7 +533,7 @@ function useCharacterSkill(c){
  if(c.action==='immune')teamImmune=true;
  if(c.action==='shield')teamShield=true;
  if(c.action==='heal')hp=Math.min(maxHp(),hp+Math.round(maxHp()*.3));
- if(c.action==='cleanse')B.cleanse(state,obstacles,B.pools[difficulty]);
+ if(c.action==='cleanse')B.cleanse(state,obstacles,activePool());
  if(c.action==='fireBoost')teamBuffs.R=1.5;
  if(c.action==='thunderBoost')teamBuffs.U=1.5;
  if(c.action==='pierce'){enemyHp=Math.max(0,enemyHp-tuning.fixed);battleDamage+=tuning.fixed;battleVibration('attack',tuning.fixed);byId('damageText').textContent='固定 −'+tuning.fixed;if(enemyHp===0){phase='victory';showVictory()}}
@@ -551,6 +555,12 @@ const panel=document.querySelector('.panel'),boardShell=document.createElement('
 canvas.before(boardShell);const boardTitle=document.createElement('div');boardTitle.className='board-heading';boardTitle.innerHTML='<span>THE ORBIT CHAMBER</span><strong>精霊の回転盤</strong>';boardShell.append(boardTitle,canvas,byId('moveGuide'));
 const orbitToggle=document.createElement('button');orbitToggle.id='orbitToggle';orbitToggle.className='orbit-toggle';orbitToggle.textContent='2D表示 ▾ 閉じる';orbitToggle.setAttribute('aria-expanded','true');canvas.before(orbitToggle);
 orbitToggle.onclick=()=>{orbitExpanded=!orbitExpanded;orbitToggle.textContent=orbitExpanded?'2D表示 ▾ 閉じる':'2D表示 ▸ 開く';orbitToggle.setAttribute('aria-expanded',String(orbitExpanded));resize();placeCubeTouch()};
+const orbitToolbar=document.createElement('div');orbitToolbar.className='orbit-toolbar';orbitToggle.before(orbitToolbar);
+const colorLabel=document.createElement('label');colorLabel.className='color-count-control';colorLabel.textContent='属性 ';
+const colorSelect=document.createElement('select');colorSelect.id='colorCount';colorSelect.setAttribute('aria-label','属性の種類数');colorSelect.title='色数を変更すると戦闘を再開始します';
+for(let n=3;n<=11;n++){const option=document.createElement('option');option.value=n;option.textContent=n+'色';colorSelect.append(option)}colorSelect.value=activePool().length;
+colorLabel.append(colorSelect);orbitToolbar.append(colorLabel,orbitToggle);
+colorSelect.onchange=()=>{if(tutorial||active||queue.length||phase==='resolving')return;const count=Number(colorSelect.value);if(!Number.isInteger(count)||count<3||count>11)return;customColorCount=count;reset()};
 // Keep internal selection controls for existing handlers, but remove the guide panel from the UI.
 byId('moveGuide').style.setProperty('display','none','important');
 const dragHint=document.createElement('div');dragHint.className='cube-drag-hint';dragHint.innerHTML='<svg viewBox="0 0 64 48" aria-hidden="true"><path class="swipe-track" d="M8 12h48m-43-5-5 5 5 5m38-10 5 5-5 5"/><g class="swipe-finger"><path d="M26 39 18 29q-3-5 2-5l6 5V13q0-6 5-6t5 6v10q7-3 11 3l-1 12-5 7H30Z"/></g></svg><span>ドラッグで見回す<small>手数は減りません</small></span>';boardShell.append(dragHint);

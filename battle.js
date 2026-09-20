@@ -9,6 +9,8 @@ const spirits={
  V:{name:'ノクス',element:'闇',color:'#b99aef',power:190},
  I:{name:'フロスト',element:'氷',color:'#91eee9',power:175},
  M:{name:'フェラム',element:'鋼',color:'#aebacb',power:195},
+ H:{name:'ソル',element:'光',color:'#fff4d1',power:175},
+ P:{name:'ヴェノム',element:'毒',color:'#bdde45',power:175},
  J:{name:'お邪魔石',element:'邪魔',color:'#57606e',power:0}
 };
 const enemies=[
