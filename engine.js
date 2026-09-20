@@ -36,7 +36,9 @@
   // Each sticker is the intersection of the two slice circles through its cubie.
   // The two intersections are the positive and negative faces of the third axis.
   const centers=[[366,247],[300,132],[234,247]];
-  const radius=layer=>115-layer*22;
+  let orbitSpacing=22;
+  const radius=layer=>115-layer*orbitSpacing;
+  function setOrbitSpacing(value){orbitSpacing=value===28?28:22}
   function orbit(s){
     const axis=s.n.findIndex(v=>v!==0),a=(axis+1)%3,b=(axis+2)%3,c=centers[a],d=centers[b];
     const r=radius(s.p[a]),t=radius(s.p[b]),dx=d[0]-c[0],dy=d[1]-c[1],dist=Math.hypot(dx,dy);
@@ -53,6 +55,6 @@
     const tau=2*Math.PI,amount=((end-start)*direction%tau+tau)%tau;
     return direction*(amount<1e-10||tau-amount<1e-10?0:amount);
   }
-  const api={faces,slices,create,rotate,move,solved,sphere,project,dot,orbit,centers,radius,orbitDirection,orbitSweep};
+  const api={faces,slices,create,rotate,move,solved,sphere,project,dot,orbit,centers,radius,orbitDirection,orbitSweep,setOrbitSpacing};
   root.CubeEngine=api;if(typeof module!=='undefined')module.exports=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

@@ -73,3 +73,8 @@ header{order:0;padding-bottom:10px}header h1{font-size:24px;white-space:nowrap}h
 .cube-drag-hint.is-learned .swipe-finger{animation:none}.tutorial-mode .cube-drag-hint{visibility:hidden}
 @keyframes cube-swipe{0%,100%{transform:translateX(-6px) rotate(-8deg)}50%{transform:translateX(6px) rotate(8deg)}}
 @media(prefers-reduced-motion:reduce){.cube-drag-hint .swipe-finger{animation:none}}
+@media(max-width:600px){
+main{padding:8px 4px 16px;gap:6px}.board-shell{margin:0;padding:5px 0;border-radius:12px}.board-heading{padding:2px 0;margin:0}.board-heading span{display:none}.board-heading strong{font-size:13px}
+.enemy-card{min-height:76px;padding:5px 8px;grid-template-columns:80px minmax(0,1fr)}.monster{width:80px;height:72px}.enemy-card h2{font-size:14px}.player-hp{padding:0 6px}
+.cube-drag-hint{margin:0 auto;gap:6px;font-size:11px}.cube-drag-hint svg{width:38px;height:30px}#viewReset{margin:3px auto!important}.board-shell>small{display:none!important}
+}
