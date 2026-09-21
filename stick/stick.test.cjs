@@ -42,7 +42,7 @@ assert.ok(!src.includes("press.mode==='view'"),'stick must not control camera');
  vm.createContext(c);
  vm.runInContext(src.slice(src.indexOf(" canvas.addEventListener('pointerdown'"),src.indexOf(' function movePad(')),c);
  const e=(x,y)=>({button:0,pointerId:1,clientX:x,clientY:y,stopImmediatePropagation(){},preventDefault(){}});
- for(const [dx,dy] of [[0,30],[30,0],[0,-30],[-30,0]]){
+ for(const [dx,dy] of [[0,30],[30,0],[0,-30],[-30,0],[0,800],[0,800],[0,-1600]]){
   const yaw=c.viewYaw,pitch=c.viewPitch;handlers.pointerdown(e(100,100));handlers.pointermove(e(100+dx,100+dy));handlers.pointerup(e(100+dx,100+dy));
   assert.equal(c.boardPress,null);assert.equal(c.viewYaw,yaw-dx*.009);assert.equal(c.viewPitch,pitch+dy*.009);assert.equal(c.picked,null,'drag must not select panel');
  }
@@ -60,7 +60,7 @@ let cases=0;
 }
 for(const size of [3,4,5]){
  E.configure(size);
- for(const yaw of [.1,.7,1.6,3,4.7])for(const pitch of [-1.1,.2,1.1]){
+ for(const yaw of [.1,.7,1.6,3,4.7])for(const pitch of [-7,-3,-1.6,-1.1,.2,1.1,1.6,3,7]){
   const sy=Math.sin(yaw),cy=Math.cos(yaw),sp=Math.sin(pitch),cp=Math.cos(pitch),right=[cy,0,-sy],up=[-sy*sp,cp,-cy*sp],camera=[sy*cp,sp,cy*cp];
   const cubePoint=p=>[358+E.dot(p,right)*46,530-E.dot(p,up)*46],c={E,cubePoint};vm.createContext(c);vm.runInContext(fn,c);
   for(const s of E.create().filter(s=>E.dot(s.n,camera)>.05))for(const [dx,dy] of [[30,0],[-30,0],[0,30],[0,-30]]){

@@ -71,7 +71,7 @@ function drawSelectedPanel(ctx,panel,time=performance.now()){
   if(!boardPress.moved&&Math.hypot(dx,dy)<6)return;
   if(!boardPress.moved){picked=null;cancel.hidden=true;setMode('view')}
   boardPress.moved=true;
-  viewYaw=boardPress.yaw-dx*.009;viewPitch=Math.max(-1.35,Math.min(1.35,boardPress.pitch+dy*.009));updateView();
+  viewYaw=boardPress.yaw-dx*.009;viewPitch=boardPress.pitch+dy*.009;updateView();
  },{capture:true});
  canvas.addEventListener('pointerup',e=>{
   e.stopImmediatePropagation();const start=boardPress;if(!start||start.id!==e.pointerId)return;boardPress=null;if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);if(start.moved){globalThis.stickLesson?.viewed();return}if(Math.hypot(start.x-e.clientX,start.y-e.clientY)>16)return;
