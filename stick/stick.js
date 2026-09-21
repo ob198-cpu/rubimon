@@ -26,10 +26,9 @@ function stickMoveFor(sticker,dx,dy){
  boardViewport=()=>orbitExpanded?{w:600,h:740,x:0,y:-20}:{w:352,h:352,x:182,y:compactBoard?384:354};
  const originalResize=resize;resize=function(){document.body.classList.toggle('stick-orbit-open',orbitExpanded);originalResize()};
  const panel=document.createElement('section');panel.className='stick-controls';
- panel.innerHTML='<div class="stick-instructions"><div class="stick-modes"><button type="button" id="stickView" aria-pressed="true">見回す</button><button type="button" id="stickTurn" aria-pressed="false">列を回す</button></div><p id="stickStatus" role="status">右のスティックで見回せます</p><button type="button" id="stickCancel" hidden>選択解除</button></div><div class="stick-pad" tabindex="0" role="group" aria-label="回転スティック。ドラッグして操作。矢印キーでも操作できます"><span class="stick-cross" aria-hidden="true">＋</span><span class="stick-knob" aria-hidden="true"></span><span class="stick-caption">VIEW</span></div>';
+ panel.innerHTML='<div class="stick-instructions"><p id="stickStatus" role="status"></p><button type="button" id="stickCancel" hidden>選択解除</button></div><div class="stick-pad" tabindex="0" role="group" aria-label="回転スティック。ドラッグして操作。矢印キーでも操作できます"><span class="stick-cross" aria-hidden="true">＋</span><span class="stick-knob" aria-hidden="true"></span><span class="stick-caption">TURN</span></div>';
  canvas.after(panel);
  const status=panel.querySelector('#stickStatus'),pad=panel.querySelector('.stick-pad'),knob=panel.querySelector('.stick-knob'),caption=panel.querySelector('.stick-caption'),cancel=panel.querySelector('#stickCancel');
- const view=panel.querySelector('#stickView'),turn=panel.querySelector('#stickTurn');
  const hintConfirm=document.createElement('button');hintConfirm.type='button';hintConfirm.textContent='ヒントの列を回す';hintConfirm.hidden=true;panel.querySelector('.stick-instructions').append(hintConfirm);
  let mode='view',picked=null,press=null,preview=null,boardPress=null;
  const originalDrawGuide=drawGuide;
@@ -42,8 +41,7 @@ function stickMoveFor(sticker,dx,dy){
  };
  const ready=()=>!active&&!queue.length&&!tutorial&&!panelPick&&phase==='ready'&&turnMoves<turnLimit;
  function clearGuide(){pendingMove=null;selectedLayer=null;hoverLayer=null;previewDir=0;preview=null;hintConfirm.hidden=true;updateGuide()}
- function setMode(next){mode=next;clearGuide();view.setAttribute('aria-pressed',String(mode==='view'));turn.setAttribute('aria-pressed',String(mode==='turn'));caption.textContent='TURN';pad.classList.toggle('turn-mode',mode==='turn');status.textContent=mode==='view'?'キューブをドラッグして見回す · タップでパネル選択':picked?'スティックを上下・左右へ → 水色の列を確認して離す':'キューブのパネルをタップしてください'}
- view.onclick=()=>setMode('view');turn.onclick=()=>setMode('turn');
+ function setMode(next){mode=next;clearGuide();caption.textContent='TURN';pad.classList.toggle('turn-mode',mode==='turn');status.textContent=mode==='view'?'':picked?'スティックを上下・左右へ → 水色の列を確認して離す':'キューブのパネルをタップしてください'}
  cancel.onclick=()=>{picked=null;cancel.hidden=true;setMode('view')};
  const originalHint=byId('hint').onclick;
  byId('hint').onclick=()=>{if(!ready())return;picked=null;cancel.hidden=true;originalHint();hintConfirm.hidden=!pendingMove;status.textContent=pendingMove?'水色の列を確認して「ヒントの列を回す」':'確実な手順は未確認です'};
