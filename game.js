@@ -635,6 +635,19 @@ canvas.before(boardShell);const boardTitle=document.createElement('div');boardTi
 const orbitToggle=document.createElement('button');orbitToggle.id='orbitToggle';orbitToggle.className='orbit-toggle';orbitToggle.textContent='2D表示 ▸ 開く';orbitToggle.setAttribute('aria-expanded','false');canvas.before(orbitToggle);
 orbitToggle.onclick=()=>{if(challengeMode&&orbitExpanded){byId('battleLog').textContent='2Dチャレンジ中は2D盤面を使って解きます。';return}orbitExpanded=!orbitExpanded;orbitToggle.textContent=orbitExpanded?'2D表示 ▾ 閉じる':'2D表示 ▸ 開く';orbitToggle.setAttribute('aria-expanded',String(orbitExpanded));resize();placeCubeTouch()};
 function setChallengeMode(on){challengeMode=!!on;if(challengeMode&&!orbitExpanded){orbitExpanded=true;orbitToggle.textContent='2D表示 ▾ 閉じる';orbitToggle.setAttribute('aria-expanded','true')}byId('battleLog').textContent=challengeMode?'2DチャレンジON：3Dパネルを隠しました。2D盤面を見てそろえよう。':'2DチャレンジOFF：3Dパネルを通常表示に戻しました。';resize();placeCubeTouch()}
+function scrambledLargeCube(size){
+ let fallback=null;
+ for(let attempt=0;attempt<16;attempt++){
+  const candidate=B.rubikBoard(E,Math.random,B.pools.normal,0),keys=Object.keys(E.slices);let previous='';
+  for(let i=0;i<(size===4?36:48);i++){
+   const choices=keys.filter(key=>key!==previous),face=choices[Math.floor(Math.random()*choices.length)];
+   E.move(candidate,face,Math.random()<.5?-1:1);previous=face;
+  }
+  fallback ||= candidate;
+  if(!B.matches(candidate).length)return candidate;
+ }
+ return fallback;
+}
 function setLineChallenge(lines){
  const next=lineChallenge===lines?0:lines;
  if(!lineChallenge&&next)lineChallengeSetup={colorCount:customColorCount,rule:byId('attackRule').value};
@@ -649,9 +662,9 @@ function setLineChallenge(lines){
  E.configure(3);
  customColorCount=6;const colorControl=byId('colorCount');if(colorControl){colorControl.value='6';syncColorCountDisplay()}
  byId('attackRule').value='front';reset();E.configure(lineChallenge);
- state=B.rubikBoard(E,Math.random,B.pools.normal,0);E.move(state,'U',1);if(lineChallenge===5)E.move(state,'R',-1);
+ state=scrambledLargeCube(lineChallenge);
  history=[];proofCache=null;turnMoves=0;phase='ready';
- byId('battleLog').textContent=lineChallenge+'列チャレンジ開始：縦・横とも'+lineChallenge+'枚の'+lineChallenge+'×'+lineChallenge+'キューブです。';refresh()
+ byId('battleLog').textContent=lineChallenge+'列チャレンジ開始：縦・横とも'+lineChallenge+'枚。合法な回転だけで十分にシャッフルした'+lineChallenge+'×'+lineChallenge+'キューブです。';refresh()
 }
 const orbitToolbar=document.createElement('div');orbitToolbar.className='orbit-toolbar';orbitToggle.before(orbitToolbar);
 const colorLabel=document.createElement('label');colorLabel.className='color-count-control';colorLabel.textContent='属性 ';
