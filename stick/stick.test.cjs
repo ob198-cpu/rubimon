@@ -1,6 +1,19 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),E=require('./engine.js');
 const src=fs.readFileSync(__dirname+'/stick.js','utf8'),fn=src.slice(src.indexOf('function stickMoveFor'),src.indexOf('(()=>{'));
 assert.ok(!src.includes('stickMoveFor(picked,30,0)'), 'panel selection must not invent a horizontal preview');
+assert.ok(!src.includes("press.mode==='view'"),'stick must not control camera');
+{
+ const handlers={};
+ const c={canvas:{addEventListener:(name,fn)=>handlers[name]=fn,setPointerCapture(){},hasPointerCapture:()=>true,releasePointerCapture(){}},boardPress:null,tutorial:null,press:null,compactBoard:false,hitFaces:[{points:[]}],inside:()=>true,boardPointer:()=>[0,0],viewYaw:0,viewPitch:0,picked:null,cancel:{hidden:true},setMode(){},updateView(){},panelPick:null,ready:()=>false};
+ vm.createContext(c);
+ vm.runInContext(src.slice(src.indexOf(" canvas.addEventListener('pointerdown'"),src.indexOf(' function movePad(')),c);
+ const e=(x,y)=>({button:0,pointerId:1,clientX:x,clientY:y,stopImmediatePropagation(){},preventDefault(){}});
+ for(const [dx,dy] of [[0,30],[30,0],[0,-30],[-30,0]]){
+  const yaw=c.viewYaw,pitch=c.viewPitch;handlers.pointerdown(e(100,100));handlers.pointermove(e(100+dx,100+dy));handlers.pointerup(e(100+dx,100+dy));
+  assert.equal(c.boardPress,null);assert.equal(c.viewYaw,yaw-dx*.009);assert.equal(c.viewPitch,pitch+dy*.009);assert.equal(c.picked,null,'drag must not select panel');
+ }
+ handlers.pointerdown(e(100,100));handlers.pointercancel();assert.equal(c.boardPress,null);
+}
 let cases=0;
 // Up/down on either upright side must select a vertical column, including corners.
 {
