@@ -20,8 +20,9 @@ function stickMoveFor(sticker,dx,dy){
 function drawSelectedPanel(ctx,panel,time=performance.now()){
  const points=panel.points,center=points.reduce((s,p)=>[s[0]+p[0]/points.length,s[1]+p[1]/points.length],[0,0]);
  ctx.save();ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(...p):ctx.moveTo(...p));ctx.closePath();
- const alpha=.21*(1+Math.cos(time*Math.PI*2/1200));
- ctx.fillStyle=`rgba(220, 40, 50, ${alpha})`;ctx.fill();ctx.restore();
+ const alpha=.5*(1+Math.cos(time*Math.PI*2/1200));
+ // Reach a clean, luminous coral at the peak instead of a muddy dark-red mix.
+ ctx.fillStyle=`rgba(255, 128, 112, ${alpha})`;ctx.fill();ctx.restore();
  // Keep the attribute and status legible over the selected surface.
  drawPanelSpirit(panel.sticker,center[0],center[1],11);
  drawBlockStatus(panel.sticker,center,11);
