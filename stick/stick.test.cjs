@@ -3,13 +3,23 @@ const src=fs.readFileSync(__dirname+'/stick.js','utf8'),fn=src.slice(src.indexOf
 assert.ok(!src.includes('stickMoveFor(picked,30,0)'), 'panel selection must not invent a horizontal preview');
 assert.ok(!src.includes("press.mode==='view'"),'stick must not control camera');
 {
- const arcs=[],fills=[];let originalCalls=0,guide=null;
- const ctx={save(){},restore(){},beginPath(){},arc:(...a)=>arcs.push(a),fill(){fills.push(this.fillStyle)},stroke(){}};
- const c={ctx,picked:{id:7},active:null,hitFaces:[{sticker:{id:7},points:[[10,10],[30,10],[30,30],[10,30]]}],guideFace:()=>guide,drawGuide:()=>originalCalls++};
+ const surfaces=[];let originalCalls=0,guide=null;
+ const c={ctx:{},drawSelectedPanel:(context,panel)=>surfaces.push(panel),picked:{id:7},active:null,hitFaces:[{sticker:{id:7},points:[[10,10],[30,10],[30,30],[10,30]]}],guideFace:()=>guide,drawGuide:()=>originalCalls++};
  vm.createContext(c);vm.runInContext(src.slice(src.indexOf(' const originalDrawGuide='),src.indexOf(' const ready=')),c);
- c.drawGuide();assert.deepEqual(arcs[0].slice(0,3),[20,20,5]);assert.equal(fills[0],'#ff3030');assert.equal(originalCalls,1);
- guide='F';c.drawGuide();assert.equal(arcs.length,1,'direction guide must keep its original rendering');assert.equal(originalCalls,2);
- c.picked=null;guide=null;c.drawGuide();assert.equal(arcs.length,1,'no dot after deselection');
+ c.drawGuide();assert.equal(surfaces.length,1);assert.equal(originalCalls,1);
+ guide='F';c.drawGuide();assert.equal(surfaces.length,1);assert.equal(originalCalls,2);
+ c.picked=null;guide=null;c.drawGuide();assert.equal(surfaces.length,1);
+}
+{
+ const vertices=[],icons=[];let fills=0;
+ const ctx={save(){},restore(){},beginPath(){},closePath(){},moveTo:(...p)=>vertices.push(p),lineTo:(...p)=>vertices.push(p),fill(){fills++}};
+ const c={drawPanelSpirit:(...args)=>icons.push(args),drawBlockStatus(){}};
+ vm.createContext(c);vm.runInContext(fn,c);
+ c.drawSelectedPanel(ctx,{sticker:{id:7},points:[[0,0],[40,0],[40,40],[0,40]]});
+ assert.equal(fills,1);assert.equal(vertices.length,4);assert.equal(ctx.fillStyle,'rgba(220, 40, 50, 0.42)');
+ assert.deepEqual(icons[0],[{id:7},20,20,11]);
+ assert.ok(!src.includes('drawSelectedGem'));
+ assert.ok(!fs.readFileSync(__dirname+'/portraits.js','utf8').includes('elementIconSheet'));
 }
 {
  const handlers={};

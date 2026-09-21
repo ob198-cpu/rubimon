@@ -1,23 +1,5 @@
-// User-provided transparent 3 x 3 sprite sheet. Unmapped attributes retain their glyphs.
-const elementIconCells={R:[0,0],B:[1,0],F:[2,0],L:[0,1],U:[1,1],I:[2,1],H:[0,2],V:[1,2],P:[2,2]};
-const elementIconSheet=new Image(),pendingElementIcons=new Map();
-elementIconSheet.onload=()=>{
- for(const [ctx,args] of pendingElementIcons){
-  // The animated board redraws itself; only standalone portrait canvases need a refresh.
-  if(ctx.canvas.id==='scene')continue;
-  const [,x,y,r]=args;ctx.clearRect(x-r,y-r,r*2,r*2);drawSpirit(ctx,...args);
- }
- pendingElementIcons.clear();
-};
-elementIconSheet.onerror=()=>pendingElementIcons.clear();
-elementIconSheet.src='element-icons.png';
+// Original simple attribute symbols.
 function drawSpirit(ctx,key,x,y,r){
- const cell=elementIconCells[key];
- if(cell&&elementIconSheet.complete&&elementIconSheet.naturalWidth){
-  const w=elementIconSheet.naturalWidth/3,h=elementIconSheet.naturalHeight/3;
-  ctx.drawImage(elementIconSheet,cell[0]*w,cell[1]*h,w,h,x-r,y-r,r*2,r*2);return;
- }
- if(cell&&!elementIconSheet.complete)pendingElementIcons.set(ctx,[key,x,y,r]);
  const colors={R:['#ff8966','#bd2d39'],B:['#81e1ff','#2363bf'],F:['#a4ee9a','#28784e'],L:['#f4cd8f','#986032'],U:['#fff3a8','#c59232'],D:['#ffbfdc','#bf508b'],V:['#c6a6ff','#643895'],I:['#b8fff3','#298d99'],M:['#d4deec','#66758e']};
  colors.J=['#7e8798','#303847'];colors.X=['#9a9da1','#55595e'];colors.H=['#fffbea','#c9bfa0'];colors.P=['#dbf472','#738926'];
  const [light,dark]=colors[key];ctx.save();ctx.translate(x,y);ctx.scale(r/20,r/20);
