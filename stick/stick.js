@@ -36,7 +36,7 @@ function stickMoveFor(sticker,dx,dy){
  drawGuide=function(part='cube'){
   if(part==='cube'&&picked&&!guideFace()&&!active){
    const panel=hitFaces.find(h=>h.sticker.id===picked.id);
-   if(panel){ctx.save();ctx.strokeStyle='#ffe5a3';ctx.lineWidth=3;ctx.beginPath();panel.points.forEach((p,i)=>i?ctx.lineTo(...p):ctx.moveTo(...p));ctx.closePath();ctx.stroke();ctx.restore()}
+   if(panel){const center=panel.points.reduce((sum,p)=>[sum[0]+p[0]/panel.points.length,sum[1]+p[1]/panel.points.length],[0,0]);ctx.save();ctx.fillStyle='#ff3030';ctx.strokeStyle='#fff4e8';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(center[0],center[1],5,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.restore()}
   }
   originalDrawGuide(part);
  };

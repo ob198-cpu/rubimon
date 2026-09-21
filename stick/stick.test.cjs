@@ -3,6 +3,15 @@ const src=fs.readFileSync(__dirname+'/stick.js','utf8'),fn=src.slice(src.indexOf
 assert.ok(!src.includes('stickMoveFor(picked,30,0)'), 'panel selection must not invent a horizontal preview');
 assert.ok(!src.includes("press.mode==='view'"),'stick must not control camera');
 {
+ const arcs=[],fills=[];let originalCalls=0,guide=null;
+ const ctx={save(){},restore(){},beginPath(){},arc:(...a)=>arcs.push(a),fill(){fills.push(this.fillStyle)},stroke(){}};
+ const c={ctx,picked:{id:7},active:null,hitFaces:[{sticker:{id:7},points:[[10,10],[30,10],[30,30],[10,30]]}],guideFace:()=>guide,drawGuide:()=>originalCalls++};
+ vm.createContext(c);vm.runInContext(src.slice(src.indexOf(' const originalDrawGuide='),src.indexOf(' const ready=')),c);
+ c.drawGuide();assert.deepEqual(arcs[0].slice(0,3),[20,20,5]);assert.equal(fills[0],'#ff3030');assert.equal(originalCalls,1);
+ guide='F';c.drawGuide();assert.equal(arcs.length,1,'direction guide must keep its original rendering');assert.equal(originalCalls,2);
+ c.picked=null;guide=null;c.drawGuide();assert.equal(arcs.length,1,'no dot after deselection');
+}
+{
  const handlers={};
  const c={canvas:{addEventListener:(name,fn)=>handlers[name]=fn,setPointerCapture(){},hasPointerCapture:()=>true,releasePointerCapture(){}},boardPress:null,tutorial:null,press:null,compactBoard:false,hitFaces:[{points:[]}],inside:()=>true,boardPointer:()=>[0,0],viewYaw:0,viewPitch:0,picked:null,cancel:{hidden:true},setMode(){},updateView(){},panelPick:null,ready:()=>false};
  vm.createContext(c);
