@@ -71,7 +71,8 @@ function updateGuide(){
  document.querySelectorAll('[data-layer]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.layer===selectedLayer)));
 }
 function selectLayer(face,choices=[face]){pendingMove=null;selectedLayer=face;hoverLayer=null;previewDir=0;byId('layerChoices').replaceChildren();for(const f of choices){const b=document.createElement('button');b.dataset.layer=f;b.textContent=E.slices[f].name+'層 '+f;b.onclick=()=>{pendingMove=null;selectedLayer=f;hoverLayer=null;updateGuide()};byId('layerChoices').append(b)}updateGuide()}
-function drawGuide(part='cube'){
+function drawGuide(part='cube',drawingContext=ctx){
+ const ctx=drawingContext;
  const face=guideFace();if(!face)return;const f=E.slices[face],color=B.canRotate(state,face)?'#83f5ff':'#ff8ca7';
  ctx.save();ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=2.5;
  if(part==='orbit'){
@@ -182,7 +183,8 @@ function cubePoint(v){const size=visualCubeScale();return [cubeOrigin[0]+58+E.do
 function polygon(points,fill,stroke,width=1){ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(...p):ctx.moveTo(...p));ctx.closePath();ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=width;ctx.stroke()}}
 function isMoving(p){return active&&p[E.slices[active.face].axis]===E.slices[active.face].layer}
 function transform(v,p,angle){return isMoving(p)?E.rotate(v,E.slices[active.face].axis,angle):v}
-function drawOrbits(angle){
+function drawOrbits(angle,drawingContext=ctx){
+  const ctx=drawingContext;
   ringHits=[];
   for(let axis=0;axis<3;axis++)for(const layer of E.layers()){
     const center=E.centers[axis],r=E.radius(layer),points=[];
@@ -192,7 +194,7 @@ function drawOrbits(angle){
     ctx.strokeStyle=lit?'#e7b66a':'#76848a';ctx.globalAlpha=lit?.95:.55;ctx.lineWidth=lit?1.8:1;ctx.stroke();ctx.globalAlpha=1;
     ringHits.push({points,face:Object.keys(E.slices).find(f=>E.slices[f].axis===axis&&E.slices[f].layer===layer)});
   }
-  drawGuide('orbit');
+  drawGuide('orbit',ctx);
   for(const s of state){
     const moving=isMoving(s.p);let p=E.orbit(s);
     if(moving){
@@ -206,8 +208,8 @@ function drawOrbits(angle){
     // An opaque backing keeps every orbit/selection line behind the symbol.
     ctx.save();ctx.beginPath();ctx.arc(...p,11,0,Math.PI*2);ctx.fillStyle='#152f34';ctx.fill();
     if(matched.has(s.id)&&!active){ctx.beginPath();ctx.arc(...p,10.7,0,Math.PI*2);ctx.strokeStyle='#ffe9a4';ctx.lineWidth=1.5;ctx.stroke()}
-    drawPanelSpirit(s,p[0],p[1],compactBoard?11:10,false);
-    drawBlockStatus(s,p,11);
+    drawPanelSpirit(s,p[0],p[1],compactBoard?11:10,false,ctx);
+    drawBlockStatus(s,p,11,ctx);
     ctx.restore();
   }
 }
@@ -233,12 +235,14 @@ function drawCube(angle){
   polygons.sort((a,b)=>a.depth-b.depth);
   for(const p of polygons){polygon(p.points,p.fill,p.stroke,.8);if(p.normal){hitFaces.push(p);const c=p.points.reduce((a,v)=>[a[0]+v[0]/4,a[1]+v[1]/4],[0,0]);drawPanelSpirit(p.sticker,c[0],c[1],11);drawBlockStatus(p.sticker,c,14)}}
 }
-function drawPanelSpirit(sticker,x,y,r,conceal=challengeMode){
+function drawPanelSpirit(sticker,x,y,r,conceal=challengeMode,drawingContext=ctx){
+ const ctx=drawingContext;
  if(conceal){ctx.save();ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#f5f0df';ctx.font='800 '+Math.round(r*1.55)+'px system-ui';ctx.fillText('?',x,y+1);ctx.restore();return}
  if(sticker.face!=='X'||!sticker.spentOriginal){drawSpirit(ctx,sticker.face,x,y,r);return}
  ctx.save();ctx.filter='grayscale(1)';ctx.globalAlpha=.72;drawSpirit(ctx,sticker.spentOriginal,x,y,r);ctx.restore();
 }
-function drawBlockStatus(s,p,r){
+function drawBlockStatus(s,p,r,drawingContext=ctx){
+ const ctx=drawingContext;
  if(active)return;ctx.save();
  if(s.locked>0){ctx.strokeStyle='#ffd47a';ctx.lineWidth=2;ctx.strokeRect(p[0]-r,p[1]-r,r*2,r*2);ctx.fillStyle='#172033';ctx.fillRect(p[0]-4,p[1]-5,8,9);ctx.strokeStyle='#ffd47a';ctx.strokeRect(p[0]-4,p[1]-5,8,9);ctx.beginPath();ctx.arc(p[0],p[1]-5,3,Math.PI,0);ctx.stroke()}
  if(B.sealed(s,attackPolicy())){ctx.strokeStyle='#f87eb7';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(p[0]-r,p[1]+r);ctx.lineTo(p[0]+r,p[1]-r);ctx.stroke()}
@@ -559,7 +563,7 @@ function drawBattleEffects(now){
   if(age<950&&!e.counter){
    const t=clamp((age-300)/650,0,1);
    e.points.forEach((point,i)=>{
-    const v=boardViewport(),shown=orbitDisplayPoint(point),source=[board.left+(shown[0]-v.x)*board.width/v.w,board.top+(shown[1]-v.y)*board.height/v.h];
+    const v=boardViewport(),shown=orbitDisplayPoint(point),source=globalThis.mobileOrbitSource?.(point)||[board.left+(shown[0]-v.x)*board.width/v.w,board.top+(shown[1]-v.y)*board.height/v.h];
     c.globalAlpha=(1-t)*.8;c.lineWidth=2;c.beginPath();c.arc(source[0],source[1],(10+age/35)*board.width/600,0,Math.PI*2);c.stroke();
     if(age<300||reducedMotion.matches)return;
     const bend=(i%2?1:-1)*(35+i*6),at=u=>[source[0]+(target[0]-source[0])*u+Math.sin(u*Math.PI)*bend,source[1]+(target[1]-source[1])*u-70*Math.sin(u*Math.PI)];

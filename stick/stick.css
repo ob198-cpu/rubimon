@@ -1,4 +1,14 @@
 /* Only /stick/ loads this stylesheet. */
+#mobileOrbit[hidden]{display:none!important}
+@media(max-width:850px){
+ .stick-version.stick-orbit-open{height:auto;min-height:100dvh;overflow-x:hidden;overflow-y:auto}
+ .stick-version.stick-orbit-open main{height:auto;min-height:100dvh}
+ .stick-version.stick-orbit-open .board-shell{flex:none;overflow:visible}
+ .stick-version.stick-orbit-open #mobileOrbit{display:block;order:2;width:100%;height:auto;flex:none;touch-action:pan-y;margin:10px auto 12px}
+ .stick-version.stick-orbit-open #scene{order:3!important;margin:0 auto!important}
+ .stick-version.stick-orbit-open .stick-controls{order:4;margin:8px auto!important}
+ .stick-version.stick-orbit-open .board-actions{order:5}
+}
 .hint-operation-stack{display:flex;flex-direction:column;gap:4px;min-width:48px}
 .stick-version .hint-operation-stack #operationHelpOpen{margin:0;min-height:32px!important;padding:4px 8px!important}
 .stick-version .board-left-actions{align-items:flex-end}

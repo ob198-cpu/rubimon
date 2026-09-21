@@ -22,6 +22,7 @@
  const shell=document.querySelector('.board-shell');
  function fit(){
   if(!matchMedia('(max-width:850px)').matches){canvas.style.removeProperty('width');return}
+  if(orbitExpanded){canvas.style.setProperty('width',Math.max(40,shell.clientWidth-16)+'px','important');return}
   const others=[...shell.children].filter(n=>n!==canvas&&getComputedStyle(n).display!=='none');
   const reserved=others.reduce((sum,n)=>{const css=getComputedStyle(n);const margin=n.classList.contains('stick-controls')?4:parseFloat(css.marginTop||0)+parseFloat(css.marginBottom||0);return sum+n.getBoundingClientRect().height+margin},0);
   const height=Math.max(40,shell.clientHeight-reserved-20),v=boardViewport();

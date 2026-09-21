@@ -42,13 +42,13 @@ function drawSelectedPanel(ctx,panel,time=performance.now()){
  const hintConfirm=document.createElement('button');hintConfirm.type='button';hintConfirm.textContent='ヒントの列を回す';hintConfirm.hidden=true;panel.querySelector('.stick-instructions').append(hintConfirm);
  let mode='view',picked=null,press=null,preview=null,boardPress=null;
  const originalDrawGuide=drawGuide;
- drawGuide=function(part='cube'){
+ drawGuide=function(part='cube',drawingContext=ctx){
   if(part==='cube'&&picked&&!active){
    const panel=hitFaces.find(h=>h.sticker.id===picked.id);
    if(panel)drawSelectedPanel(ctx,panel);
   }
   // Manual stick movement needs no cyan overlay. Keep explicit hint/demo guides.
-  if(pendingMove||tutorial)originalDrawGuide(part);
+  if(pendingMove||tutorial)originalDrawGuide(part,drawingContext);
  };
  const ready=()=>!active&&!queue.length&&!tutorial&&!panelPick&&phase==='ready'&&turnMoves<turnLimit;
  function clearGuide(){pendingMove=null;selectedLayer=null;hoverLayer=null;previewDir=0;preview=null;hintConfirm.hidden=true;updateGuide()}
