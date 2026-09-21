@@ -1,0 +1,14 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const src=fs.readFileSync(__dirname+'/menu.js','utf8');
+let listener,capture,closed=0;const tasks=[];
+const context={menu:{addEventListener:(type,fn,cap)=>{listener=fn;capture=cap},close:()=>closed++},queueMicrotask:fn=>tasks.push(fn)};
+vm.createContext(context);vm.runInContext(src.slice(src.indexOf(" menu.addEventListener('click'"),src.indexOf(' // Fit the existing canvas')),context);
+assert.equal(capture,true,'capture button identity before skill refresh replaces its label');
+let button={dataset:{char:'sala'},id:'',disabled:false};
+listener({target:{closest:()=>button}});button=null;
+assert.equal(closed,0,'existing skill handler runs before menu closes');tasks.shift()();assert.equal(closed,1);
+listener({target:{closest:()=>({dataset:{char:'sala'},disabled:true})}});assert.equal(tasks.length,0);
+listener({target:{closest:()=>({dataset:{},id:'',disabled:false})}});assert.equal(tasks.length,0);
+for(const selector of ['.lobby-nav','.squad-skills','.rule-panel','#boardProof','#battleLog','.settings-drawer'])assert.ok(src.includes(selector));
+assert.ok(!src.includes('cloneNode'),'keep original handlers and selected values');
+console.log('PASS: menu preserves existing controls and closes after enabled skills only');

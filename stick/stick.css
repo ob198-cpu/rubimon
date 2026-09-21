@@ -1,4 +1,27 @@
 /* Only /stick/ loads this stylesheet. */
+#battleMenu{width:min(680px,calc(100% - 20px));max-height:calc(100dvh - 24px);padding:0;border:1px solid #aa9564;border-radius:16px;background:#14292d;color:#e6e9de;overflow:hidden}
+#battleMenu::backdrop{background:#061215bf}
+#battleMenu[open]{display:flex;flex-direction:column}
+.battle-menu-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid #aa956444;flex:none}
+.battle-menu-head h2{font-size:18px;margin:0;color:#ecd49b}
+.battle-menu-body{overflow:auto;overscroll-behavior:contain;padding:12px;display:flex;flex-direction:column;gap:12px;min-height:0}
+.battle-menu-body>*{order:initial!important;margin:0!important}
+.battle-menu-body .lobby-nav{flex:none}
+#battleMenuOpen{white-space:nowrap;border-color:#aa9564;color:#f5dfaa;min-height:40px}
+@media(max-width:850px){
+ .stick-version{height:100dvh;min-height:0;overflow:hidden}
+ .stick-version main{height:100%;min-height:0;display:flex!important;flex-direction:column;max-width:600px;padding:6px 6px max(6px,env(safe-area-inset-bottom))!important;gap:5px!important}
+ .stick-version main>.panel{display:contents!important}
+ .stick-version .enemy-card,.stick-version .player-hp{flex:none}
+ .stick-version .board-shell{flex:1;width:100%;min-height:0;display:flex;flex-direction:column;align-items:stretch;padding:6px!important}
+ .stick-version #scene{order:2!important;flex:none;align-self:center;margin:auto!important}
+ .stick-version .stick-controls{order:3;height:112px;min-height:112px;flex:none;width:100%;margin:0 auto;padding:2px 4px}
+ .stick-version .board-actions{order:4;flex:none;padding:4px 0 0;min-height:44px}
+ .stick-version .board-left-actions{display:flex;flex-wrap:nowrap;width:100%;gap:4px}
+ .stick-version .board-left-actions button{padding:5px!important;font-size:10px!important;min-height:40px!important;flex:1}
+ .stick-version .orbit-toolbar{order:1;flex:none}
+ .stick-version #battleMenu .settings-drawer,.stick-version #battleMenu .mobile-battle-details{display:block}
+}
 .stick-version{padding-bottom:0;overscroll-behavior-y:contain}
 .stick-version .board-heading,.stick-version .board-shell>small,.stick-version .cube-drag-hint{display:none!important}
 .stick-version .board-shell{position:relative;top:auto!important;margin:0!important;padding:8px!important;overflow:hidden}
