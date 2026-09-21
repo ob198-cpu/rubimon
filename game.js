@@ -637,14 +637,15 @@ orbitToggle.onclick=()=>{if(challengeMode&&orbitExpanded){byId('battleLog').text
 function setChallengeMode(on){challengeMode=!!on;if(challengeMode&&!orbitExpanded){orbitExpanded=true;orbitToggle.textContent='2D表示 ▾ 閉じる';orbitToggle.setAttribute('aria-expanded','true')}byId('battleLog').textContent=challengeMode?'2DチャレンジON：3Dパネルを隠しました。2D盤面を見てそろえよう。':'2DチャレンジOFF：3Dパネルを通常表示に戻しました。';resize();placeCubeTouch()}
 function scrambledLargeCube(size){
  let fallback=null;
- for(let attempt=0;attempt<16;attempt++){
+ for(let attempt=0;attempt<64;attempt++){
   const candidate=B.rubikBoard(E,Math.random,B.pools.normal,0),keys=Object.keys(E.slices);let previous='';
   for(let i=0;i<(size===4?36:48);i++){
    const choices=keys.filter(key=>key!==previous),face=choices[Math.floor(Math.random()*choices.length)];
    E.move(candidate,face,Math.random()<.5?-1:1);previous=face;
   }
   fallback ||= candidate;
-  if(!B.matches(candidate).length)return candidate;
+  const faceDiversity=Object.values(E.faces).map(f=>new Set(candidate.filter(s=>s.n[f.axis]===Math.sign(f.layer)).map(s=>s.face)).size);
+  if(!B.matches(candidate).length&&faceDiversity.every(count=>count>=4))return candidate;
  }
  return fallback;
 }
@@ -663,6 +664,7 @@ function setLineChallenge(lines){
  customColorCount=6;const colorControl=byId('colorCount');if(colorControl){colorControl.value='6';syncColorCountDisplay()}
  byId('attackRule').value='front';reset();E.configure(lineChallenge);
  state=scrambledLargeCube(lineChallenge);
+ canvas.dataset.cubeSize=String(lineChallenge);canvas.dataset.faceDiversity=Object.values(E.faces).map(f=>new Set(state.filter(s=>s.n[f.axis]===Math.sign(f.layer)).map(s=>s.face)).size).join(',');
  history=[];proofCache=null;turnMoves=0;phase='ready';
  byId('battleLog').textContent=lineChallenge+'列チャレンジ開始：縦・横とも'+lineChallenge+'枚。合法な回転だけで十分にシャッフルした'+lineChallenge+'×'+lineChallenge+'キューブです。';refresh()
 }
