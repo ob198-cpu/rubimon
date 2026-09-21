@@ -1,4 +1,16 @@
 /* Only /stick/ loads this stylesheet. */
+#operationHelp{width:min(420px,calc(100% - 28px));max-height:calc(100dvh - 28px);overflow:auto;border:1px solid #aa9564;border-radius:18px;padding:22px;background:linear-gradient(145deg,#203e40,#112529);color:#e9eee6;box-shadow:0 20px 70px #0008}
+#operationHelp::backdrop{background:#051013c9}
+.operation-help-head small{color:#bda879;font-size:10px;letter-spacing:.18em}
+.operation-help-head h2{font-size:22px;margin:5px 0 20px;color:#f2dfae}
+.operation-help-steps{list-style:none;counter-reset:help;margin:0;padding:0;display:grid;gap:18px}
+.operation-help-steps li{position:relative;padding-left:36px;counter-increment:help}
+.operation-help-steps li::before{content:counter(help);position:absolute;left:0;top:0;width:25px;height:25px;border:1px solid #ab9462;border-radius:50%;display:grid;place-items:center;color:#f2dfae;font-size:12px}
+.operation-help-steps strong{font-size:15px}.operation-help-steps p{font-size:12px;line-height:1.65;color:#c5d5d0;margin:6px 0 0}
+.operation-help-note{font-size:11px;line-height:1.7;color:#b3c7c0;margin:20px 0 14px}
+#operationHelpClose{width:100%;min-height:44px;background:#d9bd7c;color:#192a29;font-weight:700;border-color:#ebd7a8}
+#operationHelpOpen{min-height:32px;padding:4px 12px;margin-left:5px;font-size:11px;color:#f2dfae;border-color:#aa9564}
+@media(max-height:600px){#operationHelp{padding:14px}.operation-help-head h2{margin-bottom:12px}.operation-help-steps{gap:10px}.operation-help-note{margin:12px 0}}
 .stick-version #scene,.stick-version .stick-pad{-webkit-tap-highlight-color:transparent}
 #battleMenu{width:min(680px,calc(100% - 20px));max-height:calc(100dvh - 24px);padding:0;border:1px solid #aa9564;border-radius:16px;background:#14292d;color:#e6e9de;overflow:hidden}
 #battleMenu::backdrop{background:#061215bf}
