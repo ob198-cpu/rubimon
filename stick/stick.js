@@ -118,7 +118,6 @@ function drawSelectedPanel(ctx,panel,time=performance.now()){
  // Keep selection honest when a skill, reset or challenge changes the board.
  let boardIdentity=JSON.stringify(state);const originalRefresh=refresh;
  refresh=function(){const next=JSON.stringify(state);if(next!==boardIdentity){boardIdentity=next;picked=null;cancel.hidden=true;clearGuide();if(mode==='turn')status.textContent='キューブのパネルをタップしてください'}originalRefresh()};
- const link=document.createElement('a');link.href='../?v=0674147';link.textContent='通常版へ';link.className='original-link';orbitToolbar.append(link);
  canvas.setAttribute('aria-label','キューブのパネルをタップして列を選択。右のスティックで方向を指定して離すと回転。');
  setMode('view');resize();updateView();
 })();
