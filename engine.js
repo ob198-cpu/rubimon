@@ -8,7 +8,10 @@
     F:{axis:2,layer:1,color:'#35d344',name:'前'},
     B:{axis:2,layer:-1,color:'#348ec5',name:'奥'}
   };
-  const slices={...faces,X:{axis:0,layer:0,name:'縦中央',color:'#bbb'},Y:{axis:1,layer:0,name:'横中央',color:'#bbb'},Z:{axis:2,layer:0,name:'奥行中央',color:'#bbb'}};
+  const slices={};let size=3;
+  const layers=()=>Array.from({length:size},(_,i)=>i-(size-1)/2);
+  function configure(next=3){size=Math.max(2,Math.min(5,Math.round(next)));const edge=(size-1)/2;faces.U.layer=faces.R.layer=faces.F.layer=edge;faces.D.layer=faces.L.layer=faces.B.layer=-edge;for(const key of Object.keys(slices))delete slices[key];Object.assign(slices,faces);const letters=['X','Y','Z'];for(let axis=0;axis<3;axis++){const inner=layers().filter(v=>Math.abs(v)<edge);inner.forEach((layer,i)=>{const key=size===3?letters[axis]:letters[axis]+(i+1);slices[key]={axis,layer,name:['縦','横','奥行'][axis]+'内側'+(inner.length>1?i+1:''),color:'#bbb'}})}return size}
+  configure(3);
   const dot=(a,b)=>a.reduce((s,v,i)=>s+v*b[i],0);
   function rotate(v,axis,angle){
     const r=v.slice(),a=(axis+1)%3,b=(axis+2)%3,c=Math.cos(angle),s=Math.sin(angle);
@@ -16,16 +19,17 @@
   }
   function create(){
     const result=[];
-    for(const [face,f] of Object.entries(faces))for(let a=-1;a<=1;a++)for(let b=-1;b<=1;b++){
-      const p=[0,0,0],n=[0,0,0];p[f.axis]=f.layer;n[f.axis]=f.layer;p[(f.axis+1)%3]=a;p[(f.axis+2)%3]=b;
+    for(const [face,f] of Object.entries(faces))for(const a of layers())for(const b of layers()){
+      const p=[0,0,0],n=[0,0,0];p[f.axis]=f.layer;n[f.axis]=Math.sign(f.layer);p[(f.axis+1)%3]=a;p[(f.axis+2)%3]=b;
       result.push({id:result.length,face,p,n});
     }return result;
   }
   function move(state,face,dir=1){
-    const f=slices[face],angle=-(f.layer||1)*dir*Math.PI/2;
-    for(const s of state)if(s.p[f.axis]===f.layer){s.p=rotate(s.p,f.axis,angle).map(Math.round);s.n=rotate(s.n,f.axis,angle).map(Math.round)}
+    const f=slices[face],angle=-Math.sign(f.layer||1)*dir*Math.PI/2;
+    const snap=v=>Math.round(v*2)/2;
+    for(const s of state)if(s.p[f.axis]===f.layer){s.p=rotate(s.p,f.axis,angle).map(snap);s.n=rotate(s.n,f.axis,angle).map(snap)}
   }
-  function solved(state){return Object.values(faces).every(f=>new Set(state.filter(s=>s.n[f.axis]===f.layer).map(s=>s.face)).size===1)}
+  function solved(state){return Object.values(faces).every(f=>new Set(state.filter(s=>s.n[f.axis]===Math.sign(f.layer)).map(s=>s.face)).size===1)}
   // Fixed component ±h gives exactly three latitude circles per rotation axis.
   function sphere(s){
     const h=.105,t=s.p.map((v,i)=>s.n[i]===0?v*h:0),k=Math.sqrt(1-dot(t,t));
@@ -50,11 +54,11 @@
   }
   // Canvas angles increase clockwise. Use one direction for the whole slice,
   // including paths longer than half a circle; never choose per-sticker shortcuts.
-  const orbitDirection=(face,dir)=> (slices[face].layer||1)*dir;
+  const orbitDirection=(face,dir)=> Math.sign(slices[face].layer||1)*dir;
   function orbitSweep(start,end,direction){
     const tau=2*Math.PI,amount=((end-start)*direction%tau+tau)%tau;
     return direction*(amount<1e-10||tau-amount<1e-10?0:amount);
   }
-  const api={faces,slices,create,rotate,move,solved,sphere,project,dot,orbit,centers,radius,orbitDirection,orbitSweep,setOrbitSpacing};
+  const api={faces,slices,create,rotate,move,solved,sphere,project,dot,orbit,centers,radius,orbitDirection,orbitSweep,setOrbitSpacing,configure,layers,get size(){return size}};
   root.CubeEngine=api;if(typeof module!=='undefined')module.exports=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

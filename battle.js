@@ -22,20 +22,22 @@ const enemies=[
 const pools={easy:['R','B','U','D'],normal:['R','B','F','L','U','D'],hard:['R','B','F','L','U','D','V','I','M']};
 const skills={R:'サラマンダー・インフェルノ',B:'ウンディーネ・大海嘯',F:'シルフ・テンペスト',L:'ノーム・大地崩撃',U:'ウィスプ・聖光裁断',D:'ルミナ・生命の祝福',V:'ノクス・月蝕',I:'フロスト・絶氷',M:'フェラム・鋼鉄流星'};
 const faceSpecs={U:[1,1],D:[1,-1],L:[0,-1],R:[0,1],F:[2,1],B:[2,-1]};
+function outer(state){return Math.max(...state.flatMap(s=>s.p.map(Math.abs)))}
 function sealed(s,policy={}){return (policy.seals||[]).some(row=>{const [axis,sign]=faceSpecs[row.face];return s.n[axis]===sign&&s.p[row.axis]===row.value})}
-function canRotate(state,face){const [axis,sign]=faceSpecs[face]||{X:[0,0],Y:[1,0],Z:[2,0]}[face];return !state.some(s=>s.locked>0&&s.p[axis]===sign)}
+function canRotate(state,face){const spec=root.CubeEngine&&root.CubeEngine.slices[face],fallback=faceSpecs[face];if(!spec&&!fallback)return false;const axis=spec?.axis??fallback[0],layer=spec?.layer??fallback[1]*outer(state);return !state.some(s=>s.locked>0&&s.p[axis]===layer)}
 function matches(state,policy={}){
  const groups=[];
+ const edge=outer(state),values=[...new Set(state.flatMap(s=>s.p))].sort((a,b)=>a-b),side=Math.round(Math.sqrt(state.length/6));
  for(let axis=0;axis<3;axis++)for(const sign of [-1,1]){
   const faceKey=Object.keys(faceSpecs).find(f=>faceSpecs[f][0]===axis&&faceSpecs[f][1]===sign);
   if(policy.faces&&!policy.faces.includes(faceKey))continue;
   const face=state.filter(s=>s.n[axis]===sign),a=(axis+1)%3,b=(axis+2)%3;
-  if(face.length===9&&!['J','X'].includes(face[0].face)&&face.every(s=>s.face===face[0].face&&!sealed(s,policy))){
+  if(face.length===side*side&&!['J','X'].includes(face[0].face)&&face.every(s=>s.face===face[0].face&&!sealed(s,policy))){
    groups.push({element:face[0].face,ids:face.map(s=>s.id),skill:true,face:faceKey});continue;
   }
-  for(const direction of [a,b])for(let v=-1;v<=1;v++){
-   const line=face.filter(s=>s.p[direction]===v);
-   if(line.length===3&&!['J','X'].includes(line[0].face)&&line.every(s=>s.face===line[0].face&&!sealed(s,policy)))groups.push({element:line[0].face,ids:line.map(s=>s.id),face:faceKey});
+  for(const direction of [a,b])for(const v of values){
+    const line=face.filter(s=>s.p[direction]===v);
+   if(line.length===side&&!['J','X'].includes(line[0].face)&&line.every(s=>s.face===line[0].face&&!sealed(s,policy)))groups.push({element:line[0].face,ids:line.map(s=>s.id),face:faceKey});
   }
  }return groups;
 }
@@ -52,7 +54,7 @@ function rubikBoard(E,random=Math.random,keys=pools.normal,moves=28){
  // A standard solved 3x3 cube has one color on each of its six faces.
  // Scrambling it only with legal turns guarantees a physically attainable board.
  for(const [faceIndex,faceName] of faceNames.entries()){
-  const f=E.faces[faceName],stickers=state.filter(s=>s.n[f.axis]===f.layer);
+  const f=E.faces[faceName],stickers=state.filter(s=>s.n[f.axis]===Math.sign(f.layer));
   stickers.forEach(s=>s.face=keys[faceIndex]);
  }
  let previous='';

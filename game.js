@@ -111,6 +111,7 @@ function showVictory(){byId('victoryEnemy').textContent=currentEnemy().name+' �
 document.getElementById('victoryRetry').onclick=()=>{victoryScreen.hidden=true;reset()};document.getElementById('victoryClose').onclick=()=>{victoryScreen.hidden=true};
 const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
 const cubeOrigin=[300,510],cubeScale=46;
+function visualCubeScale(){return cubeScale*3/E.size}
 let arrowHits=[],guidedArrowKey=null,arrowGuideActive=false,arrowsUnlocked=false;
 function sliceControl(axis,layer,dir){
  // Identify which visible side is on screen-left, then map its columns.
@@ -118,14 +119,14 @@ function sliceControl(axis,layer,dir){
  const leftNormal=camRight[0]*sx<camRight[2]*sz?0:2;
  const leftAxis=leftNormal===0?2:0;
  const normalAxis=axis===1?leftNormal:axis===0?2:0;
- const pivot=[0,0,0];pivot[axis]=layer;pivot[normalAxis]=(normalAxis===0?sx:sz)*1.5;
+ const edge=(E.size-1)/2+.5,pivot=[0,0,0];pivot[axis]=layer;pivot[normalAxis]=(normalAxis===0?sx:sz)*edge;
  const a=cubePoint(pivot),b=cubePoint(E.rotate(pivot,axis,.001));
- const sign=-(layer||1)*dir,component=axis===1?0:1;
+ const sign=-Math.sign(layer||1)*dir,component=axis===1?0:1;
  const towardStart=(b[component]-a[component])*sign<0;
- const column=camRight[axis]>=0?layer+1:1-layer;
- const edge=[...pivot];if(axis!==1)edge[1]=-1.5;else{const other=normalAxis===0?2:0;edge[other]=camRight[other]>=0?-1.5:1.5}
+ const column=camRight[axis]>=0?layer+(E.size-1)/2:(E.size-1)/2-layer;
+ const edgePoint=[...pivot];if(axis!==1)edgePoint[1]=-edge;else{const other=normalAxis===0?2:0;edgePoint[other]=camRight[other]>=0?-edge:edge}
  return {
-  anchor:cubePoint(edge),
+  anchor:cubePoint(edgePoint),
   p:axis===1?[towardStart?117:159,514-layer*42]:[(axis===leftAxis?204:350)+column*42,towardStart?632:674],
   angle:axis===1?(towardStart?Math.PI:0):(towardStart?-Math.PI/2:Math.PI/2)
  };
@@ -133,11 +134,11 @@ function sliceControl(axis,layer,dir){
 function drawSliceArrows(){
  arrowHits=[];if(tutorial||cubeDrag?.moved)return;
  const markerColors=['#ef8b74','#e8bd67','#89c98d','#67c9d0','#77aee8','#b491df','#dc82ae','#d99a64','#9caf72'];
- const columns=[];for(const axis of [0,2])for(let layer=-1;layer<=1;layer++)columns.push({axis,layer,x:sliceControl(axis,layer,1).anchor[0]});columns.sort((a,b)=>a.x-b.x||a.axis-b.axis);
+ const columns=[];for(const axis of [0,2])for(const layer of E.layers())columns.push({axis,layer,x:sliceControl(axis,layer,1).anchor[0]});columns.sort((a,b)=>a.x-b.x||a.axis-b.axis);
  const gap=compactBoard?56:38,center=columns.reduce((sum,c)=>sum+c.x,0)/columns.length;
  const columnX=columns.map(c=>c.x);for(let i=1;i<columnX.length;i++)columnX[i]=Math.max(columnX[i],columnX[i-1]+gap);
- let shift=center-columnX.reduce((sum,x)=>sum+x,0)/columnX.length;if(compactBoard)shift=Math.max(99-columnX[0],Math.min(501-columnX[5],shift));for(let i=0;i<columnX.length;i++)columnX[i]+=shift;
- for(let axis=0;axis<3;axis++)for(let layer=-1;layer<=1;layer++){
+ let shift=center-columnX.reduce((sum,x)=>sum+x,0)/columnX.length;if(compactBoard)shift=Math.max(75-columnX[0],Math.min(525-columnX[columnX.length-1],shift));for(let i=0;i<columnX.length;i++)columnX[i]+=shift;
+ const layers=E.layers();for(let axis=0;axis<3;axis++)for(const layer of layers){
  const face=Object.keys(E.slices).find(k=>E.slices[k].axis===axis&&E.slices[k].layer===layer);
  for(const dir of [1,-1]){
  // Screen-space controls: horizontal rows on the left, vertical columns below.
@@ -145,7 +146,7 @@ function drawSliceArrows(){
  const control=sliceControl(axis,layer,dir),angle=control.angle;
  const rank=columns.findIndex(c=>c.axis===axis&&c.layer===layer);
  const p=compactBoard?(axis===1?[angle===0?174:116,564-layer*58]:[columnX[rank],angle<0?746:804]):[axis===1?(angle===0?179:141):columnX[rank],control.p[1]+(axis===1?20:76)];
- const markerIndex=axis===1?1-layer:3+rank,markerLabel=axis===1?String.fromCharCode(65+1-layer):String(rank+1),markerColor=markerColors[markerIndex];
+ const layerIndex=layers.indexOf(layer),markerIndex=axis===1?layers.length-1-layerIndex:layers.length+rank,markerLabel=axis===1?String.fromCharCode(65+layers.length-1-layerIndex):String(rank+1),markerColor=markerColors[markerIndex%markerColors.length];
  const points=[p],end=[p[0]+13*Math.cos(angle),p[1]+13*Math.sin(angle)];
  const disabled=!arrowsUnlocked||!!active||phase!=='ready'||turnMoves>=turnLimit||!B.canRotate(state,face),lit=guideFace()===face&&(pendingMove?.dir||previewDir)===dir;
  if(dir===1){
@@ -177,13 +178,13 @@ const byId=id=>document.getElementById(id);
 const add=(a,b)=>a.map((v,i)=>v+b[i]),scale=(v,k)=>v.map(x=>x*k);
 // 1.28 is the largest rounded scale with padding for every camera angle:
 // a projected cube fits inside a radius of 1.5 * sqrt(3) * scale.
-function cubePoint(v){return [cubeOrigin[0]+58+E.dot(v,camRight)*cubeScale*1.28,cubeOrigin[1]+20-E.dot(v,camUp)*cubeScale*1.28]}
+function cubePoint(v){const size=visualCubeScale();return [cubeOrigin[0]+58+E.dot(v,camRight)*size*1.28,cubeOrigin[1]+20-E.dot(v,camUp)*size*1.28]}
 function polygon(points,fill,stroke,width=1){ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(...p):ctx.moveTo(...p));ctx.closePath();ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=width;ctx.stroke()}}
 function isMoving(p){return active&&p[E.slices[active.face].axis]===E.slices[active.face].layer}
 function transform(v,p,angle){return isMoving(p)?E.rotate(v,E.slices[active.face].axis,angle):v}
 function drawOrbits(angle){
   ringHits=[];
-  for(let axis=0;axis<3;axis++)for(let layer=-1;layer<=1;layer++){
+  for(let axis=0;axis<3;axis++)for(const layer of E.layers()){
     const center=E.centers[axis],r=E.radius(layer),points=[];
     for(let i=0;i<=256;i++){const t=i*Math.PI/128;points.push([center[0]+r*Math.cos(t),center[1]+r*Math.sin(t)])}
     ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(...p):ctx.moveTo(...p));
@@ -213,7 +214,7 @@ function drawOrbits(angle){
 function drawCube(angle){
   const polygons=[];hitFaces=[];
   // All 27 cubelets, including internal black faces exposed mid-turn.
-  for(let x=-1;x<=1;x++)for(let y=-1;y<=1;y++)for(let z=-1;z<=1;z++){
+  for(const x of E.layers())for(const y of E.layers())for(const z of E.layers()){
     const p=[x,y,z];
     for(let axis=0;axis<3;axis++)for(const sign of [-1,1]){
       const n=[0,0,0];n[axis]=sign;const rn=transform(n,p,angle);if(E.dot(rn,camera)<=0)continue;
@@ -310,7 +311,7 @@ function startNext(now){
 }
 function frame(now){
   startNext(now);let angle=0;
-  if(active){const t=Math.min(1,(now-active.start)/active.duration),ease=t*t*(3-2*t);angle=-(E.slices[active.face].layer||1)*active.dir*Math.PI/2*ease;
+  if(active){const t=Math.min(1,(now-active.start)/active.duration),ease=t*t*(3-2*t);angle=-Math.sign(E.slices[active.face].layer||1)*active.dir*Math.PI/2*ease;
     if(t===1){const m=active;E.move(state,m.face,m.dir);active=null;angle=0;
       if(m.kind==='user'){history.push({face:m.face,dir:m.dir});moves++;turnMoves++}
       if(m.kind==='undo'){history.pop();moves=Math.max(0,moves-1);turnMoves--}
@@ -329,7 +330,7 @@ function reset(){attackChain=0;bestChain=0;battleDamage=0;spentElements.clear();
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 async function resolveTurn(){
  if(phase!=='ready'||active||queue.length||(turnMoves===0&&canAct()))return;
- history=[];phase='resolving';const token=roundToken,challengeGoal=typeof lineChallenge==='number'?lineChallenge:0;combo=0;let total=0,healed=0,recoveryMatched=false,attackMatched=false,challengeShortfall=-1;refresh();
+ history=[];phase='resolving';const token=roundToken,challengeGoal=0;combo=0;let total=0,healed=0,recoveryMatched=false,attackMatched=false,challengeShortfall=-1;refresh();
  for(let chain=0;chain<(tutorial?8:1);chain++){
   const foundGroups=currentMatches();if(!foundGroups.length)break;
   const completedLines=foundGroups.reduce((sum,g)=>sum+(g.skill?6:1),0);if(!tutorial&&challengeGoal&&completedLines<challengeGoal){challengeShortfall=completedLines;break}
@@ -639,15 +640,18 @@ function setLineChallenge(lines){
  if(!lineChallenge&&next)lineChallengeSetup={colorCount:customColorCount,rule:byId('attackRule').value};
  lineChallenge=next;attackChain=0;byId('damageText').textContent='';
  if(!lineChallenge){
+  E.configure(3);
   if(lineChallengeSetup){customColorCount=lineChallengeSetup.colorCount;byId('attackRule').value=lineChallengeSetup.rule;lineChallengeSetup=null}
   reset();syncColorCountDisplay();byId('battleLog').textContent='列チャレンジOFF：通常の盤面に戻しました。';refresh();return
  }
- // Use a legal six-colour cube with a guaranteed solution instead of leaving the normal random board unchanged.
+ // Reset the regular battle while the engine is still 3×3; planning a 5×5
+ // board as if it were a normal random battle is needlessly expensive.
+ E.configure(3);
  customColorCount=6;const colorControl=byId('colorCount');if(colorControl){colorControl.value='6';syncColorCountDisplay()}
- byId('attackRule').value='front';reset();
+ byId('attackRule').value='front';reset();E.configure(lineChallenge);
  state=B.rubikBoard(E,Math.random,B.pools.normal,0);E.move(state,'U',1);if(lineChallenge===5)E.move(state,'R',-1);
  history=[];proofCache=null;turnMoves=0;phase='ready';
- byId('battleLog').textContent=lineChallenge+'列チャレンジ開始：前面で同時に'+lineChallenge+'列以上を完成させよう。'+(lineChallenge===4?'1手で完成できる専用盤面です。':'2手以内で完成できる専用盤面です。');refresh()
+ byId('battleLog').textContent=lineChallenge+'列チャレンジ開始：縦・横とも'+lineChallenge+'枚の'+lineChallenge+'×'+lineChallenge+'キューブです。';refresh()
 }
 const orbitToolbar=document.createElement('div');orbitToolbar.className='orbit-toolbar';orbitToggle.before(orbitToolbar);
 const colorLabel=document.createElement('label');colorLabel.className='color-count-control';colorLabel.textContent='属性 ';
