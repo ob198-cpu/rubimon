@@ -446,11 +446,12 @@ function finishArrowOnboarding(){
 }
 function isMouseActivation(e){return e.pointerType==='mouse'||(!e.pointerType&&mousePrimary)}
 function chooseMove(face,dir,instant=false,touch=false){
- if(panelPick||!arrowsUnlocked||tutorial||turnMoves>=turnLimit||!B.canRotate(state,face))return;
+ if(panelPick||!arrowsUnlocked||tutorial||!B.canRotate(state,face)||phase==='victory'||phase==='lost'||phase==='setup')return;
  if(active||queue.length||phase!=='ready'){
   if(touch){queuedTouchMove={face,dir};byId('battleLog').textContent='次の回転を予約しました。攻撃・補充の後に続けて回転します。'}
   return
  }
+ if(turnMoves>=turnLimit)return;
  if(instant){pendingMove=null;selectedLayer=null;hoverLayer=null;previewDir=0;finishArrowOnboarding();userMove(face,dir);updateGuide();return}
  if(pendingMove?.face===face&&pendingMove.dir===dir){guidedArrowKey=null;arrowGuideActive=false;dragHint.classList.remove('arrow-step');dragHint.classList.add('is-complete');confirmMove();return}
  arrowGuideActive=!dragHint.classList.contains('is-complete');guidedArrowKey=face+':'+dir;dragHint.innerHTML=secondTapHintMarkup;dragHint.classList.add('arrow-step');requestAnimationFrame(placeCubeTouch);
@@ -716,16 +717,25 @@ function syncArrowButtons(){
  for(const arrow of arrowHits){
   const key=arrow.face+':'+arrow.dir;visible.add(key);let button=arrowButtons.get(key);
   if(!button){button=document.createElement('button');button.type='button';button.style.cssText='position:absolute;pointer-events:auto;opacity:0;padding:0;margin:0;min-height:0;min-width:0;touch-action:manipulation;transform:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none';
-   button.onclick=e=>{e.preventDefault();e.stopPropagation();suppressCubeClick=false;chooseMove(arrow.face,arrow.dir,true,true)};
+   let press=null,handledRelease=false;
+   const activate=()=>{suppressCubeClick=false;chooseMove(arrow.face,arrow.dir,true,true)};
+   button.onpointerdown=e=>{if(e.button!==0||button.disabled)return;handledRelease=false;press={id:e.pointerId,x:e.clientX,y:e.clientY};try{button.setPointerCapture(e.pointerId)}catch{}};
+   button.onpointerup=e=>{if(!press||press.id!==e.pointerId)return;const start=press;press=null;handledRelease=true;e.preventDefault();e.stopPropagation();if(Math.hypot(e.clientX-start.x,e.clientY-start.y)<18)activate()};
+   button.onpointercancel=()=>{press=null;handledRelease=true};
+   button.onclick=e=>{e.preventDefault();e.stopPropagation();if(handledRelease){handledRelease=false;return}activate()};
    button.onpointerenter=e=>{if(e.pointerType==='mouse'){hoverLayer=arrow.face;previewDir=arrow.dir;updateGuide()}};
    button.onpointerleave=()=>{hoverLayer=null;previewDir=0;updateGuide()};
    arrowButtons.set(key,button);arrowButtonLayer.append(button);
   }
-  button.hidden=false;button.disabled=!arrowsUnlocked||!!tutorial||!!panelPick||!B.canRotate(state,arrow.face)||phase==='victory'||phase==='defeat';
-  button.setAttribute('aria-label',arrow.label+' '+(Math.abs(arrow.angle)===Math.PI?'左':arrow.angle===0?'右':arrow.angle<0?'上':'下')+'に回転');
-  Object.assign(button.style,{left:(canvas.offsetLeft+(arrow.p[0]-half-v.x)*sx)+'px',top:(canvas.offsetTop+(arrow.p[1]-half-v.y)*sy)+'px',width:(half*2*sx)+'px',height:(half*2*sy)+'px'});
+  if(button.hidden)button.hidden=false;
+  const disabled=!arrowsUnlocked||!!tutorial||!!panelPick||!B.canRotate(state,arrow.face)||phase==='victory'||phase==='lost'||phase==='setup';
+  if(button.disabled!==disabled)button.disabled=disabled;
+  const label=arrow.label+' '+(Math.abs(arrow.angle)===Math.PI?'左':arrow.angle===0?'右':arrow.angle<0?'上':'下')+'に回転';
+  if(button.getAttribute('aria-label')!==label)button.setAttribute('aria-label',label);
+  const layout=[canvas.offsetLeft+(arrow.p[0]-half-v.x)*sx,canvas.offsetTop+(arrow.p[1]-half-v.y)*sy,half*2*sx,half*2*sy].map(n=>n.toFixed(2)+'px');
+  const layoutKey=layout.join('|');if(button.dataset.layout!==layoutKey){button.dataset.layout=layoutKey;Object.assign(button.style,{left:layout[0],top:layout[1],width:layout[2],height:layout[3]})}
  }
- for(const [key,button] of arrowButtons)if(!visible.has(key))button.hidden=true;
+ for(const [key,button] of arrowButtons)if(!visible.has(key)&&!button.hidden)button.hidden=true;
 }
 function placeCubeTouch(){
  if(getComputedStyle(boardShell).position==='static')boardShell.style.position='relative';
