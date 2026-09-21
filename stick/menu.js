@@ -27,7 +27,7 @@
   const height=Math.max(40,shell.clientHeight-reserved-20),v=boardViewport();
   canvas.style.setProperty('width',Math.max(40,Math.min(shell.clientWidth-16,height*v.w/v.h))+'px','important');
  }
- const observer=new ResizeObserver(()=>{fit();resize()});observer.observe(shell);observer.observe(document.querySelector('.board-actions'));
+ const observer=new ResizeObserver(()=>{fit();resize()});observer.observe(shell);observer.observe(document.querySelector('.board-actions'));observer.observe(document.querySelector('.stick-controls'));
  new MutationObserver(()=>{fit();resize()}).observe(byId('orbitToggle'),{attributes:true,attributeFilter:['aria-expanded']});
  addEventListener('resize',fit);fit();resize();
 })();
