@@ -466,9 +466,9 @@ function boardClick(e){
   const picked=panelPick,c=picked.char;for(const s of state)if(picked.ids.has(s.id)){s.face='B';delete s.tempOriginal;delete s.spentOriginal}
   panelPick=null;cooldowns[c.id]=c.cd;teamSpent.add(c.id);history=[];byId('battleLog').textContent=c.name+'：'+c.skill+' ／ 4パネルを水に変換！';refresh();return;
  }
- if(!arrowsUnlocked||tutorial)return;const arrow=arrowAt(e);if(arrow){chooseMove(arrow.face,arrow.dir,isMouseActivation(e),e.pointerType==='touch');return}if(active||phase!=='ready')return;const faces=pickLayers(e);if(faces.length)selectLayer(faces[0],faces)
+ if(!arrowsUnlocked||tutorial)return;const arrow=arrowAt(e);if(arrow){const touch=e.pointerType==='touch';chooseMove(arrow.face,arrow.dir,isMouseActivation(e)||touch,touch);return}if(active||phase!=='ready')return;const faces=pickLayers(e);if(faces.length)selectLayer(faces[0],faces)
 }
-canvas.addEventListener('pointerup',e=>{if(e.pointerType!=='touch')return;ignoreCanvasClickUntil=performance.now()+700;boardClick(e)});
+canvas.addEventListener('pointerup',e=>{if(e.pointerType!=='touch')return;ignoreCanvasClickUntil=performance.now()+1500;boardClick(e)});
 canvas.addEventListener('click',e=>{if(performance.now()<ignoreCanvasClickUntil)return;boardClick(e)});
 canvas.addEventListener('pointermove',e=>{if(!arrowsUnlocked||e.pointerType==='touch')return;const arrow=arrowAt(e);if(arrow){hoverLayer=arrow.face;previewDir=arrow.dir;updateGuide();return}previewDir=0;hoverLayer=selectedLayer?null:pickLayers(e)[0]||null;updateGuide()});
 canvas.addEventListener('pointerleave',()=>{hoverLayer=null;previewDir=0;updateGuide()});
@@ -662,7 +662,7 @@ const dragHint=document.createElement('div');dragHint.className='cube-drag-hint'
 const dragHintMarkup='<svg viewBox="0 0 64 48" aria-hidden="true"><path class="swipe-track" d="M8 12h48m-43-5-5 5 5 5m38-10 5 5-5 5"/><g class="swipe-finger"><path d="M26 39 18 29q-3-5 2-5l6 5V13q0-6 5-6t5 6v10q7-3 11 3l-1 12-5 7H30Z"/></g></svg><span>ドラッグで見回す<small>手数は減りません</small></span>';
 const tapHintIcon='<svg viewBox="0 0 64 48" aria-hidden="true"><path class="tap-ring" d="M9 24h20m-7-7 7 7-7 7"/><g class="tap-finger"><path d="M36 42 27 32q-3-5 2-6l5 5V15q0-6 5-6t5 6v9q8-2 10 5l-2 10-6 6Z"/></g></svg>';
 const mousePrimary=matchMedia('(hover:hover) and (pointer:fine)').matches;
-const arrowHintMarkup=tapHintIcon+(mousePrimary?'<span>同じ色・記号の矢印を選ぶ<small>1クリックで回転</small></span>':'<span>同じ色・記号の矢印をタップ<small>1回目で列を選択</small></span>');
+const arrowHintMarkup=tapHintIcon+(mousePrimary?'<span>同じ色・記号の矢印を選ぶ<small>1クリックで回転</small></span>':'<span>同じ色・記号の矢印をタップ<small>1タップで回転</small></span>');
 const secondTapHintMarkup=tapHintIcon+'<span>2回目のタップで回転するよ</span>';
 dragHint.innerHTML=dragHintMarkup;boardShell.append(dragHint);
 const viewReset=document.createElement('button');viewReset.id='viewReset';viewReset.textContent='視点を元に戻す';viewReset.disabled=true;viewReset.style.cssText='display:block;margin:8px auto;font-size:11px';boardShell.append(viewReset);
