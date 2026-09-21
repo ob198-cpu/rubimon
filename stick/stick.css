@@ -14,8 +14,8 @@
  .stick-version main>.panel{display:contents!important}
  .stick-version .enemy-card,.stick-version .player-hp{flex:none}
  .stick-version .board-shell{flex:1;width:100%;min-height:0;display:flex;flex-direction:column;align-items:stretch;padding:6px!important}
- .stick-version #scene{order:2!important;flex:none;align-self:center;margin:auto!important}
- .stick-version .stick-controls{order:3;height:112px;min-height:112px;flex:none;width:100%;margin:0 auto;padding:2px 4px}
+ .stick-version #scene{order:2!important;flex:none;align-self:center;margin:auto auto 0!important}
+ .stick-version .stick-controls{order:3;height:96px;min-height:96px;flex:none;width:100%;margin:4px auto auto!important;padding:2px 12px}
  .stick-version .board-actions{order:4;flex:none;padding:4px 0 0;min-height:44px}
  .stick-version .board-left-actions{display:flex;flex-wrap:nowrap;width:100%;gap:4px}
  .stick-version .board-left-actions button{padding:5px!important;font-size:10px!important;min-height:40px!important;flex:1}
@@ -48,7 +48,7 @@
  .stick-version .player-hp{padding:6px 9px!important;min-height:32px!important;font-size:11px!important}
  .stick-version #scene{width:min(100%,max(180px,calc(100svh - 440px)))}
  .stick-version .orbit-toolbar button,.stick-version .orbit-toolbar select{font-size:10px!important;min-height:34px!important;padding:4px!important}
- .stick-version .stick-controls{grid-template-columns:minmax(0,1fr) 104px;margin-bottom:2px;gap:8px;padding:2px 4px}
- .stick-version .stick-pad{width:104px;height:104px}.stick-version .stick-knob{left:26px;top:26px}
+ .stick-version .stick-controls{grid-template-columns:minmax(0,1fr) 92px;gap:12px;padding:2px 12px}
+ .stick-version .stick-pad{width:92px;height:92px}.stick-version .stick-knob{left:20px;top:20px}
  .stick-version .squad-skills{margin-top:0}
 }

@@ -23,7 +23,7 @@
  function fit(){
   if(!matchMedia('(max-width:850px)').matches){canvas.style.removeProperty('width');return}
   const others=[...shell.children].filter(n=>n!==canvas&&getComputedStyle(n).display!=='none');
-  const reserved=others.reduce((sum,n)=>{const css=getComputedStyle(n);return sum+n.getBoundingClientRect().height+parseFloat(css.marginTop||0)+parseFloat(css.marginBottom||0)},0);
+  const reserved=others.reduce((sum,n)=>{const css=getComputedStyle(n);const margin=n.classList.contains('stick-controls')?4:parseFloat(css.marginTop||0)+parseFloat(css.marginBottom||0);return sum+n.getBoundingClientRect().height+margin},0);
   const height=Math.max(40,shell.clientHeight-reserved-20),v=boardViewport();
   canvas.style.setProperty('width',Math.max(40,Math.min(shell.clientWidth-16,height*v.w/v.h))+'px','important');
  }

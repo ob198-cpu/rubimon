@@ -32,7 +32,7 @@ function drawSelectedPanel(ctx,panel,time=performance.now()){
  cubeTouch.remove();arrowButtonLayer.remove();dragHint.remove();
  drawSliceArrows=()=>{arrowHits=[]};syncArrowButtons=()=>{};placeCubeTouch=()=>{};showArrowHint=()=>{};
  arrowsUnlocked=true;arrowGuideActive=false;guidedArrowKey=null;
- boardViewport=()=>orbitExpanded?{w:600,h:740,x:0,y:-20}:{w:352,h:352,x:182,y:compactBoard?384:354};
+ boardViewport=()=>orbitExpanded?{w:600,h:740,x:0,y:-20}:compactBoard?{w:320,h:320,x:198,y:400}:{w:352,h:352,x:182,y:354};
  const originalResize=resize;resize=function(){document.body.classList.toggle('stick-orbit-open',orbitExpanded);originalResize()};
  const panel=document.createElement('section');panel.className='stick-controls';
  panel.innerHTML='<div class="stick-instructions"><p id="stickStatus" role="status"></p><button type="button" id="stickCancel" hidden>選択解除</button></div><div class="stick-pad" tabindex="0" role="group" aria-label="回転スティック。ドラッグして操作。矢印キーでも操作できます"><span class="stick-cross" aria-hidden="true">＋</span><span class="stick-knob" aria-hidden="true"></span><span class="stick-caption">TURN</span></div>';

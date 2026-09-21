@@ -3,6 +3,15 @@ const src=fs.readFileSync(__dirname+'/stick.js','utf8'),fn=src.slice(src.indexOf
 assert.ok(!src.includes('stickMoveFor(picked,30,0)'), 'panel selection must not invent a horizontal preview');
 assert.ok(!src.includes("press.mode==='view'"),'stick must not control camera');
 {
+ const c={orbitExpanded:false,compactBoard:true};vm.createContext(c);
+ vm.runInContext(src.match(/boardViewport=\(\)=>[^;]+;/)[0],c);
+ const v=c.boardViewport(),radius=Math.sqrt(3)*46*3*1.28/2;
+ assert.equal(v.x+v.w/2,358);assert.equal(v.y+v.h/2,560);
+ assert.ok(v.w/2>radius&&v.h/2>radius,'all cube corners fit at every viewing angle');
+ c.compactBoard=false;assert.equal(c.boardViewport().w,352,'desktop framing remains unchanged');
+ c.orbitExpanded=true;assert.equal(c.boardViewport().h,740,'expanded 2D framing remains unchanged');
+}
+{
  const surfaces=[];let originalCalls=0,guide=null;
  const c={ctx:{},drawSelectedPanel:(context,panel)=>surfaces.push(panel),picked:{id:7},active:null,hitFaces:[{sticker:{id:7},points:[[10,10],[30,10],[30,30],[10,30]]}],guideFace:()=>guide,drawGuide:()=>originalCalls++};
  vm.createContext(c);vm.runInContext(src.slice(src.indexOf(' const originalDrawGuide='),src.indexOf(' const ready=')),c);
