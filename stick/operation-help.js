@@ -1,13 +1,47 @@
-// Instructions only: opening or closing this dialog never changes the board.
+// Interactive practice uses a temporary board; combat and the saved board stay intact.
 (()=>{
- const dialog=document.createElement('dialog');dialog.id='operationHelp';dialog.setAttribute('aria-labelledby','operationHelpTitle');
- dialog.innerHTML='<div class="operation-help-head"><small>HOW TO PLAY</small><h2 id="operationHelpTitle">キューブの操作</h2></div><ol class="operation-help-steps"><li><strong>ドラッグして見回す</strong><p>キューブを指やマウスで動かすと、裏側も見られます。手数は使いません。</p></li><li><strong>回したいパネルをタップ</strong><p>選んだパネルが赤く点滅します。マウスではクリックで選択します。</p></li><li><strong>トリガーで方向を決める</strong><p>右下の丸いスティックを上下・左右に動かし、離すと選んだパネルを含む列が1手回転します。中心に戻して離すとキャンセルできます。</p></li></ol><p class="operation-help-note">回転後は、パネルを選び直して続けます。<br>この説明は「操作」ボタンでいつでも確認できます。</p><button type="button" id="operationHelpClose">わかった・遊ぶ</button>';
- document.body.append(dialog);
- const button=document.createElement('button');button.id='operationHelpOpen';button.type='button';button.textContent='操作';button.setAttribute('aria-haspopup','dialog');button.setAttribute('aria-controls',dialog.id);
- document.querySelector('.stick-instructions').append(button);
- button.onclick=()=>dialog.showModal();
- dialog.querySelector('#operationHelpClose').onclick=()=>dialog.close();
- dialog.addEventListener('keydown',e=>e.stopPropagation());
- // Native modal makes the board inert until the explanation is dismissed.
- dialog.showModal();
+ const hint=byId('hint'),stack=document.createElement('div');stack.className='hint-operation-stack';hint.before(stack);
+ const button=document.createElement('button');button.id='operationHelpOpen';button.type='button';button.textContent='操作';stack.append(button,hint);
+ const coach=document.createElement('section');coach.id='operationCoach';coach.hidden=true;coach.setAttribute('aria-live','polite');
+ coach.innerHTML='<strong id="operationStep"></strong><p id="operationPrompt"></p><button type="button" id="operationExit">終了する</button>';
+ document.querySelector('.stick-instructions').prepend(coach);
+ let lesson=null,token=0;
+ const pad=document.querySelector('.stick-pad');
+ function show(step){
+  lesson.step=step;byId('operationStep').textContent=step===4?'操作完了！':'操作 '+step+' / 3';
+  byId('operationPrompt').textContent=({1:'キューブをドラッグして見回してみよう',2:'回したいパネルをタップして選ぼう',3:'右のトリガーを上下・左右へ動かして離そう',4:'回転できました。「遊ぶ」で元の対戦へ戻れます'})[step];
+  byId('operationExit').textContent=step===4?'遊ぶ':'終了する';
+  canvas.classList.toggle('lesson-target',step<3);pad.classList.toggle('lesson-target',step===3);pad.inert=step!==3;
+ }
+ function end(){
+  if(!lesson)return;token++;
+  if(active?.kind==='operation-practice')active=null;
+  queue=queue.filter(m=>m.kind!=='operation-practice');
+  state=lesson.state;viewYaw=lesson.yaw;viewPitch=lesson.pitch;
+  for(const [node,value] of lesson.inert)node.inert=value;
+  lesson=null;globalThis.stickLesson=null;pad.inert=false;coach.hidden=true;
+  document.body.classList.remove('operation-lesson');canvas.classList.remove('lesson-target');pad.classList.remove('lesson-target');
+  byId('stickCancel').click();byId('stickStatus').textContent='';updateView();refresh();
+ }
+ function start(){
+  if(lesson){end();return}
+  if(active||queue.length||tutorial||panelPick||phase!=='ready')return;
+  byId('stickCancel').click();
+  const nodes=[document.querySelector('.orbit-toolbar'),...document.querySelectorAll('.board-left-actions button:not(#operationHelpOpen)')];
+  lesson={state,yaw:viewYaw,pitch:viewPitch,inert:nodes.map(n=>[n,n.inert]),step:1};
+  state=structuredClone(state);for(const s of state)s.locked=0;
+  for(const node of nodes)node.inert=true;
+  globalThis.stickLesson={viewed:()=>{if(lesson?.step===1)show(2)},canSelect:()=>lesson?.step===2||lesson?.step===3,selected:()=>{if(lesson?.step===2)show(3)}};
+  coach.hidden=false;document.body.classList.add('operation-lesson');show(1);refresh();
+ }
+ const normalMove=userMove;
+ userMove=function(face,dir){
+  if(!lesson)return normalMove(face,dir);
+  if(lesson.step!==3||active||queue.length)return;
+  queue.push({face,dir,kind:'operation-practice'});pad.inert=true;
+  const current=++token;
+  function completed(){if(!lesson||current!==token)return;if(active||queue.length){requestAnimationFrame(completed);return}show(4)}
+  requestAnimationFrame(completed);
+ };
+ button.onclick=start;byId('operationExit').onclick=end;start();
 })();

@@ -1,4 +1,12 @@
 /* Only /stick/ loads this stylesheet. */
+.hint-operation-stack{display:flex;flex-direction:column;gap:4px;min-width:48px}
+.stick-version .hint-operation-stack #operationHelpOpen{margin:0;min-height:32px!important;padding:4px 8px!important}
+.stick-version .board-left-actions{align-items:flex-end}
+#operationCoach strong{font-size:11px;color:#f2dfae}#operationCoach p{font-size:12px;line-height:1.45;margin:4px 0;min-height:0;color:#eef4ec}
+#operationCoach button{font-size:11px;padding:3px 9px;min-height:28px}
+.operation-lesson #stickStatus,.operation-lesson #stickCancel{display:none!important}
+.operation-lesson .lesson-target{outline:2px solid #e2c585;outline-offset:-2px}
+.operation-lesson .stick-pad.lesson-target{outline-offset:3px;box-shadow:0 0 16px #e2c58555}
 #operationHelp{width:min(420px,calc(100% - 28px));max-height:calc(100dvh - 28px);overflow:auto;border:1px solid #aa9564;border-radius:18px;padding:22px;background:linear-gradient(145deg,#203e40,#112529);color:#e9eee6;box-shadow:0 20px 70px #0008}
 #operationHelp::backdrop{background:#051013c9}
 .operation-help-head small{color:#bda879;font-size:10px;letter-spacing:.18em}

@@ -74,12 +74,14 @@ function drawSelectedPanel(ctx,panel,time=performance.now()){
   viewYaw=boardPress.yaw-dx*.009;viewPitch=Math.max(-1.35,Math.min(1.35,boardPress.pitch+dy*.009));updateView();
  },{capture:true});
  canvas.addEventListener('pointerup',e=>{
-  e.stopImmediatePropagation();const start=boardPress;if(!start||start.id!==e.pointerId)return;boardPress=null;if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);if(start.moved||Math.hypot(start.x-e.clientX,start.y-e.clientY)>16)return;
+  e.stopImmediatePropagation();const start=boardPress;if(!start||start.id!==e.pointerId)return;boardPress=null;if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);if(start.moved){globalThis.stickLesson?.viewed();return}if(Math.hypot(start.x-e.clientX,start.y-e.clientY)>16)return;
+  if(globalThis.stickLesson&&!globalThis.stickLesson.canSelect())return;
   if(panelPick){suppressCubeClick=false;boardClick(e);return}
   if(!ready()){status.textContent='攻撃・補充が終わるまでお待ちください';return}
   const p=boardPointer(e);if(compactBoard)p[1]-=30;
   const hit=[...hitFaces].reverse().find(h=>inside(p,h.points));if(!hit)return;
   picked=hit.sticker;cancel.hidden=false;setMode('turn');
+  globalThis.stickLesson?.selected();
   // Do not invent a horizontal choice before the player supplies a direction.
  },{capture:true});
  canvas.addEventListener('pointercancel',()=>{boardPress=null},{capture:true});
