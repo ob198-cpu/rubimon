@@ -132,6 +132,7 @@ function sliceControl(axis,layer,dir){
 }
 function drawSliceArrows(){
  arrowHits=[];if(tutorial||cubeDrag?.moved)return;
+ const markerColors=['#ef8b74','#e8bd67','#89c98d','#67c9d0','#77aee8','#b491df','#dc82ae','#d99a64','#9caf72'];
  const columns=[];for(const axis of [0,2])for(let layer=-1;layer<=1;layer++)columns.push({axis,layer,x:sliceControl(axis,layer,1).anchor[0]});columns.sort((a,b)=>a.x-b.x||a.axis-b.axis);
  const gap=compactBoard?56:38,center=columns.reduce((sum,c)=>sum+c.x,0)/columns.length;
  const columnX=columns.map(c=>c.x);for(let i=1;i<columnX.length;i++)columnX[i]=Math.max(columnX[i],columnX[i-1]+gap);
@@ -144,23 +145,22 @@ function drawSliceArrows(){
  const control=sliceControl(axis,layer,dir),angle=control.angle;
  const rank=columns.findIndex(c=>c.axis===axis&&c.layer===layer);
  const p=compactBoard?(axis===1?[angle===0?174:116,564-layer*58]:[columnX[rank],angle<0?746:804]):[axis===1?(angle===0?179:141):columnX[rank],control.p[1]+(axis===1?20:76)];
+ const markerIndex=axis===1?1-layer:3+rank,markerLabel=axis===1?String.fromCharCode(65+1-layer):String(rank+1),markerColor=markerColors[markerIndex];
  const points=[p],end=[p[0]+13*Math.cos(angle),p[1]+13*Math.sin(angle)];
  const disabled=!arrowsUnlocked||!!active||phase!=='ready'||turnMoves>=turnLimit||!B.canRotate(state,face),lit=guideFace()===face&&(pendingMove?.dir||previewDir)===dir;
- if(arrowGuideActive&&(axis===1?angle===0:angle<0)){
-  const anchor=[control.anchor[0],control.anchor[1]+(compactBoard?30:0)];
-  const dx=anchor[0]-p[0],dy=anchor[1]-p[1],half=17*(compactBoard?1.58:1);
-  const edgeScale=half/Math.max(Math.abs(dx),Math.abs(dy),1);
-  const start=[p[0]+dx*edgeScale,p[1]+dy*edgeScale];
-  ctx.save();ctx.strokeStyle='#8ff6ff';ctx.lineWidth=lit?2:1.35;ctx.shadowColor='#62eaf5';ctx.shadowBlur=lit?5:0;ctx.globalAlpha=lit?.9:.55;ctx.beginPath();ctx.moveTo(...start);ctx.lineTo(...anchor);ctx.stroke();ctx.beginPath();ctx.arc(...anchor,2.5,0,Math.PI*2);ctx.fillStyle='#8ff6ff';ctx.fill();ctx.restore();
+ if(dir===1){
+  const anchor=axis===1?[control.anchor[0],control.anchor[1]+(compactBoard?30:0)]:[columnX[rank],compactBoard?690:650];
+  ctx.save();ctx.beginPath();ctx.arc(...anchor,compactBoard?9:7,0,Math.PI*2);ctx.fillStyle='#13292d';ctx.fill();ctx.strokeStyle=markerColor;ctx.lineWidth=2;ctx.stroke();ctx.fillStyle=markerColor;ctx.font='800 '+(compactBoard?11:9)+'px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(markerLabel,anchor[0],anchor[1]+.5);ctx.restore();
  }
  arrowHits.push({p,points,face,dir});ctx.save();if(compactBoard){ctx.translate(...p);ctx.scale(1.58,1.58);ctx.translate(-p[0],-p[1])}ctx.globalAlpha=disabled?.3:1;ctx.lineCap='round';ctx.lineJoin='round';
  const finish=ctx.createLinearGradient(p[0],p[1]-17,p[0],p[1]+17);finish.addColorStop(0,lit?'#416168':'#30494c');finish.addColorStop(1,lit?'#223e45':'#142b30');ctx.fillStyle=finish;
  ctx.shadowColor='#0005';ctx.shadowBlur=4;ctx.shadowOffsetY=2;ctx.beginPath();ctx.roundRect(p[0]-17,p[1]-17,34,34,7);ctx.fill();ctx.shadowBlur=0;ctx.shadowOffsetY=0;
- ctx.strokeStyle=lit?'#ebc778':'#89958d';ctx.lineWidth=lit?1.6:1;ctx.stroke();
+ ctx.strokeStyle=lit?'#ffe5a3':markerColor;ctx.lineWidth=lit?2:1.5;ctx.stroke();
  ctx.beginPath();ctx.moveTo(p[0]-10,p[1]-14);ctx.lineTo(p[0]+10,p[1]-14);ctx.strokeStyle='#ffffff18';ctx.stroke();
  ctx.strokeStyle=lit?'#ffe5a3':'#eee9db';ctx.lineWidth=2;
  ctx.beginPath();ctx.moveTo(p[0]-13*Math.cos(angle),p[1]-13*Math.sin(angle));ctx.lineTo(...end);ctx.stroke();
- ctx.beginPath();ctx.moveTo(end[0]-13*Math.cos(angle-.55),end[1]-13*Math.sin(angle-.55));ctx.lineTo(...end);ctx.lineTo(end[0]-13*Math.cos(angle+.55),end[1]-13*Math.sin(angle+.55));ctx.stroke();ctx.restore();
+ ctx.beginPath();ctx.moveTo(end[0]-13*Math.cos(angle-.55),end[1]-13*Math.sin(angle-.55));ctx.lineTo(...end);ctx.lineTo(end[0]-13*Math.cos(angle+.55),end[1]-13*Math.sin(angle+.55));ctx.stroke();
+ ctx.beginPath();ctx.arc(p[0]+11,p[1]-11,6,0,Math.PI*2);ctx.fillStyle='#13292d';ctx.fill();ctx.strokeStyle=markerColor;ctx.lineWidth=1.4;ctx.stroke();ctx.fillStyle=markerColor;ctx.font='800 8px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(markerLabel,p[0]+11,p[1]-10.5);ctx.restore();
  }}
 }
 function arrowAt(e){const p=boardPointer(e),half=compactBoard?27:17;return arrowHits.find(a=>Math.abs(p[0]-a.p[0])<=half&&Math.abs(p[1]-a.p[1])<=half)}
@@ -656,7 +656,7 @@ const dragHint=document.createElement('div');dragHint.className='cube-drag-hint'
 const dragHintMarkup='<svg viewBox="0 0 64 48" aria-hidden="true"><path class="swipe-track" d="M8 12h48m-43-5-5 5 5 5m38-10 5 5-5 5"/><g class="swipe-finger"><path d="M26 39 18 29q-3-5 2-5l6 5V13q0-6 5-6t5 6v10q7-3 11 3l-1 12-5 7H30Z"/></g></svg><span>ドラッグで見回す<small>手数は減りません</small></span>';
 const tapHintIcon='<svg viewBox="0 0 64 48" aria-hidden="true"><path class="tap-ring" d="M9 24h20m-7-7 7 7-7 7"/><g class="tap-finger"><path d="M36 42 27 32q-3-5 2-6l5 5V15q0-6 5-6t5 6v9q8-2 10 5l-2 10-6 6Z"/></g></svg>';
 const mousePrimary=matchMedia('(hover:hover) and (pointer:fine)').matches;
-const arrowHintMarkup=tapHintIcon+(mousePrimary?'<span>矢印にカーソルを合わせる<small>ガイド確認・1クリックで回転</small></span>':'<span>矢印をタップすると<small>1回目で列を選択</small></span>');
+const arrowHintMarkup=tapHintIcon+(mousePrimary?'<span>同じ色・記号の矢印を選ぶ<small>1クリックで回転</small></span>':'<span>同じ色・記号の矢印をタップ<small>1回目で列を選択</small></span>');
 const secondTapHintMarkup=tapHintIcon+'<span>2回目のタップで回転するよ</span>';
 dragHint.innerHTML=dragHintMarkup;boardShell.append(dragHint);
 const viewReset=document.createElement('button');viewReset.id='viewReset';viewReset.textContent='視点を元に戻す';viewReset.disabled=true;viewReset.style.cssText='display:block;margin:8px auto;font-size:11px';boardShell.append(viewReset);
@@ -716,7 +716,7 @@ addEventListener('pointerup',endCubeDrag,true);
 // Tapping the cube never selects a face or layer. This overlay is camera-only.
 cubeTouch.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();suppressCubeClick=false});
 cubeTouch.addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)||tutorial)return;e.preventDefault();viewYaw+=(e.key==='ArrowLeft'?.2:e.key==='ArrowRight'?-.2:0);viewPitch=Math.max(-1.35,Math.min(1.35,viewPitch+(e.key==='ArrowUp'?.15:e.key==='ArrowDown'?-.15:0)));updateView()});
-const viewNote=document.createElement('small');viewNote.textContent='視点を変えても矢印で操作できます。左は左右、下は上下。表示中の面に合わせて列と方向が切り替わります。';viewNote.style.cssText='display:block;text-align:center;font-size:10px;color:#a9bcb5;line-height:1.6';boardShell.append(viewNote);
+const viewNote=document.createElement('small');viewNote.textContent='キューブ端と同じ色・記号の矢印で操作。左はA〜C、下は1〜6。';viewNote.style.cssText='display:block;text-align:center;font-size:10px;color:#a9bcb5;line-height:1.6';boardShell.append(viewNote);
 // Keep detailed rules available without reserving space on the phone battle screen.
 byId('moveGuide').querySelector('small').textContent='光る帯だけが移動対象。方向を選んで回転、選択解除で閉じます。';
 const settingsDrawer=document.createElement('details');settingsDrawer.className='settings-drawer';settingsDrawer.innerHTML='<summary>設定・操作説明・試作ツール</summary>';
