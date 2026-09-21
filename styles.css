@@ -23,7 +23,7 @@ header{grid-column:1/-1;padding:0 4px 17px;border-bottom:1px solid #a7864d66}
 header small{color:#ba975b;letter-spacing:.3em}header h1{font-family:Georgia,"Yu Mincho",serif;font-size:28px;color:#f2ddb1;font-weight:700;text-shadow:0 2px 3px #000}header h1 span{color:#b1a188}#stage{white-space:nowrap;border:1px solid #806237;padding:8px 12px;border-radius:4px;color:#e3c78a;background:#231e18}
 .board-shell{position:sticky;top:16px;align-self:start;min-width:0;padding:16px 12px 12px;border:1px solid #c09a57;border-radius:18px;background:radial-gradient(ellipse at 50% 35%,#28494b,#142e33 65%,#101f24);box-shadow:0 0 0 4px #35271e,0 0 0 6px #79603a,0 16px 36px #0008,inset 0 0 55px #020b0da8}
 .board-heading{text-align:center;display:grid;gap:4px;padding-top:3px}.board-heading span{font-size:9px;letter-spacing:.28em;color:#a99063}.board-heading strong{font:700 19px "Yu Mincho",serif;letter-spacing:.15em;color:#e3cfaa}
-#scene{position:static;width:100%;max-height:none;aspect-ratio:600/700;cursor:pointer}
+#scene{position:static;width:100%;max-height:none;aspect-ratio:600/700;cursor:pointer;touch-action:manipulation}
 .board-help{text-align:center;font-size:11px;color:#b5c3bf;margin:0 0 4px;line-height:1.7}
 .panel{display:flex;flex-direction:column;gap:10px;padding:0;border:0;min-width:0;align-self:start}
 .enemy-card{margin:0;padding:12px 18px 10px;border-radius:12px;border:1px solid #a48043;background:radial-gradient(ellipse at 50% 40%,#78422e66,#221b19 75%);box-shadow:inset 0 0 0 3px #31271d,0 8px 18px #0005}

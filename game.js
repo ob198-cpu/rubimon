@@ -166,7 +166,7 @@ function drawSliceArrows(){
 function arrowAt(e){const p=boardPointer(e),half=compactBoard?27:17;return arrowHits.find(a=>Math.abs(p[0]-a.p[0])<=half&&Math.abs(p[1]-a.p[1])<=half)}
 const camera=[.57,.48,.67],camRight=[.762,0,-.648],camUp=[-.311,.879,-.366];
 const viewHome={yaw:Math.atan2(.57,.67),pitch:Math.asin(.48)};
-let viewYaw=viewHome.yaw,viewPitch=viewHome.pitch,cubeDrag=null,suppressCubeClick=false;
+let viewYaw=viewHome.yaw,viewPitch=viewHome.pitch,cubeDrag=null,suppressCubeClick=false,ignoreCanvasClickUntil=0,queuedTouchMove=null;
 function viewTurned(){return Math.abs(viewYaw-viewHome.yaw)+Math.abs(viewPitch-viewHome.pitch)>.015}
 function updateView(){
  const sy=Math.sin(viewYaw),cy=Math.cos(viewYaw),sp=Math.sin(viewPitch),cp=Math.cos(viewPitch);
@@ -314,7 +314,7 @@ function frame(now){
     if(t===1){const m=active;E.move(state,m.face,m.dir);active=null;angle=0;
       if(m.kind==='user'){history.push({face:m.face,dir:m.dir});moves++;turnMoves++}
       if(m.kind==='undo'){history.pop();moves=Math.max(0,moves-1);turnMoves--}
-      refresh();if(m.kind==='user'&&phase==='ready')resolveTurn();
+      refresh();if(m.kind==='user'&&phase==='ready')resolveTurn().then(runQueuedTouchMove);
     }
   }
   ctx.clearRect(0,-20,600,940);if(orbitExpanded){ctx.save();ctx.translate(300,250);ctx.scale(orbitDisplayScale(),orbitDisplayScale());ctx.translate(-300,-250);drawOrbits(angle);ctx.restore()}ctx.save();if(compactBoard)ctx.translate(0,30);drawCube(angle);drawGuide();ctx.restore();drawSliceArrows();
@@ -324,7 +324,8 @@ function frame(now){
   requestAnimationFrame(frame);
 }
 function userMove(face,dir){if(panelPick||tutorial||phase!=='ready'||active||queue.length||turnMoves>=turnLimit)return;if(!B.canRotate(state,face)){byId('battleLog').textContent='この層には固定ブロックがあります。別の面か、リベラの解除を使おう。';return}pendingMove=null;queue.push({face,dir,kind:'user'})}
-function reset(){attackChain=0;bestChain=0;battleDamage=0;spentElements.clear();victoryScreen.hidden=true;comboBanner.classList.remove('active');pendingMove=null;panelPick=null;shuffleCharges=2;roundToken++;endTeamTurn();cooldowns={};selectedLayer=null;hoverLayer=null;previewDir=0;byId('layerChoices').replaceChildren();state=B.board(E,Math.random,activePool());skillUses={convert:2,shuffle:2,clock:2,cleanse:2,open:2};turnLimit=3;clockUsed=false;openFaces=false;obstacles={seals:[],restrict:0};enemyTurns=0;baseRule=byId('attackRule').value;active=null;queue=[];history=[];moves=0;hp=maxHp();wave=0;enemyHp=currentEnemy().hp;phase='ready';turnMoves=0;combo=0;fx=null;byId('battleLog').textContent='5体の編成で '+dungeon.name+' に挑戦。属性をそろえ、仲間の技で対策しよう。';byId('damageText').textContent='';balanceMetrics={repairs:0,refills:0,rejectedObstacles:0};certifiedStart();renderParty();refresh()}
+function runQueuedTouchMove(){if(!queuedTouchMove||tutorial||active||queue.length||phase!=='ready'||turnMoves>=turnLimit)return;const move=queuedTouchMove;queuedTouchMove=null;userMove(move.face,move.dir)}
+function reset(){attackChain=0;bestChain=0;battleDamage=0;spentElements.clear();victoryScreen.hidden=true;comboBanner.classList.remove('active');pendingMove=null;queuedTouchMove=null;panelPick=null;shuffleCharges=2;roundToken++;endTeamTurn();cooldowns={};selectedLayer=null;hoverLayer=null;previewDir=0;byId('layerChoices').replaceChildren();state=B.board(E,Math.random,activePool());skillUses={convert:2,shuffle:2,clock:2,cleanse:2,open:2};turnLimit=3;clockUsed=false;openFaces=false;obstacles={seals:[],restrict:0};enemyTurns=0;baseRule=byId('attackRule').value;active=null;queue=[];history=[];moves=0;hp=maxHp();wave=0;enemyHp=currentEnemy().hp;phase='ready';turnMoves=0;combo=0;fx=null;byId('battleLog').textContent='5体の編成で '+dungeon.name+' に挑戦。属性をそろえ、仲間の技で対策しよう。';byId('damageText').textContent='';balanceMetrics={repairs:0,refills:0,rejectedObstacles:0};certifiedStart();renderParty();refresh()}
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 async function resolveTurn(){
  if(phase!=='ready'||active||queue.length||(turnMoves===0&&canAct()))return;
@@ -443,8 +444,12 @@ function finishArrowOnboarding(){
  guidedArrowKey=null;arrowGuideActive=false;dragHint.classList.remove('arrow-step');dragHint.classList.add('is-complete');
 }
 function isMouseActivation(e){return e.pointerType==='mouse'||(!e.pointerType&&mousePrimary)}
-function chooseMove(face,dir,instant=false){
- if(panelPick||!arrowsUnlocked||tutorial||active||queue.length||phase!=='ready'||turnMoves>=turnLimit||!B.canRotate(state,face))return;
+function chooseMove(face,dir,instant=false,touch=false){
+ if(panelPick||!arrowsUnlocked||tutorial||turnMoves>=turnLimit||!B.canRotate(state,face))return;
+ if(active||queue.length||phase!=='ready'){
+  if(touch){queuedTouchMove={face,dir};byId('battleLog').textContent='次の回転を予約しました。攻撃・補充の後に続けて回転します。'}
+  return
+ }
  if(instant){pendingMove=null;selectedLayer=null;hoverLayer=null;previewDir=0;finishArrowOnboarding();userMove(face,dir);updateGuide();return}
  if(pendingMove?.face===face&&pendingMove.dir===dir){guidedArrowKey=null;arrowGuideActive=false;dragHint.classList.remove('arrow-step');dragHint.classList.add('is-complete');confirmMove();return}
  arrowGuideActive=!dragHint.classList.contains('is-complete');guidedArrowKey=face+':'+dir;dragHint.innerHTML=secondTapHintMarkup;dragHint.classList.add('arrow-step');requestAnimationFrame(placeCubeTouch);
@@ -461,9 +466,10 @@ function boardClick(e){
   const picked=panelPick,c=picked.char;for(const s of state)if(picked.ids.has(s.id)){s.face='B';delete s.tempOriginal;delete s.spentOriginal}
   panelPick=null;cooldowns[c.id]=c.cd;teamSpent.add(c.id);history=[];byId('battleLog').textContent=c.name+'：'+c.skill+' ／ 4パネルを水に変換！';refresh();return;
  }
- if(!arrowsUnlocked||tutorial||active||phase!=='ready')return;const arrow=arrowAt(e);if(arrow){chooseMove(arrow.face,arrow.dir,isMouseActivation(e));return}const faces=pickLayers(e);if(faces.length)selectLayer(faces[0],faces)
+ if(!arrowsUnlocked||tutorial)return;const arrow=arrowAt(e);if(arrow){chooseMove(arrow.face,arrow.dir,isMouseActivation(e),e.pointerType==='touch');return}if(active||phase!=='ready')return;const faces=pickLayers(e);if(faces.length)selectLayer(faces[0],faces)
 }
-canvas.addEventListener('click',boardClick);
+canvas.addEventListener('pointerup',e=>{if(e.pointerType!=='touch')return;ignoreCanvasClickUntil=performance.now()+700;boardClick(e)});
+canvas.addEventListener('click',e=>{if(performance.now()<ignoreCanvasClickUntil)return;boardClick(e)});
 canvas.addEventListener('pointermove',e=>{if(!arrowsUnlocked||e.pointerType==='touch')return;const arrow=arrowAt(e);if(arrow){hoverLayer=arrow.face;previewDir=arrow.dir;updateGuide();return}previewDir=0;hoverLayer=selectedLayer?null:pickLayers(e)[0]||null;updateGuide()});
 canvas.addEventListener('pointerleave',()=>{hoverLayer=null;previewDir=0;updateGuide()});
 for(const [id,dir] of [['guideCW',1],['guideCCW',-1]]){const b=byId(id);b.onclick=e=>{if(selectedLayer)chooseMove(selectedLayer,dir,isMouseActivation(e))};b.onpointerenter=b.onfocus=()=>{previewDir=dir};b.onpointerleave=b.onblur=()=>{previewDir=0}}
