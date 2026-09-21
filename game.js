@@ -153,7 +153,7 @@ function drawSliceArrows(){
   const anchor=axis===1?[control.anchor[0],control.anchor[1]+(compactBoard?30:0)]:[columnX[rank],compactBoard?690:650];
   ctx.save();ctx.beginPath();ctx.arc(...anchor,compactBoard?9:7,0,Math.PI*2);ctx.fillStyle='#13292d';ctx.fill();ctx.strokeStyle=markerColor;ctx.lineWidth=2;ctx.stroke();ctx.fillStyle=markerColor;ctx.font='800 '+(compactBoard?11:9)+'px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(markerLabel,anchor[0],anchor[1]+.5);ctx.restore();
  }
- arrowHits.push({p,points,face,dir});ctx.save();if(compactBoard){ctx.translate(...p);ctx.scale(1.58,1.58);ctx.translate(-p[0],-p[1])}ctx.globalAlpha=disabled?.3:1;ctx.lineCap='round';ctx.lineJoin='round';
+ arrowHits.push({p,points,face,dir,label:markerLabel,angle});ctx.save();if(compactBoard){ctx.translate(...p);ctx.scale(1.58,1.58);ctx.translate(-p[0],-p[1])}ctx.globalAlpha=disabled?.3:1;ctx.lineCap='round';ctx.lineJoin='round';
  const finish=ctx.createLinearGradient(p[0],p[1]-17,p[0],p[1]+17);finish.addColorStop(0,lit?'#416168':'#30494c');finish.addColorStop(1,lit?'#223e45':'#142b30');ctx.fillStyle=finish;
  ctx.shadowColor='#0005';ctx.shadowBlur=4;ctx.shadowOffsetY=2;ctx.beginPath();ctx.roundRect(p[0]-17,p[1]-17,34,34,7);ctx.fill();ctx.shadowBlur=0;ctx.shadowOffsetY=0;
  ctx.strokeStyle=lit?'#ffe5a3':markerColor;ctx.lineWidth=lit?2:1.5;ctx.stroke();
@@ -321,7 +321,7 @@ function frame(now){
   ctx.clearRect(0,-20,600,940);if(orbitExpanded){ctx.save();ctx.translate(300,250);ctx.scale(orbitDisplayScale(),orbitDisplayScale());ctx.translate(-300,-250);drawOrbits(angle);ctx.restore()}ctx.save();if(compactBoard)ctx.translate(0,30);drawCube(angle);drawGuide();ctx.restore();drawSliceArrows();
   if(fx){const t=(now-fx.start)/1100;if(t<1){ctx.save();ctx.globalAlpha=1-t;for(const p of fx.points){const x=p[0]+(540-p[0])*t,y=p[1]+(35-p[1])*t-60*Math.sin(t*Math.PI);ctx.beginPath();ctx.arc(x,y,5*(1-t)+2,0,Math.PI*2);ctx.fillStyle=fx.color;ctx.shadowColor=fx.color;ctx.shadowBlur=16;ctx.fill()}ctx.restore()}else fx=null}
   if(skillFlash){const t=(now-skillFlash.start)/2200;if(t<1){ctx.save();ctx.fillStyle='#121727df';ctx.fillRect(20,320,560,78);ctx.strokeStyle=skillFlash.color;ctx.lineWidth=2;ctx.strokeRect(20,320,560,78);ctx.textAlign='center';ctx.fillStyle='#ffe8ae';ctx.font='bold 17px sans-serif';ctx.fillText('1面完成 · SKILL',300,345);ctx.font='bold 21px sans-serif';ctx.fillStyle=skillFlash.color;ctx.fillText(skillFlash.name,300,379);ctx.restore()}else skillFlash=null}
-  drawBattleEffects(now);
+  syncArrowButtons();drawBattleEffects(now);
   requestAnimationFrame(frame);
 }
 function userMove(face,dir){if(panelPick||tutorial||phase!=='ready'||active||queue.length||turnMoves>=turnLimit)return;if(!B.canRotate(state,face)){byId('battleLog').textContent='この層には固定ブロックがあります。別の面か、リベラの解除を使おう。';return}pendingMove=null;queue.push({face,dir,kind:'user'})}
@@ -707,6 +707,26 @@ refillToggle.onclick=()=>{
 };
 viewReset.onclick=()=>{pendingMove=null;viewYaw=viewHome.yaw;viewPitch=viewHome.pitch;updateView()};
 const cubeTouch=document.createElement('div');cubeTouch.setAttribute('aria-label','立方体の視点操作。ドラッグで見回す。矢印キーでも視点を変更。');cubeTouch.tabIndex=0;cubeTouch.style.cssText='position:absolute;touch-action:none;cursor:grab;user-select:none;z-index:2;border-radius:12px';boardShell.append(cubeTouch);
+// Native buttons receive a single browser click, including iOS/LINE touch clicks.
+// Keep nodes stable through redraws so a press cannot lose its release target.
+const arrowButtonLayer=document.createElement('div'),arrowButtons=new Map();
+arrowButtonLayer.style.cssText='position:absolute;inset:0;pointer-events:none;z-index:5';boardShell.append(arrowButtonLayer);
+function syncArrowButtons(){
+ const v=boardViewport(),sx=canvas.clientWidth/v.w,sy=canvas.clientHeight/v.h,half=compactBoard?27:17,visible=new Set();
+ for(const arrow of arrowHits){
+  const key=arrow.face+':'+arrow.dir;visible.add(key);let button=arrowButtons.get(key);
+  if(!button){button=document.createElement('button');button.type='button';button.style.cssText='position:absolute;pointer-events:auto;opacity:0;padding:0;margin:0;min-height:0;min-width:0;touch-action:manipulation;transform:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none';
+   button.onclick=e=>{e.preventDefault();e.stopPropagation();suppressCubeClick=false;chooseMove(arrow.face,arrow.dir,true,true)};
+   button.onpointerenter=e=>{if(e.pointerType==='mouse'){hoverLayer=arrow.face;previewDir=arrow.dir;updateGuide()}};
+   button.onpointerleave=()=>{hoverLayer=null;previewDir=0;updateGuide()};
+   arrowButtons.set(key,button);arrowButtonLayer.append(button);
+  }
+  button.hidden=false;button.disabled=!arrowsUnlocked||!!tutorial||!!panelPick||!B.canRotate(state,arrow.face)||phase==='victory'||phase==='defeat';
+  button.setAttribute('aria-label',arrow.label+' '+(Math.abs(arrow.angle)===Math.PI?'左':arrow.angle===0?'右':arrow.angle<0?'上':'下')+'に回転');
+  Object.assign(button.style,{left:(canvas.offsetLeft+(arrow.p[0]-half-v.x)*sx)+'px',top:(canvas.offsetTop+(arrow.p[1]-half-v.y)*sy)+'px',width:(half*2*sx)+'px',height:(half*2*sy)+'px'});
+ }
+ for(const [key,button] of arrowButtons)if(!visible.has(key))button.hidden=true;
+}
 function placeCubeTouch(){
  if(getComputedStyle(boardShell).position==='static')boardShell.style.position='relative';
  const w=canvas.clientWidth,h=canvas.clientHeight;
