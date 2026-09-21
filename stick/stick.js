@@ -4,7 +4,9 @@ function stickMoveFor(sticker,dx,dy){
  let best=null,score=.35;
  for(const [face,spec] of Object.entries(E.slices)){
   if(sticker.n[spec.axis]!==0||sticker.p[spec.axis]!==spec.layer)continue;
-  const center=sticker.p.map((v,i)=>v+sticker.n[i]*.5);
+  // Use the face's tangent directions, not a corner's curved rotation path.
+  // Otherwise an upward gesture at a corner can incorrectly choose a horizontal row.
+  const center=sticker.n.map(v=>v*(E.size/2));
   const angle=-Math.sign(spec.layer||1)*.01;
   const a=cubePoint(E.rotate(center,spec.axis,-angle)),b=cubePoint(E.rotate(center,spec.axis,angle));
   for(const dir of [1,-1]){
@@ -30,9 +32,17 @@ function stickMoveFor(sticker,dx,dy){
  const view=panel.querySelector('#stickView'),turn=panel.querySelector('#stickTurn');
  const hintConfirm=document.createElement('button');hintConfirm.type='button';hintConfirm.textContent='ヒントの列を回す';hintConfirm.hidden=true;panel.querySelector('.stick-instructions').append(hintConfirm);
  let mode='view',picked=null,press=null,preview=null,boardPress=null;
+ const originalDrawGuide=drawGuide;
+ drawGuide=function(part='cube'){
+  if(part==='cube'&&picked&&!guideFace()&&!active){
+   const panel=hitFaces.find(h=>h.sticker.id===picked.id);
+   if(panel){ctx.save();ctx.strokeStyle='#ffe5a3';ctx.lineWidth=3;ctx.beginPath();panel.points.forEach((p,i)=>i?ctx.lineTo(...p):ctx.moveTo(...p));ctx.closePath();ctx.stroke();ctx.restore()}
+  }
+  originalDrawGuide(part);
+ };
  const ready=()=>!active&&!queue.length&&!tutorial&&!panelPick&&phase==='ready'&&turnMoves<turnLimit;
  function clearGuide(){pendingMove=null;selectedLayer=null;hoverLayer=null;previewDir=0;preview=null;hintConfirm.hidden=true;updateGuide()}
- function setMode(next){mode=next;clearGuide();view.setAttribute('aria-pressed',String(mode==='view'));turn.setAttribute('aria-pressed',String(mode==='turn'));caption.textContent=mode==='view'?'VIEW':'TURN';pad.classList.toggle('turn-mode',mode==='turn');status.textContent=mode==='view'?'右のスティックで見回せます':picked?'スティックを倒して確認 → 離すと1手回転':'キューブのパネルをタップしてください'}
+ function setMode(next){mode=next;clearGuide();view.setAttribute('aria-pressed',String(mode==='view'));turn.setAttribute('aria-pressed',String(mode==='turn'));caption.textContent=mode==='view'?'VIEW':'TURN';pad.classList.toggle('turn-mode',mode==='turn');status.textContent=mode==='view'?'右のスティックで見回せます':picked?'スティックを上下・左右へ → 水色の列を確認して離す':'キューブのパネルをタップしてください'}
  view.onclick=()=>setMode('view');turn.onclick=()=>setMode('turn');
  cancel.onclick=()=>{picked=null;cancel.hidden=true;setMode('view')};
  const originalHint=byId('hint').onclick;
@@ -48,9 +58,7 @@ function stickMoveFor(sticker,dx,dy){
   const p=boardPointer(e);if(compactBoard)p[1]-=30;
   const hit=[...hitFaces].reverse().find(h=>inside(p,h.points));if(!hit)return;
   picked=hit.sticker;cancel.hidden=false;setMode('turn');
-  // Show an initial valid layer without spending a move.
-  const candidate=stickMoveFor(picked,30,0)||stickMoveFor(picked,0,30);
-  if(candidate){selectedLayer=candidate.face;previewDir=candidate.dir;updateGuide()}
+  // Do not invent a horizontal choice before the player supplies a direction.
  },{capture:true});
  canvas.addEventListener('pointercancel',()=>{boardPress=null},{capture:true});
  function movePad(e){

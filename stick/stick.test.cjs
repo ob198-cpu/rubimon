@@ -1,6 +1,16 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),E=require('./engine.js');
 const src=fs.readFileSync(__dirname+'/stick.js','utf8'),fn=src.slice(src.indexOf('function stickMoveFor'),src.indexOf('(()=>{'));
+assert.ok(!src.includes('stickMoveFor(picked,30,0)'), 'panel selection must not invent a horizontal preview');
 let cases=0;
+// Up/down on either upright side must select a vertical column, including corners.
+{
+ const c={E,cubePoint:p=>[358+E.dot(p,[.762,0,-.648])*46,530-E.dot(p,[-.311,.879,-.366])*46]};
+ vm.createContext(c);vm.runInContext(fn,c);
+ for(const s of E.create().filter(s=>s.n[0]===1||s.n[2]===1)){
+  for(const dy of [-30,30]){const m=c.stickMoveFor(s,0,dy);assert.notEqual(E.slices[m.face].axis,1,'up/down selected horizontal row at '+JSON.stringify(s.p));}
+  for(const dx of [-30,30]){const m=c.stickMoveFor(s,dx,0);assert.equal(E.slices[m.face].axis,1,'left/right must select horizontal row');}
+ }
+}
 for(const size of [3,4,5]){
  E.configure(size);
  for(const yaw of [.1,.7,1.6,3,4.7])for(const pitch of [-1.1,.2,1.1]){
