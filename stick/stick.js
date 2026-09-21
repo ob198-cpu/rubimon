@@ -102,6 +102,8 @@ function drawSelectedPanel(ctx,panel,time=performance.now()){
  pad.addEventListener('pointermove',movePad);
  function finish(e,commit){
   if(!press||e.pointerId!==press.id)return;
+  // Use the actual release position even when the browser omits a move event.
+  if(commit)movePad(e);
   const start=press,move=preview;press=null;knob.style.transform='';
   if(pad.hasPointerCapture(e.pointerId))pad.releasePointerCapture(e.pointerId);
   clearGuide();
