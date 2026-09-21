@@ -42,15 +42,16 @@ function drawSelectedPanel(ctx,panel,time=performance.now()){
  let mode='view',picked=null,press=null,preview=null,boardPress=null;
  const originalDrawGuide=drawGuide;
  drawGuide=function(part='cube'){
-  if(part==='cube'&&picked&&!guideFace()&&!active){
+  if(part==='cube'&&picked&&!active){
    const panel=hitFaces.find(h=>h.sticker.id===picked.id);
    if(panel)drawSelectedPanel(ctx,panel);
   }
-  originalDrawGuide(part);
+  // Manual stick movement needs no cyan overlay. Keep explicit hint/demo guides.
+  if(pendingMove||tutorial)originalDrawGuide(part);
  };
  const ready=()=>!active&&!queue.length&&!tutorial&&!panelPick&&phase==='ready'&&turnMoves<turnLimit;
  function clearGuide(){pendingMove=null;selectedLayer=null;hoverLayer=null;previewDir=0;preview=null;hintConfirm.hidden=true;updateGuide()}
- function setMode(next){mode=next;clearGuide();caption.textContent='TURN';pad.classList.toggle('turn-mode',mode==='turn');status.textContent=mode==='view'?'':picked?'スティックを上下・左右へ → 水色の列を確認して離す':'キューブのパネルをタップしてください'}
+ function setMode(next){mode=next;clearGuide();caption.textContent='TURN';pad.classList.toggle('turn-mode',mode==='turn');status.textContent=mode==='view'?'':picked?'スティックを上下・左右へ動かし、離すと回転':'キューブのパネルをタップしてください'}
  cancel.onclick=()=>{picked=null;cancel.hidden=true;setMode('view')};
  const originalHint=byId('hint').onclick;
  byId('hint').onclick=()=>{if(!ready())return;picked=null;cancel.hidden=true;originalHint();hintConfirm.hidden=!pendingMove;status.textContent=pendingMove?'水色の列を確認して「ヒントの列を回す」':'確実な手順は未確認です'};
@@ -90,7 +91,7 @@ function drawSelectedPanel(ctx,panel,time=performance.now()){
   if(mode==='turn'){
    preview=picked&&ready()?stickMoveFor(picked,dx,dy):null;
    selectedLayer=preview?.face||null;previewDir=preview?.dir||0;updateGuide();
-   status.textContent=preview?(B.canRotate(state,preview.face)?'水色の列が動きます · 離すと回転':'固定中の列です · 別の方向を選んでください'):'中心に戻して離すとキャンセル';
+   status.textContent=preview?(B.canRotate(state,preview.face)?'離すと回転':'固定中の列です · 別の方向を選んでください'):'中心に戻して離すとキャンセル';
   }
  }
  pad.addEventListener('pointerdown',e=>{

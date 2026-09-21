@@ -13,11 +13,13 @@ assert.ok(!src.includes("press.mode==='view'"),'stick must not control camera');
 }
 {
  const surfaces=[];let originalCalls=0,guide=null;
- const c={ctx:{},drawSelectedPanel:(context,panel)=>surfaces.push(panel),picked:{id:7},active:null,hitFaces:[{sticker:{id:7},points:[[10,10],[30,10],[30,30],[10,30]]}],guideFace:()=>guide,drawGuide:()=>originalCalls++};
+ const c={ctx:{},pendingMove:null,tutorial:null,drawSelectedPanel:(context,panel)=>surfaces.push(panel),picked:{id:7},active:null,hitFaces:[{sticker:{id:7},points:[[10,10],[30,10],[30,30],[10,30]]}],guideFace:()=>guide,drawGuide:()=>originalCalls++};
  vm.createContext(c);vm.runInContext(src.slice(src.indexOf(' const originalDrawGuide='),src.indexOf(' const ready=')),c);
- c.drawGuide();assert.equal(surfaces.length,1);assert.equal(originalCalls,1);
- guide='F';c.drawGuide();assert.equal(surfaces.length,1);assert.equal(originalCalls,2);
- c.picked=null;guide=null;c.drawGuide();assert.equal(surfaces.length,1);
+ c.drawGuide();assert.equal(surfaces.length,1);assert.equal(originalCalls,0);
+ guide='F';c.drawGuide();assert.equal(surfaces.length,2);assert.equal(originalCalls,0,'manual rotation must not draw cyan guide');
+ c.picked=null;guide=null;c.drawGuide();assert.equal(surfaces.length,2);
+ c.pendingMove={face:'F'};c.drawGuide();assert.equal(originalCalls,1,'explicit hint remains available');
+ c.pendingMove=null;c.tutorial={};c.drawGuide();assert.equal(originalCalls,2,'demo guide is preserved');
 }
 {
  const vertices=[],icons=[];let fills=0;
