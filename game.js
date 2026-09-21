@@ -167,7 +167,7 @@ function drawSliceArrows(){
 function arrowAt(e){const p=boardPointer(e),half=compactBoard?27:17;return arrowHits.find(a=>Math.abs(p[0]-a.p[0])<=half&&Math.abs(p[1]-a.p[1])<=half)}
 const camera=[.57,.48,.67],camRight=[.762,0,-.648],camUp=[-.311,.879,-.366];
 const viewHome={yaw:Math.atan2(.57,.67),pitch:Math.asin(.48)};
-let viewYaw=viewHome.yaw,viewPitch=viewHome.pitch,cubeDrag=null,suppressCubeClick=false,ignoreCanvasClickUntil=0,queuedTouchMove=null;
+let viewYaw=viewHome.yaw,viewPitch=viewHome.pitch,cubeDrag=null,suppressCubeClick=false,ignoreCanvasClickUntil=0,lastCanvasTouchAt=0,lastCanvasTouchPoint=null,queuedTouchMove=null;
 function viewTurned(){return Math.abs(viewYaw-viewHome.yaw)+Math.abs(viewPitch-viewHome.pitch)>.015}
 function updateView(){
  const sy=Math.sin(viewYaw),cy=Math.cos(viewYaw),sp=Math.sin(viewPitch),cp=Math.cos(viewPitch);
@@ -469,7 +469,14 @@ function boardClick(e){
  }
  if(!arrowsUnlocked||tutorial)return;const arrow=arrowAt(e);if(arrow){const touch=e.pointerType==='touch';chooseMove(arrow.face,arrow.dir,isMouseActivation(e)||touch,touch);return}if(active||phase!=='ready')return;const faces=pickLayers(e);if(faces.length)selectLayer(faces[0],faces)
 }
-canvas.addEventListener('pointerup',e=>{if(e.pointerType!=='touch')return;ignoreCanvasClickUntil=performance.now()+1500;boardClick(e)});
+function handleCanvasTouch(clientX,clientY){
+ const now=performance.now(),point=[clientX,clientY];
+ if(lastCanvasTouchPoint&&now-lastCanvasTouchAt<420&&Math.hypot(point[0]-lastCanvasTouchPoint[0],point[1]-lastCanvasTouchPoint[1])<24)return;
+ lastCanvasTouchAt=now;lastCanvasTouchPoint=point;ignoreCanvasClickUntil=now+1800;
+ boardClick({clientX,clientY,pointerType:'touch'});
+}
+canvas.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse')return;handleCanvasTouch(e.clientX,e.clientY)});
+canvas.addEventListener('touchstart',e=>{const touch=e.changedTouches&&e.changedTouches[0];if(!touch||!arrowAt(touch))return;e.preventDefault();handleCanvasTouch(touch.clientX,touch.clientY)},{passive:false});
 canvas.addEventListener('click',e=>{if(performance.now()<ignoreCanvasClickUntil)return;boardClick(e)});
 canvas.addEventListener('pointermove',e=>{if(!arrowsUnlocked||e.pointerType==='touch')return;const arrow=arrowAt(e);if(arrow){hoverLayer=arrow.face;previewDir=arrow.dir;updateGuide();return}previewDir=0;hoverLayer=selectedLayer?null:pickLayers(e)[0]||null;updateGuide()});
 canvas.addEventListener('pointerleave',()=>{hoverLayer=null;previewDir=0;updateGuide()});
@@ -703,7 +710,7 @@ const cubeTouch=document.createElement('div');cubeTouch.setAttribute('aria-label
 function placeCubeTouch(){
  if(getComputedStyle(boardShell).position==='static')boardShell.style.position='relative';
  const w=canvas.clientWidth,h=canvas.clientHeight;
- const v=boardViewport();Object.assign(cubeTouch.style,{left:(canvas.offsetLeft+w*(202-v.x)/v.w)+'px',top:(canvas.offsetTop+h*((compactBoard?404:374)-v.y)/v.h)+'px',width:(w*312/v.w)+'px',height:(h*312/v.h)+'px'});
+ const v=boardViewport();Object.assign(cubeTouch.style,{left:(canvas.offsetLeft+w*(202-v.x)/v.w)+'px',top:(canvas.offsetTop+h*((compactBoard?404:374)-v.y)/v.h)+'px',width:(w*312/v.w)+'px',height:(h*(compactBoard?274:292)/v.h)+'px'});
  const arrowTarget=dragHint.classList.contains('arrow-step')&&arrowHits.find(a=>a.face+':'+a.dir===guidedArrowKey);
  const hintPoint=arrowTarget
   ?(arrowTarget.p[0]<220?[arrowTarget.p[0]+92,arrowTarget.p[1]]:[arrowTarget.p[0],arrowTarget.p[1]-58])
