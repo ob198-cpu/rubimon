@@ -15,9 +15,13 @@ assert.ok(!src.includes("press.mode==='view'"),'stick must not control camera');
  const ctx={save(){},restore(){},beginPath(){},closePath(){},moveTo:(...p)=>vertices.push(p),lineTo:(...p)=>vertices.push(p),fill(){fills++}};
  const c={drawPanelSpirit:(...args)=>icons.push(args),drawBlockStatus(){}};
  vm.createContext(c);vm.runInContext(fn,c);
- c.drawSelectedPanel(ctx,{sticker:{id:7},points:[[0,0],[40,0],[40,40],[0,40]]});
+ const panel={sticker:{id:7},points:[[0,0],[40,0],[40,40],[0,40]]};
+ c.drawSelectedPanel(ctx,panel,0);
  assert.equal(fills,1);assert.equal(vertices.length,4);assert.equal(ctx.fillStyle,'rgba(220, 40, 50, 0.42)');
  assert.deepEqual(icons[0],[{id:7},20,20,11]);
+ c.drawSelectedPanel(ctx,panel,600);assert.equal(ctx.fillStyle,'rgba(220, 40, 50, 0)','selection tint fades out');
+ c.drawSelectedPanel(ctx,panel,1200);assert.equal(ctx.fillStyle,'rgba(220, 40, 50, 0.42)','selection tint repeats');
+ assert.equal(icons.length,3,'attribute stays visible throughout the blink');
  assert.ok(!src.includes('drawSelectedGem'));
  assert.ok(!fs.readFileSync(__dirname+'/portraits.js','utf8').includes('elementIconSheet'));
 }
