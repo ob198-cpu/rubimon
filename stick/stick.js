@@ -1,0 +1,100 @@
+// Isolated analog-stick experiment. The original URL does not load this file.
+function stickMoveFor(sticker,dx,dy){
+ const length=Math.hypot(dx,dy);if(length<12)return null;
+ let best=null,score=.35;
+ for(const [face,spec] of Object.entries(E.slices)){
+  if(sticker.n[spec.axis]!==0||sticker.p[spec.axis]!==spec.layer)continue;
+  const center=sticker.p.map((v,i)=>v+sticker.n[i]*.5);
+  const angle=-Math.sign(spec.layer||1)*.01;
+  const a=cubePoint(E.rotate(center,spec.axis,-angle)),b=cubePoint(E.rotate(center,spec.axis,angle));
+  for(const dir of [1,-1]){
+   const vx=(b[0]-a[0])*dir,vy=(b[1]-a[1])*dir,size=Math.hypot(vx,vy);if(size<.01)continue;
+   const alignment=(vx*dx+vy*dy)/size/length;
+   if(alignment>score){score=alignment;best={face,dir}}
+  }
+ }
+ return best;
+}
+(()=>{
+ document.title='ルビモン｜スティック操作試作';document.body.classList.add('stick-version');
+ // Snapshot files and a separate save namespace prevent changes to the original version.
+ cubeTouch.remove();arrowButtonLayer.remove();dragHint.remove();
+ drawSliceArrows=()=>{arrowHits=[]};syncArrowButtons=()=>{};placeCubeTouch=()=>{};showArrowHint=()=>{};
+ arrowsUnlocked=true;arrowGuideActive=false;guidedArrowKey=null;
+ boardViewport=()=>orbitExpanded?{w:600,h:740,x:0,y:-20}:{w:352,h:352,x:182,y:compactBoard?384:354};
+ const originalResize=resize;resize=function(){document.body.classList.toggle('stick-orbit-open',orbitExpanded);originalResize()};
+ const panel=document.createElement('section');panel.className='stick-controls';
+ panel.innerHTML='<div class="stick-instructions"><div class="stick-modes"><button type="button" id="stickView" aria-pressed="true">見回す</button><button type="button" id="stickTurn" aria-pressed="false">列を回す</button></div><p id="stickStatus" role="status">右のスティックで見回せます</p><button type="button" id="stickCancel" hidden>選択解除</button></div><div class="stick-pad" tabindex="0" role="group" aria-label="回転スティック。ドラッグして操作。矢印キーでも操作できます"><span class="stick-cross" aria-hidden="true">＋</span><span class="stick-knob" aria-hidden="true"></span><span class="stick-caption">VIEW</span></div>';
+ canvas.after(panel);
+ const status=panel.querySelector('#stickStatus'),pad=panel.querySelector('.stick-pad'),knob=panel.querySelector('.stick-knob'),caption=panel.querySelector('.stick-caption'),cancel=panel.querySelector('#stickCancel');
+ const view=panel.querySelector('#stickView'),turn=panel.querySelector('#stickTurn');
+ const hintConfirm=document.createElement('button');hintConfirm.type='button';hintConfirm.textContent='ヒントの列を回す';hintConfirm.hidden=true;panel.querySelector('.stick-instructions').append(hintConfirm);
+ let mode='view',picked=null,press=null,preview=null,boardPress=null;
+ const ready=()=>!active&&!queue.length&&!tutorial&&!panelPick&&phase==='ready'&&turnMoves<turnLimit;
+ function clearGuide(){pendingMove=null;selectedLayer=null;hoverLayer=null;previewDir=0;preview=null;hintConfirm.hidden=true;updateGuide()}
+ function setMode(next){mode=next;clearGuide();view.setAttribute('aria-pressed',String(mode==='view'));turn.setAttribute('aria-pressed',String(mode==='turn'));caption.textContent=mode==='view'?'VIEW':'TURN';pad.classList.toggle('turn-mode',mode==='turn');status.textContent=mode==='view'?'右のスティックで見回せます':picked?'スティックを倒して確認 → 離すと1手回転':'キューブのパネルをタップしてください'}
+ view.onclick=()=>setMode('view');turn.onclick=()=>setMode('turn');
+ cancel.onclick=()=>{picked=null;cancel.hidden=true;setMode('view')};
+ const originalHint=byId('hint').onclick;
+ byId('hint').onclick=()=>{if(!ready())return;picked=null;cancel.hidden=true;originalHint();hintConfirm.hidden=!pendingMove;status.textContent=pendingMove?'水色の列を確認して「ヒントの列を回す」':'確実な手順は未確認です'};
+ hintConfirm.onclick=()=>{if(!ready()||!pendingMove)return;const move=pendingMove;if(move.board!==JSON.stringify(state)){clearGuide();return}clearGuide();picked=null;cancel.hidden=true;userMove(move.face,move.dir)};
+ // Capture replaces only this variant's legacy canvas input, including synthetic clicks.
+ for(const eventName of ['touchstart','touchmove','click','pointermove','pointerleave'])canvas.addEventListener(eventName,e=>{e.stopImmediatePropagation();if(e.cancelable)e.preventDefault()},{capture:true,passive:false});
+ canvas.addEventListener('pointerdown',e=>{e.stopImmediatePropagation();if(e.button!==0)return;e.preventDefault();boardPress={id:e.pointerId,x:e.clientX,y:e.clientY};canvas.setPointerCapture(e.pointerId)},{capture:true});
+ canvas.addEventListener('pointerup',e=>{
+  e.stopImmediatePropagation();const start=boardPress;boardPress=null;if(!start||start.id!==e.pointerId||Math.hypot(start.x-e.clientX,start.y-e.clientY)>16)return;
+  if(panelPick){suppressCubeClick=false;boardClick(e);return}
+  if(!ready()){status.textContent='攻撃・補充が終わるまでお待ちください';return}
+  const p=boardPointer(e);if(compactBoard)p[1]-=30;
+  const hit=[...hitFaces].reverse().find(h=>inside(p,h.points));if(!hit)return;
+  picked=hit.sticker;cancel.hidden=false;setMode('turn');
+  // Show an initial valid layer without spending a move.
+  const candidate=stickMoveFor(picked,30,0)||stickMoveFor(picked,0,30);
+  if(candidate){selectedLayer=candidate.face;previewDir=candidate.dir;updateGuide()}
+ },{capture:true});
+ canvas.addEventListener('pointercancel',()=>{boardPress=null},{capture:true});
+ function movePad(e){
+  if(!press||press.id!==e.pointerId)return;
+  const rect=pad.getBoundingClientRect();let dx=e.clientX-(rect.left+rect.width/2),dy=e.clientY-(rect.top+rect.height/2);
+  const distance=Math.hypot(dx,dy),limit=rect.width*.3;if(distance>limit){dx*=limit/distance;dy*=limit/distance}
+  press.dx=dx;press.dy=dy;knob.style.transform=`translate(${dx}px,${dy}px)`;
+  if(mode==='turn'){
+   preview=picked&&ready()?stickMoveFor(picked,dx,dy):null;
+   selectedLayer=preview?.face||null;previewDir=preview?.dir||0;updateGuide();
+   status.textContent=preview?(B.canRotate(state,preview.face)?'水色の列が動きます · 離すと回転':'固定中の列です · 別の方向を選んでください'):'中心に戻して離すとキャンセル';
+  }
+ }
+ pad.addEventListener('pointerdown',e=>{
+  if(e.button!==0||press)return;e.preventDefault();
+  if(mode==='turn'&&(!picked||!ready())){status.textContent=picked?'攻撃・補充が終わるまでお待ちください':'先にキューブのパネルをタップしてください';return}
+  press={id:e.pointerId,dx:0,dy:0,board:JSON.stringify(state),mode};pad.setPointerCapture(e.pointerId);movePad(e);
+ });
+ pad.addEventListener('pointermove',movePad);
+ function finish(e,commit){
+  if(!press||e.pointerId!==press.id)return;
+  const start=press,move=preview;press=null;knob.style.transform='';
+  if(pad.hasPointerCapture(e.pointerId))pad.releasePointerCapture(e.pointerId);
+  clearGuide();
+  if(commit&&start.mode==='turn'&&move&&ready()&&start.board===JSON.stringify(state)&&B.canRotate(state,move.face)){
+   userMove(move.face,move.dir);picked=null;cancel.hidden=true;status.textContent='1手回転 · パネルを選んで続けられます';
+  }else if(mode==='turn')status.textContent=picked?'パネル選択中 · スティックで方向を指定':'キューブのパネルをタップしてください';
+ }
+ pad.addEventListener('pointerup',e=>finish(e,true));pad.addEventListener('pointercancel',e=>finish(e,false));pad.addEventListener('lostpointercapture',e=>finish(e,false));
+ addEventListener('blur',()=>{if(press)finish({pointerId:press.id},false)});
+ let last=performance.now();function animate(now){
+  const dt=Math.min(40,now-last);last=now;
+  if(press&&press.mode==='view'&&Math.hypot(press.dx,press.dy)>8){viewYaw-=press.dx*dt*.00005;viewPitch=Math.max(-1.35,Math.min(1.35,viewPitch+press.dy*dt*.00005));updateView()}
+  requestAnimationFrame(animate);
+ }requestAnimationFrame(animate);
+ pad.addEventListener('keydown',e=>{
+  const direction={ArrowLeft:[-30,0],ArrowRight:[30,0],ArrowUp:[0,-30],ArrowDown:[0,30]}[e.key];if(!direction||e.repeat)return;e.preventDefault();e.stopPropagation();
+  if(mode==='view'){viewYaw-=direction[0]*.006;viewPitch=Math.max(-1.35,Math.min(1.35,viewPitch+direction[1]*.006));updateView()}
+  else if(picked&&ready()){const move=stickMoveFor(picked,...direction);if(move&&B.canRotate(state,move.face)){userMove(move.face,move.dir);picked=null;clearGuide();cancel.hidden=true;status.textContent='1手回転 · パネルを選んで続けられます'}}
+ });
+ // Keep selection honest when a skill, reset or challenge changes the board.
+ let boardIdentity=JSON.stringify(state);const originalRefresh=refresh;
+ refresh=function(){const next=JSON.stringify(state);if(next!==boardIdentity){boardIdentity=next;picked=null;cancel.hidden=true;clearGuide();if(mode==='turn')status.textContent='キューブのパネルをタップしてください'}originalRefresh()};
+ const link=document.createElement('a');link.href='../?v=0674147';link.textContent='通常版へ';link.className='original-link';orbitToolbar.append(link);
+ canvas.setAttribute('aria-label','キューブのパネルをタップして列を選択。右のスティックで方向を指定して離すと回転。');
+ resize();updateView();
+})();

@@ -1,0 +1,31 @@
+/* Only /stick/ loads this stylesheet. */
+.stick-version{padding-bottom:0;overscroll-behavior-y:contain}
+.stick-version .board-heading,.stick-version .board-shell>small,.stick-version .cube-drag-hint{display:none!important}
+.stick-version .board-shell{position:relative;top:auto!important;margin:0!important;padding:8px!important;overflow:hidden}
+.stick-version #scene{width:min(100%,360px);margin:0 auto;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.stick-controls{display:grid;grid-template-columns:minmax(0,1fr) 112px;gap:12px;align-items:center;margin:0 auto 8px;max-width:430px;padding:4px 8px;height:144px}
+.stick-modes{display:flex;gap:5px}.stick-modes button{flex:1;padding:6px;white-space:nowrap;font-size:12px;min-height:40px}
+.stick-modes button[aria-pressed=true]{border-color:#e7c276;color:#fff1c5;background:#3c5148}
+.stick-instructions p{font-size:12px;color:#d5e4dc;line-height:1.5;margin:7px 0;min-height:36px}
+.stick-instructions #stickCancel{font-size:11px;min-height:32px;padding:4px 8px}
+.stick-pad{position:relative;width:112px;height:112px;border-radius:50%;border:2px solid #aa9564;background:radial-gradient(circle,#26494c,#10282b);box-shadow:inset 0 3px 14px #0009,0 2px 6px #0005;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}
+.stick-pad:focus-visible{outline:2px solid #82edf0;outline-offset:3px}.stick-pad:active{cursor:grabbing}
+.stick-cross{position:absolute;inset:0;display:grid;place-items:center;font-size:82px;line-height:1;color:#9fc0b71f;pointer-events:none}
+.stick-knob{position:absolute;width:48px;height:48px;left:30px;top:30px;border-radius:50%;border:2px solid #e0c78c;background:radial-gradient(circle at 35% 25%,#b9d7cd,#4c7976 50%,#244d50);box-shadow:0 5px 9px #0008,inset 0 2px 4px #fff5;pointer-events:none}
+.turn-mode .stick-knob{background:radial-gradient(circle at 35% 25%,#ffeda8,#c69b4a 55%,#685022)}
+.stick-caption{position:absolute;bottom:4px;left:0;right:0;text-align:center;font-size:8px;letter-spacing:.2em;color:#d3c7a5;pointer-events:none}
+.original-link{font-size:10px;color:#ddc58d;white-space:nowrap;justify-self:end}
+.stick-version.stick-orbit-open #scene{width:min(100%,440px)!important}
+.stick-version .orbit-toolbar{gap:4px;margin:0!important;padding:0!important}.stick-version .board-actions{margin:0;padding:4px 0}
+@media(max-width:850px){
+ .stick-version main{padding:6px;gap:6px}
+ .stick-version .enemy-card{min-height:0!important;grid-template-columns:82px minmax(0,1fr)!important;padding:7px!important;gap:3px 8px!important}
+ .stick-version .monster{width:82px!important;height:84px!important;margin:0!important}
+ .stick-version .enemy-card h2{font-size:15px!important;margin:0!important}.stick-version .enemy-card .hp-caption{font-size:10px!important}.stick-version #count{font-size:11px!important}
+ .stick-version .player-hp{padding:6px 9px!important;min-height:32px!important;font-size:11px!important}
+ .stick-version #scene{width:min(100%,max(180px,calc(100svh - 440px)))}
+ .stick-version .orbit-toolbar button,.stick-version .orbit-toolbar select{font-size:10px!important;min-height:34px!important;padding:4px!important}
+ .stick-version .stick-controls{grid-template-columns:minmax(0,1fr) 104px;margin-bottom:2px;gap:8px;padding:2px 4px}
+ .stick-version .stick-pad{width:104px;height:104px}.stick-version .stick-knob{left:26px;top:26px}
+ .stick-version .squad-skills{margin-top:0}
+}
