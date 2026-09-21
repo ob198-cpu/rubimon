@@ -468,7 +468,7 @@ function boardClick(e){
   const picked=panelPick,c=picked.char;for(const s of state)if(picked.ids.has(s.id)){s.face='B';delete s.tempOriginal;delete s.spentOriginal}
   panelPick=null;cooldowns[c.id]=c.cd;teamSpent.add(c.id);history=[];byId('battleLog').textContent=c.name+'：'+c.skill+' ／ 4パネルを水に変換！';refresh();return;
  }
- if(!arrowsUnlocked||tutorial)return;const arrow=arrowAt(e);if(arrow){const touch=e.pointerType==='touch';chooseMove(arrow.face,arrow.dir,isMouseActivation(e)||touch,touch);return}if(active||phase!=='ready')return;const faces=pickLayers(e);if(faces.length)selectLayer(faces[0],faces)
+ if(!arrowsUnlocked||tutorial)return;const arrow=arrowAt(e);if(arrow){chooseMove(arrow.face,arrow.dir,isMouseActivation(e));return}if(active||phase!=='ready')return;const faces=pickLayers(e);if(faces.length)selectLayer(faces[0],faces)
 }
 function handleCanvasTouch(clientX,clientY){
  const now=performance.now(),point=[clientX,clientY];
@@ -718,11 +718,11 @@ function syncArrowButtons(){
   const key=arrow.face+':'+arrow.dir;visible.add(key);let button=arrowButtons.get(key);
   if(!button){button=document.createElement('button');button.type='button';button.style.cssText='position:absolute;pointer-events:auto;opacity:0;padding:0;margin:0;min-height:0;min-width:0;touch-action:manipulation;transform:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none';
    let press=null,handledRelease=false;
-   const activate=()=>{suppressCubeClick=false;chooseMove(arrow.face,arrow.dir,true,true)};
-   button.onpointerdown=e=>{if(e.button!==0||button.disabled)return;handledRelease=false;press={id:e.pointerId,x:e.clientX,y:e.clientY};try{button.setPointerCapture(e.pointerId)}catch{}};
-   button.onpointerup=e=>{if(!press||press.id!==e.pointerId)return;const start=press;press=null;handledRelease=true;e.preventDefault();e.stopPropagation();if(Math.hypot(e.clientX-start.x,e.clientY-start.y)<18)activate()};
+   const activate=pointerType=>{suppressCubeClick=false;chooseMove(arrow.face,arrow.dir,pointerType==='mouse',false)};
+   button.onpointerdown=e=>{if(e.button!==0||button.disabled)return;handledRelease=false;press={id:e.pointerId,x:e.clientX,y:e.clientY,type:e.pointerType};try{button.setPointerCapture(e.pointerId)}catch{}};
+   button.onpointerup=e=>{if(!press||press.id!==e.pointerId)return;const start=press;press=null;handledRelease=true;e.preventDefault();e.stopPropagation();if(Math.hypot(e.clientX-start.x,e.clientY-start.y)<18)activate(start.type)};
    button.onpointercancel=()=>{press=null;handledRelease=true};
-   button.onclick=e=>{e.preventDefault();e.stopPropagation();if(handledRelease){handledRelease=false;return}activate()};
+   button.onclick=e=>{e.preventDefault();e.stopPropagation();if(handledRelease){handledRelease=false;return}activate(e.pointerType||(mousePrimary?'mouse':'touch'))};
    button.onpointerenter=e=>{if(e.pointerType==='mouse'){hoverLayer=arrow.face;previewDir=arrow.dir;updateGuide()}};
    button.onpointerleave=()=>{hoverLayer=null;previewDir=0;updateGuide()};
    arrowButtons.set(key,button);arrowButtonLayer.append(button);
