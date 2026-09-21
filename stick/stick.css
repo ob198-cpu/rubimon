@@ -14,8 +14,6 @@
 .stick-version .board-left-actions{align-items:flex-end}
 #operationCoach strong{font-size:11px;color:#f2dfae}#operationCoach p{font-size:12px;line-height:1.45;margin:4px 0;min-height:0;color:#eef4ec}
 #operationCoach button{font-size:11px;padding:3px 9px;min-height:28px}
-.operation-lesson.lesson-rules .stick-controls{height:140px;min-height:140px}
-#operationNext{border-color:#d9bd7c;color:#f2dfae}
 .operation-lesson #stickStatus,.operation-lesson #stickCancel{display:none!important}
 .operation-lesson .lesson-target{outline:2px solid #e2c585;outline-offset:-2px}
 .operation-lesson .stick-pad.lesson-target{outline-offset:3px;box-shadow:0 0 16px #e2c58555}
