@@ -1,0 +1,30 @@
+/* Portrait reference: use only its top dragon artwork, never its baked-in UI. */
+@media(max-width:850px){
+ body.stick-version{background:#061317}
+ .stick-version main{padding:0 4px 6px!important;gap:4px!important;background:#04161d}
+ .stick-version .enemy-card{margin-top:calc(min(100vw,600px)*.437)!important;padding:8px 10px 8px 48px!important;border-radius:16px;background:linear-gradient(115deg,#25171ded,#07121a);border:1px solid #d0ad63;box-shadow:inset 0 0 0 3px #b1924933,0 0 0 2px #47351c}
+ .stick-version .monster{grid-area:auto;bottom:calc(100% + 1px);left:50%;width:min(100vw,600px)!important;max-width:none;height:calc(min(100vw,600px)*.43)!important;background:url('portrait-reference.png') top center/100% auto no-repeat;overflow:hidden}
+ .stick-version .monster .enemy-sprite{opacity:0}
+ .stick-version .enemy-card::before{content:'🔥';position:absolute;top:12px;left:8px;width:32px;height:38px;border:1px solid #f5b778;border-radius:50%;display:grid;place-items:center;font-size:24px;color:#ffbb90;background:radial-gradient(#aa3424,#340f16);box-shadow:0 0 8px #ee4c3555}
+ .stick-version .enemy-card h2{font-size:clamp(15px,4.3vw,21px)!important;letter-spacing:0}
+ .stick-version .enemy-card>.hp-caption{font-size:11px!important}.stick-version #enemySkill{font-size:11px}.stick-version #count{font-size:12px!important}
+ .stick-version .player-hp{border-radius:12px;grid-template-columns:auto 1fr auto;padding:7px 10px!important;background:linear-gradient(100deg,#073a42,#020e16);box-shadow:inset 0 0 0 2px #37908844;font-size:12px!important}
+ .stick-version .board-shell{isolation:isolate;padding:4px!important;background:linear-gradient(#052a3299,#02262b33 70%,#06151ae6),url('arena-background.png') center bottom/auto 100% no-repeat;background-color:#258f96;background-blend-mode:normal,luminosity;border-radius:0;overflow:hidden}
+ .stick-version .board-shell::before{content:'';position:absolute;pointer-events:none;z-index:-1;left:8%;right:8%;top:33%;height:42%;border:2px solid #56eee777;border-radius:50%;box-shadow:0 0 0 9px #072c3266,0 0 0 11px #57e8e24d,inset 0 0 30px #32c7c62b,0 0 35px #32d8d955;transform:rotate(-9deg)}
+ .stick-version .orbit-toolbar{padding:2px 0!important;gap:5px}.stick-version .orbit-toolbar button{font-size:11px!important}
+ .stick-version:not(.operation-lesson):not(.stick-orbit-open) .stick-controls{width:clamp(94px,25vw,126px);height:clamp(94px,25vw,126px);right:10px;bottom:98px}
+ .stick-version .stick-pad{width:clamp(94px,25vw,126px);height:clamp(94px,25vw,126px);border:3px solid #f5d285;box-shadow:0 0 0 2px #534022,0 0 0 4px #bca468,0 0 18px #13dbe66b,inset 0 0 0 4px #05272f,inset 0 0 18px #47fff299;background:radial-gradient(circle at 38% 22%,#087b85,#004754 60%,#031c29)}
+ .stick-version .stick-knob{width:46px;height:46px;left:calc(50% - 23px);top:calc(50% - 23px);border-color:#ffe3a2}
+ .stick-version .stick-cross{font-size:70px;color:#53d4d722}
+ .stick-version .board-actions{border-radius:14px;padding:6px!important;border-color:#d8b266;background:linear-gradient(#081a20f5,#05121af2);box-shadow:inset 0 0 0 2px #ad8c3b44}
+ .stick-version .board-left-actions{gap:5px}.stick-version .board-left-actions button{min-height:44px!important;border-radius:10px}
+ .stick-version #hint::before{content:'✦';margin-right:4px;color:#ffe9ac}.stick-version #rescue::before{content:'⟳';margin-right:4px;color:#ffe9ac}.stick-version #immuneToggle::before{content:'◈';margin-right:4px}.stick-version #battleMenuOpen::before{content:'☰';margin-right:4px}
+ .stick-version.stick-orbit-open .stick-pad{right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px))}
+ .stick-version #scene{z-index:1;position:relative;top:auto}
+ .stick-version #operationCoach{position:relative;z-index:6}
+}
+@media(max-width:850px) and (max-height:700px){
+ .stick-version .enemy-card{margin-top:110px!important}.stick-version .monster{height:110px!important;background-size:100% auto;background-position:center top}
+ .stick-version .enemy-card{padding-top:5px!important;padding-bottom:5px!important}.stick-version #enemySkill{font-size:10px}
+ .stick-version .stick-pad{width:82px;height:82px}.stick-version:not(.operation-lesson):not(.stick-orbit-open) .stick-controls{width:82px;height:82px;bottom:94px}
+}
