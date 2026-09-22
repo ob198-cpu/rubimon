@@ -6,5 +6,6 @@ vm.createContext(c);vm.runInContext(fs.readFileSync(__dirname+'/mobile-orbit.js'
 assert.equal(map.hidden,true);assert.equal(c.boardViewport().w,600);assert.equal(c.mobileOrbitSource([0,0]),null);
 c.orbitExpanded=true;c.resize();assert.equal(map.hidden,false);assert.equal(c.boardViewport().w,320);assert.equal(map.width,884);assert.equal(map.height,850);c.drawOrbits(0);assert.equal(target,context);
 assert.deepEqual(Array.from(c.mobileOrbitSource([79,-23])),[10,20]);
-media.matches=false;c.resize();assert.equal(map.hidden,true);assert.equal(c.boardViewport().w,600);c.drawOrbits(0);assert.equal(target,undefined);
+media.matches=false;c.compactBoard=false;c.resize();assert.equal(map.hidden,false);assert.equal(c.boardViewport().w,352);c.drawOrbits(0);assert.equal(target,context);
+c.orbitExpanded=false;c.resize();assert.equal(map.hidden,true);assert.equal(c.boardViewport().w,600);c.drawOrbits(0);assert.equal(target,undefined);
 console.log('PASS: mobile split map bounds/context, closed and desktop fallback, attack source mapping');

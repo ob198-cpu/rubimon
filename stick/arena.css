@@ -1,0 +1,78 @@
+/* Reference-led battle presentation; existing controls and handlers stay intact. */
+#arenaAttributes{flex:none;aspect-ratio:auto;pointer-events:none}#arenaTurn{font:600 16px Georgia,serif;letter-spacing:.1em;color:#f1d394;text-shadow:0 2px 3px #000;pointer-events:none}
+@media(min-width:851px){#arenaTurn{position:absolute;left:3%;bottom:100px;border-left:2px solid #c5a45f;padding:12px;background:#10181bba}.stick-version .color-count-control.is-rubik::after{right:calc(var(--attribute-strip-width) + 35px)}}
+@media(max-width:850px){#arenaAttributes,#arenaTurn{display:none}}
+body.stick-version{background:linear-gradient(#080d1233,#080d1244),url('arena-background.png') center/cover fixed;color:#fff3d2}
+.stick-version button,.stick-version select{background:linear-gradient(155deg,#214750,#06151deF 65%);border:1px solid #c5a45f;color:#eee8cc;box-shadow:inset 0 0 0 2px #07191f,inset 0 3px 8px #8ae3dc25,0 3px 10px #0009;border-radius:12px}
+.stick-version button:hover{background:linear-gradient(145deg,#35646b,#102830)}
+.stick-version .enemy-card,.stick-version .player-hp{border:1px solid #d3b472;box-shadow:inset 0 0 0 3px #0a111ab0,0 0 0 2px #9c79383d,0 8px 25px #0008;background:linear-gradient(145deg,#0a2028eb,#080d12e8);border-radius:15px}
+.stick-version .bar{border:1px solid #b7c6bb88!important;box-shadow:0 0 8px #0009,inset 0 1px 3px #000;height:12px!important;flex-shrink:0}
+.stick-version .enemy-card .bar>div{background:linear-gradient(#ffb185,#ee4c42 55%,#a5262d);box-shadow:0 0 12px #ff603d}
+.stick-version .player-hp .bar>div{background:linear-gradient(#adffcf,#43d9a3 60%,#238866)}
+.stick-version .enemy-title-row{align-items:center;gap:8px}.stick-version #damageText{color:#ffdc76;text-shadow:0 2px 3px #000}
+.stick-version .enemy-type{display:none}.stick-version #weakness{color:#a8edff}
+.stick-version #refillToggle[aria-pressed=true]{border-color:#8be5b6;box-shadow:inset 0 0 12px #31dbb933,0 0 8px #42e8c855;color:#baffdf}
+.stick-version #immuneToggle{background:linear-gradient(145deg,#4b242b,#1b1018);border-color:#b56c68}
+.stick-version .stick-pad{border:3px solid #e3bd68;background:radial-gradient(circle at 40% 25%,#258b91,#063e49 50%,#06151f 75%);box-shadow:0 0 0 3px #4e391d,0 0 0 5px #c0a367,0 0 22px #2ee9df44,inset 0 0 0 5px #062731,inset 0 0 18px #62ffed88}
+.stick-version .stick-knob{background:radial-gradient(circle at 35% 25%,#9bfff0,#278c90 55%,#073b49);border-color:#ffe0a0}
+.stick-version .stick-caption{color:#ffe3a0;font-family:Georgia,serif;font-size:14px;font-weight:bold;letter-spacing:.12em;text-shadow:0 2px 3px #000;bottom:6px}
+.stick-version .board-shell{background:transparent;border:0;box-shadow:none}
+.stick-version #scene{filter:drop-shadow(0 10px 18px #0009)}
+.stick-version .monster.hit{animation:arena-hit .45s}@keyframes arena-hit{20%,60%{transform:translateX(calc(-50% - 6px));filter:brightness(1.8)}40%,80%{transform:translateX(calc(-50% + 6px))}}
+@media(prefers-reduced-motion:reduce){.stick-version .monster.hit{animation:none}}
+.stick-version #operationCoach{background:#071b25f5;border:1px solid #c5a45f;border-radius:10px;padding:10px;box-shadow:0 5px 20px #0009}
+.stick-version #mobileOrbit{background:radial-gradient(ellipse,#193942f2,#061720f7);border:1px solid #c5a45f;border-radius:15px;box-shadow:inset 0 0 0 3px #aa8c4944,0 8px 24px #0008}
+@media(min-width:851px){
+ body.stick-version{height:100dvh;min-height:680px;overflow:auto}
+ .stick-version main{position:relative;display:block;width:100%;max-width:1800px;height:100dvh;min-height:680px;padding:0;margin:auto}
+ .stick-version main>header{display:none}.stick-version main>.panel,.stick-version .board-shell{display:contents!important}
+ .stick-version .orbit-toolbar{position:absolute;inset:18px 24px auto;display:flex;justify-content:flex-end;gap:12px;z-index:4}
+ .stick-version .color-count-control{margin-right:auto;background:#061c23e8;border:1px solid #ba9a58;padding:6px 14px;border-radius:12px;font-size:14px}
+ .stick-version .color-count-control select{width:100px;flex:none}
+ .stick-version .orbit-toolbar button{min-height:46px!important;padding:10px 18px!important;font-size:14px!important}
+ .stick-version .enemy-card{position:absolute;top:29vh;left:30%;width:40%;height:auto;min-height:0;margin:0;padding:0 16px 10px;display:flex;flex-direction:column;align-items:stretch;overflow:visible;background:linear-gradient(transparent,#090e16ee);border:0;box-shadow:none;z-index:1}
+ .stick-version .monster{position:absolute;bottom:calc(100% - 14px);left:50%;transform:translateX(-50%);width:min(42vw,550px);max-width:none;height:30vh;margin:0 auto;filter:drop-shadow(0 7px 15px #ff4c2244);pointer-events:none}
+ .stick-version .enemy-title-row{justify-content:center}.stick-version .enemy-card h2{font-size:clamp(18px,1.7vw,28px);margin:0 0 5px}
+ .stick-version .hp-caption{font-size:12px;margin-top:5px;gap:8px}.stick-version #enemySkill{font-size:12px}
+ .stick-version #count{position:fixed;right:2.5vw;top:53vh;width:23vw;padding:20px 8px;text-align:center;background:#06171eed;border:1px solid #bc9a57;border-radius:12px;font-size:clamp(14px,1.35vw,22px);box-shadow:inset 0 0 0 3px #9d81402b,0 5px 15px #0008}
+ .stick-version .player-hp{position:absolute;right:2.5%;top:39%;width:23%;padding:18px;font-size:clamp(12px,1.2vw,19px)}
+ .stick-version #scene,.stick-version.stick-orbit-open #scene{position:absolute;top:40%;left:50%;transform:translateX(-50%);width:min(39vw,48vh)!important;height:auto;margin:0!important;z-index:2}
+ .stick-version #mobileOrbit{position:absolute;left:2.5%;top:35%;width:24%;height:auto;padding:12px;z-index:2}
+ .stick-version .stick-controls{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);width:120px;height:120px;max-width:none;display:block;margin:0;padding:0;z-index:5}
+ .stick-version .stick-pad{width:120px;height:120px}.stick-version .stick-knob{left:33px;top:33px}
+ .stick-version .stick-instructions{position:absolute;width:220px;bottom:155px;left:50%;transform:translateX(-50%);text-align:center;pointer-events:none}.stick-version .stick-instructions button{pointer-events:auto}
+ .stick-version .stick-instructions p{min-height:0;text-shadow:0 2px 4px #000}
+ .stick-version .board-actions{position:absolute;bottom:25px;left:2.5%;right:2.5%;padding:0;border:0;z-index:4}
+ .stick-version .board-left-actions{display:flex;align-items:end;gap:14px;width:100%}
+ .stick-version .board-left-actions>button,.stick-version #hint{min-height:58px;padding:12px 22px;font-size:15px}
+ .stick-version #immuneToggle{margin-left:auto}.stick-version .hint-operation-stack{min-width:100px}
+ .stick-version #operationHelpOpen{align-self:start;min-height:28px!important}
+ .stick-version .board-right-actions:empty{display:none}
+}
+@media(max-width:850px){
+ .stick-version main{background:linear-gradient(transparent 15%,#03263166 65%,#010d1699);gap:6px!important}
+ .stick-version .enemy-card{position:relative;display:grid!important;grid-template-columns:1fr!important;grid-template-rows:auto 10px auto!important;padding:8px 12px!important;margin-top:clamp(90px,19dvh,170px);overflow:visible;gap:5px!important;background:linear-gradient(125deg,#160e12e8,#080f17ef)}
+ .stick-version .monster{position:absolute;bottom:calc(100% - 8px);left:50%;transform:translateX(-50%);width:230px!important;max-width:80%;height:clamp(100px,19dvh,185px)!important;pointer-events:none;z-index:-0}
+ .stick-version .enemy-title-row{grid-column:1!important;grid-row:1!important;position:relative}.stick-version .enemy-card h2{font-size:17px!important;text-shadow:0 2px 5px #000}
+ .stick-version .enemy-card>.bar{grid-column:1!important;grid-row:2!important;width:100%}
+ .stick-version .enemy-card>.hp-caption{grid-column:1!important;grid-row:3!important;display:grid;grid-template-columns:1fr auto;gap:4px;font-size:10px!important}
+ .stick-version #enemySkill{font-size:10px;line-height:1.45}.stick-version #count{font-size:12px!important}.stick-version .enemy-title-row #damageText{font-size:11px}
+ .stick-version .player-hp{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px;padding:8px 10px!important;border-color:#76d9ce;min-height:37px!important}
+ .stick-version .player-hp .bar{grid-column:2;grid-row:1;margin:0;height:8px!important}.stick-version .player-hp strong{grid-column:3;grid-row:1;font-size:11px}
+ .stick-version .board-shell{padding:2px!important;background:radial-gradient(ellipse at 50% 40%,#16b7b326,transparent 70%)}
+ .stick-version .orbit-toolbar{gap:5px;padding:3px 0!important}.stick-version .orbit-toolbar button{border-radius:20px;min-height:36px!important}
+ .stick-version .color-count-control{font-size:0}.stick-version .color-count-control select{font-size:11px;border-radius:20px}
+ .stick-version .stick-controls{height:92px;min-height:92px;padding-right:16px;margin:2px auto!important}
+ .stick-version:not(.operation-lesson):not(.stick-orbit-open) .stick-controls{position:absolute;bottom:96px;right:0;width:110px;display:block;padding:0;margin:0!important;z-index:4}
+ .stick-version:not(.operation-lesson):not(.stick-orbit-open) .stick-instructions{position:absolute;right:110px;bottom:0;width:160px;pointer-events:none;text-shadow:0 2px 4px #000}
+ .stick-version:not(.operation-lesson):not(.stick-orbit-open) .stick-instructions button{pointer-events:auto}
+ .stick-version .board-actions{padding:7px 2px!important;background:#05171fe8;border:1px solid #b99a59;border-radius:12px}
+ .stick-version .board-left-actions button{min-height:44px!important;font-size:11px!important}
+ .stick-version.stick-orbit-open #mobileOrbit{margin:10px auto!important;padding:8px}
+ .stick-version.stick-orbit-open .stick-pad{z-index:30}
+ .stick-version #operationCoach{font-size:11px;padding:6px}
+}
+@media(max-width:850px) and (max-height:700px){
+ .stick-version .enemy-card{margin-top:76px}.stick-version .monster{height:84px!important;width:155px!important}.stick-version .enemy-card h2{font-size:15px!important}
+ .stick-version .stick-controls{height:82px;min-height:82px}.stick-version .stick-pad{width:78px;height:78px}.stick-version .stick-knob{width:40px;height:40px;left:16px;top:16px}.stick-version .stick-caption{font-size:11px}
+}

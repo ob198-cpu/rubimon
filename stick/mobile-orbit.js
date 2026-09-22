@@ -2,7 +2,7 @@
 (()=>{
  const map=document.createElement('canvas');map.id='mobileOrbit';map.hidden=true;map.setAttribute('aria-label','2D属性配置図');canvas.before(map);
  const context=map.getContext('2d'),media=matchMedia('(max-width:850px)');
- const split=()=>media.matches&&orbitExpanded;
+ const split=()=>orbitExpanded;
  function bounds(){const r=Math.max(...E.layers().map(E.radius))+12;return {x:234-r,y:132-r,w:132+2*r,h:115+2*r}}
  const normalViewport=boardViewport;
  boardViewport=()=>split()?(compactBoard?{w:320,h:320,x:198,y:400}:{w:352,h:352,x:182,y:354}):normalViewport();
