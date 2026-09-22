@@ -1,4 +1,8 @@
 /* Portrait reference: use only its top dragon artwork, never its baked-in UI. */
+.battle-setting-toggles{display:flex;gap:10px;flex-wrap:wrap;padding:12px 0}
+.stick-version .orbit-toolbar #battleMenuOpen{grid-column:4;white-space:nowrap;min-height:36px;padding:6px 10px}
+.stick-version .board-left-actions #operationHelpOpen{margin:0;align-self:stretch;min-height:44px!important}
+.stick-version .board-left-actions{align-items:stretch}
 @media(max-width:850px){
  body.stick-version{background:#061317}
  .stick-version main{padding:0 4px 6px!important;gap:4px!important;background:#04161d}
@@ -24,7 +28,7 @@
  .stick-version #operationCoach{position:relative;z-index:6}
 }
 @media(max-width:850px) and (max-height:700px){
- .stick-version .enemy-card{margin-top:110px!important}.stick-version .monster{height:110px!important;background-size:100% auto;background-position:center top}
+ .stick-version .enemy-card{margin-top:110px!important}.stick-version .monster{height:110px!important;background-size:calc(110px / .43) auto;background-position:center top;background-color:#100e11}
  .stick-version .enemy-card{padding-top:5px!important;padding-bottom:5px!important}.stick-version #enemySkill{font-size:10px}
  .stick-version .stick-pad{width:82px;height:82px}.stick-version:not(.operation-lesson):not(.stick-orbit-open) .stick-controls{width:82px;height:82px;bottom:94px}
 }
