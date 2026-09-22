@@ -1,4 +1,5 @@
 /* Reference-led battle presentation; existing controls and handlers stay intact. */
+.stick-version .stick-caption{display:none}
 #arenaAttributes{flex:none;aspect-ratio:auto;pointer-events:none}#arenaTurn{font:600 16px Georgia,serif;letter-spacing:.1em;color:#f1d394;text-shadow:0 2px 3px #000;pointer-events:none}
 @media(min-width:851px){#arenaTurn{position:absolute;left:3%;bottom:100px;border-left:2px solid #c5a45f;padding:12px;background:#10181bba}.stick-version .color-count-control.is-rubik::after{right:calc(var(--attribute-strip-width) + 35px)}}
 @media(max-width:850px){#arenaAttributes,#arenaTurn{display:none}}
