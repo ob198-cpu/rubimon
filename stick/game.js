@@ -334,7 +334,7 @@ function reset(){attackChain=0;bestChain=0;battleDamage=0;spentElements.clear();
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 async function resolveTurn(){
  if(phase!=='ready'||active||queue.length||(turnMoves===0&&canAct()))return;
- history=[];phase='resolving';const token=roundToken,challengeGoal=0;combo=0;let total=0,healed=0,recoveryMatched=false,attackMatched=false,challengeShortfall=-1;refresh();
+ history=[];phase='resolving';const token=roundToken,challengeGoal=0,actionMessages=[];combo=0;let total=0,healed=0,recoveryMatched=false,attackMatched=false,challengeShortfall=-1;refresh();
  for(let chain=0;chain<(tutorial?8:1);chain++){
   const foundGroups=currentMatches();if(!foundGroups.length)break;
   const completedLines=foundGroups.reduce((sum,g)=>sum+(g.skill?6:1),0);if(!tutorial&&challengeGoal&&completedLines<challengeGoal){challengeShortfall=completedLines;break}
@@ -351,6 +351,8 @@ async function resolveTurn(){
   byId('damageText').textContent=groups.length?(skill?'技発動！ ':combo+' COMBO · ')+(result.damage?'-'+result.damage:'回復 +'+result.heal):'攻撃済み · 灰色化';
   if(result.damage){byId('monster').classList.remove('hit');void byId('monster').offsetWidth;byId('monster').classList.add('hit')}
   byId('battleLog').textContent=tutorial?groups.map(g=>g.skill?B.skills[g.element]:B.spirits[g.element].name).join(' × ')+'！':groups.length?(result.details.join(' ／ ')||(result.heal?'チーム回復':'該当属性の仲間がいないため攻撃なし')):'この属性は攻撃済みです。そろったパネルを灰色にしました。';
+  if(!tutorial&&globalThis.battleActionText&&groups.length)byId('battleLog').textContent=globalThis.battleActionText(result);
+  actionMessages.push(byId('battleLog').textContent);
   if(tutorial){byId('tutorialText').textContent=skill?'9体がすべて火属性！ 「サラマンダー・インフェルノ」発動。列攻撃の5倍の威力です。':'3手目で火の精霊が1列そろいました。サラマンダーが攻撃！ 光る列と敵HPに注目してください。'}
   refresh();await pause(tutorial||skill?1800:1100);if(token!==roundToken)return;
   if(tutorial)B.refill(state,ids,Math.random,B.pools.normal);
@@ -361,6 +363,7 @@ async function resolveTurn(){
  }
  if(!tutorial&&!attackMatched&&!recoveryMatched)attackChain=0;
  byId('battleLog').textContent=combo?combo+' COMBO / '+total+' ダメージ'+(!tutorial&&attackChain>1?' / CHAIN '+attackChain:'')+(healed?' / 回復 +'+healed:''):challengeShortfall>=0?challengeGoal+'列チャレンジ：'+challengeShortfall+'列成立。同時に'+challengeGoal+'列そろうと攻撃！':'そろわなかった！';
+ if(actionMessages.length)byId('battleLog').textContent=actionMessages.join(' ／ ')+' ／ '+byId('battleLog').textContent;
  if(enemyHp===0){
   await pause(550);if(token!==roundToken)return;
   if(!tutorial||wave===2){phase='victory';byId('battleLog').textContent='CLEAR！ '+currentEnemy().name+'を撃破。'+(!tutorial?'想定報酬 '+dungeon.reward+'素材（試算のみ・所持数への加算なし）':'');endTeamTurn();refresh();if(!tutorial)showVictory();return}
@@ -371,7 +374,7 @@ async function resolveTurn(){
   battleEffects.push({start:performance.now()-950,token:roundToken,counter:true,value:incoming,key:'R',skill:false,points:[]});
   hp=Math.max(0,hp-incoming);
   battleVibration('hit',incoming);
-  byId('battleLog').textContent+=' ／ 反撃 -'+incoming+((teamImmune||manualImmune)?'（無敵）':'');
+  byId('battleLog').textContent+=' ／ '+currentEnemy().name+'：'+enemyTechnique(currentEnemy()).name+' → 味方に'+incoming+'ダメージ'+((teamImmune||manualImmune)?'（無敵）':'');
   if(hp===0){phase='lost';refresh();return}
   if(!tutorial){B.tick(state,obstacles);enemyTurns++;endTeamTurn();openFaces=false;if(enemyObstaclesEnabled&&enemyTurns%3===1){if(Q.safeHinder(state,dungeon.obstacle,obstacles,attackKeys(),attackPolicy(),3)){byId('battleLog').textContent+=' ／ 敵が妨害を発動！'}else{balanceMetrics.rejectedObstacles++;byId('battleLog').textContent+=' ／ 逃げ道を保証できない妨害は見送り'}}}
  }
