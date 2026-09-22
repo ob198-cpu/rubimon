@@ -7,6 +7,7 @@
  .stick-version.stick-orbit-open #mobileOrbit{display:block;order:2;width:100%;height:auto;flex:none;touch-action:pan-y;margin:10px auto 12px}
  .stick-version.stick-orbit-open #scene{order:3!important;margin:0 auto!important}
  .stick-version.stick-orbit-open .stick-controls{order:4;margin:8px auto!important}
+ .stick-version.stick-orbit-open .stick-pad{position:fixed;right:calc(12px + env(safe-area-inset-right,0px));bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:30;box-shadow:0 0 0 5px #10282bd9,0 4px 18px #0008,inset 0 3px 14px #0009}
  .stick-version.stick-orbit-open .board-actions{order:5}
 }
 .hint-operation-stack{display:flex;flex-direction:column;gap:4px;min-width:48px}
