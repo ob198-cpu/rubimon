@@ -69,6 +69,14 @@ function drawRotationRings(ctx,sticker,move,time=performance.now()){
  }
  return targets;
 }
+function normalizeReleasedView(){
+ // Preserve the viewing direction, but restore upright camera axes on release.
+ // Dragging itself remains unrestricted, including multiple full vertical turns.
+ if(Math.cos(viewPitch)<0)viewYaw+=Math.PI;
+ viewPitch=Math.asin(Math.sin(viewPitch));
+ viewYaw=Math.atan2(Math.sin(viewYaw),Math.cos(viewYaw));
+ updateView();
+}
 function faceSelectedTile(sticker){
  const n=sticker.n;
  if(n[1]===0)viewYaw=Math.atan2(n[0],n[2]);
@@ -125,7 +133,7 @@ function faceSelectedTile(sticker){
   viewYaw=boardPress.yaw-dx*.009;viewPitch=boardPress.pitch+dy*.009;updateView();
  },{capture:true});
  canvas.addEventListener('pointerup',e=>{
-  e.stopImmediatePropagation();const start=boardPress;if(!start||start.id!==e.pointerId)return;boardPress=null;if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);if(start.moved){globalThis.stickLesson?.viewed();return}if(Math.hypot(start.x-e.clientX,start.y-e.clientY)>16)return;
+  e.stopImmediatePropagation();const start=boardPress;if(!start||start.id!==e.pointerId)return;boardPress=null;if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);if(start.moved){if(!start.ring){normalizeReleasedView();globalThis.stickLesson?.viewed()}return}if(Math.hypot(start.x-e.clientX,start.y-e.clientY)>16)return;
   if(globalThis.stickLesson&&!globalThis.stickLesson.canSelect())return;
   if(start.ring){
    const p=boardPointer(e);if(compactBoard)p[1]-=30;

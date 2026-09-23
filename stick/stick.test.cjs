@@ -41,15 +41,31 @@ assert.ok(!src.includes("press.mode==='view'"),'stick must not control camera');
  const handlers={};
  const c={canvas:{addEventListener:(name,fn)=>handlers[name]=fn,setPointerCapture(){},hasPointerCapture:()=>true,releasePointerCapture(){}},boardPress:null,tutorial:null,press:null,compactBoard:false,hitFaces:[{points:[]}],inside:()=>true,boardPointer:()=>[0,0],viewYaw:0,viewPitch:0,picked:null,cancel:{hidden:true},setMode(){},updateView(){},panelPick:null,ready:()=>false};
  vm.createContext(c);
+ vm.runInContext(fn,c);
  vm.runInContext(src.slice(src.indexOf(" canvas.addEventListener('pointerdown'"),src.indexOf(' function movePad(')),c);
  const e=(x,y)=>({button:0,pointerId:1,clientX:x,clientY:y,stopImmediatePropagation(){},preventDefault(){}});
  for(const [dx,dy] of [[0,30],[30,0],[0,-30],[-30,0],[0,800],[0,800],[0,-1600]]){
-  const yaw=c.viewYaw,pitch=c.viewPitch;handlers.pointerdown(e(100,100));handlers.pointermove(e(100+dx,100+dy));handlers.pointerup(e(100+dx,100+dy));
-  assert.equal(c.boardPress,null);assert.equal(c.viewYaw,yaw-dx*.009);assert.equal(c.viewPitch,pitch+dy*.009);assert.equal(c.picked,null,'drag must not select panel');
+  const yaw=c.viewYaw,pitch=c.viewPitch;handlers.pointerdown(e(100,100));handlers.pointermove(e(100+dx,100+dy));
+  assert.equal(c.viewYaw,yaw-dx*.009);assert.equal(c.viewPitch,pitch+dy*.009,'drag stays unrestricted');
+  const camera=(y,p)=>[Math.sin(y)*Math.cos(p),Math.sin(p),Math.cos(y)*Math.cos(p)],before=camera(c.viewYaw,c.viewPitch);
+  handlers.pointerup(e(100+dx,100+dy));
+  camera(c.viewYaw,c.viewPitch).forEach((v,i)=>assert.ok(Math.abs(v-before[i])<1e-10,'release preserves viewing direction'));
+  assert.ok(Math.abs(c.viewPitch)<=Math.PI/2,'release restores upright axes');
+  assert.equal(c.boardPress,null);assert.equal(c.picked,null,'drag must not select panel');
  }
  handlers.pointerdown(e(100,100));handlers.pointercancel();assert.equal(c.boardPress,null);
 }
 let cases=0;
+{
+ const c={viewYaw:0,viewPitch:0,updateView(){}};vm.createContext(c);vm.runInContext(fn,c);
+ for(const yaw of [-4,0,.7,4])for(const pitch of [Math.PI,-Math.PI,Math.PI*.75,-Math.PI*.75,Math.PI*1.25,Math.PI*9,0,.3]){
+  c.viewYaw=yaw;c.viewPitch=pitch;
+  const camera=(y,p)=>[Math.sin(y)*Math.cos(p),Math.sin(p),Math.cos(y)*Math.cos(p)],before=camera(yaw,pitch);
+  c.normalizeReleasedView();camera(c.viewYaw,c.viewPitch).forEach((v,i)=>assert.ok(Math.abs(v-before[i])<1e-10));
+  assert.ok(Math.cos(c.viewPitch)>=0,'upright camera after 180-degree and multi-turn release');
+  const normalized=[c.viewYaw,c.viewPitch];c.normalizeReleasedView();assert.ok(Math.abs(c.viewYaw-normalized[0])+Math.abs(c.viewPitch-normalized[1])<1e-10,'normalization is stable');
+ }
+}
 // Up/down on either upright side must select a vertical column, including corners.
 {
  const c={E,cubePoint:p=>[358+E.dot(p,[.762,0,-.648])*46,530-E.dot(p,[-.311,.879,-.366])*46]};
