@@ -28,9 +28,10 @@ function drawSelectedPanel(ctx,panel,time=performance.now()){
  drawBlockStatus(panel.sticker,center,11);
 }
 function drawRotationRings(ctx,sticker,move,time=performance.now()){
+ const targets=[];
  const faces=move?[move.face]:Object.keys(E.slices).filter(face=>{const s=E.slices[face];return sticker.n[s.axis]===0&&sticker.p[s.axis]===s.layer});
  for(const face of faces){
-  const spec=E.slices[face],radius=E.size*.74,base=[0,0,0];base[spec.axis]=spec.layer;base[(spec.axis+1)%3]=radius;
+  const spec=E.slices[face],radius=E.size*.62,base=[0,0,0];base[spec.axis]=spec.layer;base[(spec.axis+1)%3]=radius;
   const point=t=>cubePoint(E.rotate(base,spec.axis,t));
   // Hide any segment over the cube, keeping every attribute icon unobstructed.
   const visible=p=>!hitFaces.some(h=>inside(p,h.points));
@@ -39,7 +40,28 @@ function drawRotationRings(ctx,sticker,move,time=performance.now()){
   if(move){const sign=-Math.sign(spec.layer||1)*move.dir;
    for(let i=0;i<4;i++){const t=sign*time/1100+i*Math.PI/2,p=point(t),q=point(t-sign*.04);if(!visible(p)||!visible(q))continue;const a=Math.atan2(p[1]-q[1],p[0]-q[0]);ctx.beginPath();ctx.moveTo(p[0]-7*Math.cos(a-.5),p[1]-7*Math.sin(a-.5));ctx.lineTo(...p);ctx.lineTo(p[0]-7*Math.cos(a+.5),p[1]-7*Math.sin(a+.5));ctx.stroke()}
   }ctx.restore();
+  if(!move){
+   const center=sticker.n.map(v=>v*E.size/2),angle=-Math.sign(spec.layer||1)*.01;
+   const a=cubePoint(E.rotate(center,spec.axis,-angle)),b=cubePoint(E.rotate(center,spec.axis,angle));
+   const length=Math.hypot(b[0]-a[0],b[1]-a[1]);if(length<.01)continue;
+   const tangent=[(b[0]-a[0])/length,(b[1]-a[1])/length];
+   for(const dir of [-1,1]){
+    let best=null,score=-Infinity;
+    for(let i=0;i<96;i++){const p=point(i*Math.PI/48),s=dir*(p[0]*tangent[0]+p[1]*tangent[1]);if(visible(p)&&s>score){score=s;best=p}}
+    if(!best)continue;
+    const [x,y]=best,theta=Math.atan2(tangent[1]*dir,tangent[0]*dir);
+    ctx.save();ctx.beginPath();ctx.arc(x,y,13,0,Math.PI*2);ctx.fillStyle='#102a32';ctx.fill();ctx.strokeStyle='#e4e9e9';ctx.lineWidth=1.5;ctx.stroke();
+    ctx.translate(x,y);ctx.rotate(theta);ctx.beginPath();ctx.moveTo(-7,0);ctx.lineTo(7,0);ctx.moveTo(2,-5);ctx.lineTo(7,0);ctx.lineTo(2,5);ctx.lineWidth=2;ctx.stroke();ctx.restore();
+    targets.push({x,y,face,dir});
+   }
+  }
  }
+ return targets;
+}
+function faceSelectedTile(sticker){
+ const n=sticker.n;
+ if(n[1]===0)viewYaw=Math.atan2(n[0],n[2]);
+ viewPitch=Math.asin(n[1]);updateView();
 }
 (()=>{
  document.title='ルビモン｜スティック操作試作';document.body.classList.add('stick-version');
@@ -54,12 +76,13 @@ function drawRotationRings(ctx,sticker,move,time=performance.now()){
  canvas.after(panel);
  const status=panel.querySelector('#stickStatus'),pad=panel.querySelector('.stick-pad'),knob=panel.querySelector('.stick-knob'),caption=panel.querySelector('.stick-caption'),cancel=panel.querySelector('#stickCancel');
  const hintConfirm=document.createElement('button');hintConfirm.type='button';hintConfirm.textContent='ヒントの列を回す';hintConfirm.hidden=true;panel.querySelector('.stick-instructions').append(hintConfirm);
- let mode='view',picked=null,press=null,preview=null,boardPress=null;
+ let mode='view',picked=null,press=null,preview=null,boardPress=null,ringTargets=[];
  const originalDrawGuide=drawGuide;
  drawGuide=function(part='cube',drawingContext=ctx){
+  if(part==='cube')ringTargets=[];
   if(part==='cube'&&picked&&!active){
    const panel=hitFaces.find(h=>h.sticker.id===picked.id);
-   if(panel){drawRotationRings(ctx,picked,preview);drawSelectedPanel(ctx,panel)}
+   if(panel){ringTargets=drawRotationRings(ctx,picked,preview)||[];drawSelectedPanel(ctx,panel)}
   }
   // Manual stick movement needs no cyan overlay. Keep explicit hint/demo guides.
   if(pendingMove||tutorial)originalDrawGuide(part,drawingContext);
@@ -76,12 +99,15 @@ function drawRotationRings(ctx,sticker,move,time=performance.now()){
  canvas.addEventListener('pointerdown',e=>{
   e.stopImmediatePropagation();if(e.button!==0||tutorial||press)return;e.preventDefault();
   const p=boardPointer(e);if(compactBoard)p[1]-=30;
+  const ring=!panelPick&&picked&&ready()&&ringTargets.find(r=>Math.hypot(p[0]-r.x,p[1]-r.y)<=17);
+  if(ring){boardPress={id:e.pointerId,x:e.clientX,y:e.clientY,ring,board:JSON.stringify(state),moved:false};canvas.setPointerCapture(e.pointerId);return}
   if(!hitFaces.some(h=>inside(p,h.points)))return;
   boardPress={id:e.pointerId,x:e.clientX,y:e.clientY,yaw:viewYaw,pitch:viewPitch,moved:false};canvas.setPointerCapture(e.pointerId);
  },{capture:true});
  canvas.addEventListener('pointermove',e=>{
   e.stopImmediatePropagation();if(!boardPress||e.pointerId!==boardPress.id)return;
   const dx=e.clientX-boardPress.x,dy=e.clientY-boardPress.y;
+  if(boardPress.ring){if(Math.hypot(dx,dy)>12)boardPress.moved=true;return}
   if(!boardPress.moved&&Math.hypot(dx,dy)<6)return;
   if(!boardPress.moved){picked=null;cancel.hidden=true;setMode('view')}
   boardPress.moved=true;
@@ -90,11 +116,17 @@ function drawRotationRings(ctx,sticker,move,time=performance.now()){
  canvas.addEventListener('pointerup',e=>{
   e.stopImmediatePropagation();const start=boardPress;if(!start||start.id!==e.pointerId)return;boardPress=null;if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);if(start.moved){globalThis.stickLesson?.viewed();return}if(Math.hypot(start.x-e.clientX,start.y-e.clientY)>16)return;
   if(globalThis.stickLesson&&!globalThis.stickLesson.canSelect())return;
+  if(start.ring){
+   const p=boardPointer(e);if(compactBoard)p[1]-=30;
+   if(ready()&&start.board===JSON.stringify(state)&&Math.hypot(p[0]-start.ring.x,p[1]-start.ring.y)<=17&&B.canRotate(state,start.ring.face)){
+    const move=start.ring;clearGuide();picked=null;ringTargets=[];cancel.hidden=true;userMove(move.face,move.dir);
+   }return;
+  }
   if(panelPick){suppressCubeClick=false;boardClick(e);return}
   if(!ready()){status.textContent='攻撃・補充が終わるまでお待ちください';return}
   const p=boardPointer(e);if(compactBoard)p[1]-=30;
   const hit=[...hitFaces].reverse().find(h=>inside(p,h.points));if(!hit)return;
-  picked=hit.sticker;cancel.hidden=false;setMode('turn');
+  picked=hit.sticker;cancel.hidden=false;setMode('turn');faceSelectedTile(picked);
   globalThis.stickLesson?.selected();
   // Do not invent a horizontal choice before the player supplies a direction.
  },{capture:true});
