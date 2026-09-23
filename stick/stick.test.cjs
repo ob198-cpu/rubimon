@@ -14,6 +14,7 @@ assert.ok(!src.includes("press.mode==='view'"),'stick must not control camera');
 {
  const surfaces=[];let originalCalls=0,guide=null;
  const c={ctx:{},pendingMove:null,tutorial:null,drawSelectedPanel:(context,panel)=>surfaces.push(panel),picked:{id:7},active:null,hitFaces:[{sticker:{id:7},points:[[10,10],[30,10],[30,30],[10,30]]}],guideFace:()=>guide,drawGuide:()=>originalCalls++};
+ c.preview=null;c.drawRotationRings=()=>{};
  vm.createContext(c);vm.runInContext(src.slice(src.indexOf(' const originalDrawGuide='),src.indexOf(' const ready=')),c);
  c.drawGuide();assert.equal(surfaces.length,1);assert.equal(originalCalls,0);
  guide='F';c.drawGuide();assert.equal(surfaces.length,2);assert.equal(originalCalls,0,'manual rotation must not draw cyan guide');
@@ -23,15 +24,15 @@ assert.ok(!src.includes("press.mode==='view'"),'stick must not control camera');
 }
 {
  const vertices=[],icons=[];let fills=0;
- const ctx={save(){},restore(){},beginPath(){},closePath(){},moveTo:(...p)=>vertices.push(p),lineTo:(...p)=>vertices.push(p),fill(){fills++}};
+ const ctx={save(){},restore(){},beginPath(){},closePath(){},stroke(){},moveTo:(...p)=>vertices.push(p),lineTo:(...p)=>vertices.push(p),fill(){fills++}};
  const c={drawPanelSpirit:(...args)=>icons.push(args),drawBlockStatus(){}};
  vm.createContext(c);vm.runInContext(fn,c);
  const panel={sticker:{id:7},points:[[0,0],[40,0],[40,40],[0,40]]};
  c.drawSelectedPanel(ctx,panel,0);
- assert.equal(fills,1);assert.equal(vertices.length,4);assert.equal(ctx.fillStyle,'rgba(255, 128, 112, 1)');
+ assert.equal(fills,0);assert.equal(vertices.length,4);assert.equal(ctx.strokeStyle,'#ffffff');
  assert.deepEqual(icons[0],[{id:7},20,20,11]);
- c.drawSelectedPanel(ctx,panel,600);assert.equal(ctx.fillStyle,'rgba(255, 128, 112, 0)','selection tint fades out');
- c.drawSelectedPanel(ctx,panel,1200);assert.equal(ctx.fillStyle,'rgba(255, 128, 112, 1)','selection tint repeats without muddy base-color mixing at peak');
+ c.drawSelectedPanel(ctx,panel,600);assert.equal(fills,0,'selection never fills the tile');
+ c.drawSelectedPanel(ctx,panel,1200);assert.equal(fills,0,'attribute color remains unchanged');
  assert.equal(icons.length,3,'attribute stays visible throughout the blink');
  assert.ok(!src.includes('drawSelectedGem'));
  assert.ok(!fs.readFileSync(__dirname+'/portraits.js','utf8').includes('elementIconSheet'));

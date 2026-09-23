@@ -20,12 +20,26 @@ function stickMoveFor(sticker,dx,dy){
 function drawSelectedPanel(ctx,panel,time=performance.now()){
  const points=panel.points,center=points.reduce((s,p)=>[s[0]+p[0]/points.length,s[1]+p[1]/points.length],[0,0]);
  ctx.save();ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(...p):ctx.moveTo(...p));ctx.closePath();
- const alpha=.5*(1+Math.cos(time*Math.PI*2/1200));
- // Reach a clean, luminous coral at the peak instead of a muddy dark-red mix.
- ctx.fillStyle=`rgba(255, 128, 112, ${alpha})`;ctx.fill();ctx.restore();
+ // Outline only: the attribute tile's fill never changes.
+ ctx.strokeStyle='#101b24';ctx.lineWidth=5;ctx.stroke();
+ ctx.strokeStyle='#ffffff';ctx.lineWidth=2.2;ctx.stroke();ctx.restore();
  // Keep the attribute and status legible over the selected surface.
  drawPanelSpirit(panel.sticker,center[0],center[1],11);
  drawBlockStatus(panel.sticker,center,11);
+}
+function drawRotationRings(ctx,sticker,move,time=performance.now()){
+ const faces=move?[move.face]:Object.keys(E.slices).filter(face=>{const s=E.slices[face];return sticker.n[s.axis]===0&&sticker.p[s.axis]===s.layer});
+ for(const face of faces){
+  const spec=E.slices[face],radius=E.size*.74,base=[0,0,0];base[spec.axis]=spec.layer;base[(spec.axis+1)%3]=radius;
+  const point=t=>cubePoint(E.rotate(base,spec.axis,t));
+  // Hide any segment over the cube, keeping every attribute icon unobstructed.
+  const visible=p=>!hitFaces.some(h=>inside(p,h.points));
+  ctx.save();ctx.strokeStyle=move?'#ffffff':'#b6c8d5';ctx.globalAlpha=move ? .95 : .8;ctx.lineWidth=move?2.3:1.8;ctx.beginPath();
+  for(let i=0;i<96;i++){const a=point(i*Math.PI/48),b=point((i+1)*Math.PI/48);if(visible(a)&&visible(b)){ctx.moveTo(...a);ctx.lineTo(...b)}}ctx.stroke();
+  if(move){const sign=-Math.sign(spec.layer||1)*move.dir;
+   for(let i=0;i<4;i++){const t=sign*time/1100+i*Math.PI/2,p=point(t),q=point(t-sign*.04);if(!visible(p)||!visible(q))continue;const a=Math.atan2(p[1]-q[1],p[0]-q[0]);ctx.beginPath();ctx.moveTo(p[0]-7*Math.cos(a-.5),p[1]-7*Math.sin(a-.5));ctx.lineTo(...p);ctx.lineTo(p[0]-7*Math.cos(a+.5),p[1]-7*Math.sin(a+.5));ctx.stroke()}
+  }ctx.restore();
+ }
 }
 (()=>{
  document.title='ルビモン｜スティック操作試作';document.body.classList.add('stick-version');
@@ -45,7 +59,7 @@ function drawSelectedPanel(ctx,panel,time=performance.now()){
  drawGuide=function(part='cube',drawingContext=ctx){
   if(part==='cube'&&picked&&!active){
    const panel=hitFaces.find(h=>h.sticker.id===picked.id);
-   if(panel)drawSelectedPanel(ctx,panel);
+   if(panel){drawRotationRings(ctx,picked,preview);drawSelectedPanel(ctx,panel)}
   }
   // Manual stick movement needs no cyan overlay. Keep explicit hint/demo guides.
   if(pendingMove||tutorial)originalDrawGuide(part,drawingContext);
