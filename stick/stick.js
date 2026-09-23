@@ -27,6 +27,18 @@ function drawSelectedPanel(ctx,panel,time=performance.now()){
  drawPanelSpirit(panel.sticker,center[0],center[1],11);
  drawBlockStatus(panel.sticker,center,11);
 }
+function drawRingArrow(ctx,x,y,theta){
+ // Vector ornament only: keep the existing center and 17px hit radius.
+ ctx.save();ctx.translate(x,y);ctx.rotate(theta);
+ const crest=s=>{ctx.beginPath();ctx.moveTo(15*s,0);ctx.lineTo(4*s,-14*s);ctx.lineTo(-12*s,-10*s);ctx.lineTo(-14*s,0);ctx.lineTo(-12*s,10*s);ctx.lineTo(4*s,14*s);ctx.closePath()};
+ const gold=ctx.createLinearGradient(-12,-14,12,14);gold.addColorStop(0,'#72512b');gold.addColorStop(.28,'#fff2be');gold.addColorStop(.46,'#bd8c42');gold.addColorStop(.7,'#f1d48b');gold.addColorStop(1,'#69401e');
+ crest(1);ctx.fillStyle='#0b151c';ctx.fill();ctx.strokeStyle='#302115';ctx.lineWidth=3;ctx.stroke();ctx.strokeStyle=gold;ctx.lineWidth=2;ctx.stroke();
+ const enamel=ctx.createLinearGradient(0,-11,0,11);enamel.addColorStop(0,'#184450');enamel.addColorStop(.5,'#071d29');enamel.addColorStop(1,'#10333d');
+ crest(.78);ctx.fillStyle=enamel;ctx.fill();ctx.strokeStyle='#8b7850';ctx.lineWidth=.7;ctx.stroke();
+ // Broad luminous chevron remains legible at phone sizes.
+ ctx.beginPath();ctx.moveTo(-4,-7);ctx.lineTo(4,0);ctx.lineTo(-4,7);ctx.strokeStyle='#44e7f5';ctx.lineWidth=3.5;ctx.lineJoin='miter';ctx.shadowColor='#36eaff';ctx.shadowBlur=6;ctx.stroke();
+ ctx.shadowBlur=0;ctx.strokeStyle='#c4ffff';ctx.lineWidth=1.2;ctx.stroke();ctx.restore();
+}
 function drawRotationRings(ctx,sticker,move,time=performance.now()){
  const targets=[];
  const faces=move?[move.face]:Object.keys(E.slices).filter(face=>{const s=E.slices[face];return sticker.n[s.axis]===0&&sticker.p[s.axis]===s.layer});
@@ -50,8 +62,7 @@ function drawRotationRings(ctx,sticker,move,time=performance.now()){
     for(let i=0;i<96;i++){const p=point(i*Math.PI/48),s=dir*(p[0]*tangent[0]+p[1]*tangent[1]);if(visible(p)&&s>score){score=s;best=p}}
     if(!best)continue;
     const [x,y]=best,theta=Math.atan2(tangent[1]*dir,tangent[0]*dir);
-    ctx.save();ctx.beginPath();ctx.arc(x,y,13,0,Math.PI*2);ctx.fillStyle='#102a32';ctx.fill();ctx.strokeStyle='#e4e9e9';ctx.lineWidth=1.5;ctx.stroke();
-    ctx.translate(x,y);ctx.rotate(theta);ctx.beginPath();ctx.moveTo(-7,0);ctx.lineTo(7,0);ctx.moveTo(2,-5);ctx.lineTo(7,0);ctx.lineTo(2,5);ctx.lineWidth=2;ctx.stroke();ctx.restore();
+    drawRingArrow(ctx,x,y,theta);
     targets.push({x,y,face,dir});
    }
   }

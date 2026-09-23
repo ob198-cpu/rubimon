@@ -8,7 +8,7 @@ for(const size of [3,4,5]){
   return [358+E.dot(p,[cy,0,-sy])*46*3/size,530-E.dot(p,[-sy*sp,cp,-cy*sp])*46*3/size];
  }};
  vm.createContext(c);vm.runInContext(helpers,c);
- const ctx={save(){},restore(){},beginPath(){},moveTo(){},lineTo(){},stroke(){},fill(){},arc(){},translate(){},rotate(){}};
+ const ctx={save(){},restore(){},beginPath(){},closePath(){},createLinearGradient:()=>({addColorStop(){}}),moveTo(){},lineTo(){},stroke(){},fill(){},arc(){},translate(){},rotate(){}};
  for(const sticker of E.create()){
   c.faceSelectedTile(sticker);
   const camera=[Math.sin(c.viewYaw)*Math.cos(c.viewPitch),Math.sin(c.viewPitch),Math.cos(c.viewYaw)*Math.cos(c.viewPitch)];
