@@ -1,0 +1,47 @@
+/* One responsive coordinate system for the metal ring, board and real buttons. */
+.ring-layout{--ring-size:clamp(300px,42vw,480px);width:var(--ring-size);max-width:100%;isolation:isolate;text-align:center}
+.ring-stage{position:relative;width:100%;aspect-ratio:1;isolation:isolate}
+.ring-back,.ring-front{position:absolute;inset:0;pointer-events:none;filter:drop-shadow(0 6px 4px #000b)}
+.ring-back{z-index:0}.ring-front{z-index:3;clip-path:inset(75% 0 0)}
+.ring-back svg,.ring-front svg{width:100%;height:100%;display:block}
+body.stick-version .ring-stage #scene,body.stick-version.stick-orbit-open .ring-stage #scene{position:absolute!important;inset:0!important;top:0!important;left:0!important;transform:none!important;width:100%!important;height:100%!important;margin:0!important;z-index:2;filter:none}
+body.stick-version .ring-layout.is-perspective .ring-stage #scene{transform:scale(.82)!important}
+.ring-axis{display:flex;gap:8px;justify-content:center;margin:0 auto 8px}
+body.stick-version .ring-axis button{min-height:40px;padding:7px 20px;font-size:13px;border-radius:22px;color:#aabfc1}
+body.stick-version .ring-axis button[aria-pressed=true]{color:#fff0c1;border-color:#e5cc8a;box-shadow:inset 0 0 12px #2be3cf28}
+body.stick-version .ring-direction{position:absolute;z-index:4;width:clamp(44px,14%,68px);height:clamp(44px,14%,68px);min-height:44px;padding:6px;display:grid;place-items:center;border:0;border-radius:0;background:none;box-shadow:none;transform:translate(-50%,-50%);touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.ring-direction::before{content:'';position:absolute;inset:0;transform:rotate(var(--angle));clip-path:polygon(50% 0,98% 50%,85% 90%,15% 90%,2% 50%);background:linear-gradient(140deg,#fff3c2,#ac8040 30%,#584022 53%,#e9cc84 78%,#624524);filter:drop-shadow(0 4px 3px #000);transition:filter .16s}
+.ring-direction::after{content:'';position:absolute;inset:4px;transform:rotate(var(--angle));clip-path:polygon(50% 0,98% 50%,85% 90%,15% 90%,2% 50%);background:linear-gradient(145deg,#27535b,#061620 58%,#103039);box-shadow:inset 0 0 10px #000}
+.ring-up{left:50%;top:7%;--angle:0deg}.ring-down{left:50%;top:93%;--angle:180deg}.ring-left{left:7%;top:50%;--angle:-90deg}.ring-right{left:93%;top:50%;--angle:90deg}
+.ring-direction svg{position:relative;z-index:1;width:85%;height:85%;transform:rotate(var(--angle));overflow:visible;fill:none;stroke:#93fffa;stroke-width:4;stroke-linejoin:miter;filter:drop-shadow(0 0 3px #1cd6e4);transition:transform .12s,filter .12s}
+body.stick-version .ring-direction:hover:not(:disabled){background:none}.ring-direction:hover:not(:disabled)::after{background:linear-gradient(145deg,#357880,#082936)}
+.ring-direction:active:not(:disabled) svg{transform:translateY(2px) rotate(var(--angle));filter:drop-shadow(0 0 7px #36fff4)}
+.ring-direction:active:not(:disabled)::after{background:#123e47}
+.ring-direction:active:not(:disabled)::before,.ring-direction:active:not(:disabled)::after{transform:translateY(2px) rotate(var(--angle))}
+body.stick-version .ring-direction:disabled{opacity:1;cursor:not-allowed;filter:saturate(.3) brightness(.48)}
+.ring-direction:focus-visible{outline:3px solid #c6fff9;outline-offset:3px}
+.ring-footer{position:relative;z-index:5;margin:12px auto 0;display:grid;justify-items:center;gap:6px;padding:0 8px}
+.ring-help{font-size:clamp(11px,2.9vw,14px);margin:0;color:#edf3e8;line-height:1.5}
+.ring-selection{font-size:11px;color:#c9cbbd;margin:0;min-height:17px}
+.ring-clear-slot{min-height:38px;margin-top:4px}body.stick-version .ring-clear-slot #stickCancel{min-height:36px;padding:6px 22px;margin:0;border-radius:18px;font-size:12px}
+body.ring-interface:not(.operation-lesson) #stickStatus{display:none}
+body.ring-interface .board-shell::before{display:none}
+@media(min-width:851px){
+ body.ring-interface main{min-height:calc(40vh + 620px)}
+ .ring-layout{position:absolute;top:40vh;left:50%;transform:translateX(-50%);z-index:2;--ring-size:clamp(340px,36vw,460px)}
+ body.ring-interface .stick-controls{left:auto;right:4%;bottom:165px;transform:none}
+ body.ring-interface .stick-instructions{bottom:135px;left:50%}
+}
+@media(max-width:850px){
+ body.ring-interface{height:auto;min-height:100dvh;overflow-y:auto}
+ body.ring-interface main{height:auto;min-height:100dvh}
+ body.ring-interface .board-shell{flex:none;overflow:visible}
+ .ring-layout{--ring-size:clamp(280px,86vw,480px);align-self:center;order:2;flex:none;margin:12px auto 0}
+ body.ring-interface.stick-orbit-open .ring-layout{order:3}
+ body.ring-interface .stick-controls,body.ring-interface:not(.operation-lesson):not(.stick-orbit-open) .stick-controls{position:relative;order:4;width:100%;height:100px;min-height:100px;right:auto;bottom:auto!important;left:auto;transform:none;display:flex;justify-content:flex-end;padding:4px 20px;margin:6px 0 12px!important}
+ body.ring-interface .stick-pad{position:relative!important;right:auto!important;bottom:auto!important;width:86px;height:86px;flex:none}
+ body.ring-interface .stick-instructions,body.ring-interface:not(.operation-lesson):not(.stick-orbit-open) .stick-instructions{position:static;transform:none;width:auto;flex:1;pointer-events:none;text-align:left;padding-right:14px}
+ body.ring-interface .stick-instructions button{pointer-events:auto}
+ body.ring-interface .board-actions{order:5}
+}
+@media(prefers-reduced-motion:reduce){.ring-direction,.ring-direction svg{transition:none}}

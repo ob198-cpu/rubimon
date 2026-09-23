@@ -93,7 +93,7 @@ function faceSelectedTile(sticker){
   if(part==='cube')ringTargets=[];
   if(part==='cube'&&picked&&!active){
    const panel=hitFaces.find(h=>h.sticker.id===picked.id);
-   if(panel){ringTargets=drawRotationRings(ctx,picked,preview)||[];drawSelectedPanel(ctx,panel)}
+   if(panel&&!globalThis.ringInterface){ringTargets=drawRotationRings(ctx,picked,preview)||[];drawSelectedPanel(ctx,panel)}
   }
   // Manual stick movement needs no cyan overlay. Keep explicit hint/demo guides.
   if(pendingMove||tutorial)originalDrawGuide(part,drawingContext);
@@ -150,6 +150,7 @@ function faceSelectedTile(sticker){
   press.dx=dx;press.dy=dy;knob.style.transform=`translate(${dx}px,${dy}px)`;
   if(mode==='turn'){
    preview=picked&&ready()?stickMoveFor(picked,dx,dy):null;
+   if(preview&&globalThis.ringAllowsMove&&!globalThis.ringAllowsMove(preview))preview=null;
    selectedLayer=preview?.face||null;previewDir=preview?.dir||0;updateGuide();
    status.textContent=preview?(B.canRotate(state,preview.face)?'離すと回転':'固定中の列です · 別の方向を選んでください'):'中心に戻して離すとキャンセル';
   }
@@ -175,11 +176,26 @@ function faceSelectedTile(sticker){
  addEventListener('blur',()=>{boardPress=null;if(press)finish({pointerId:press.id},false)});
  pad.addEventListener('keydown',e=>{
   const direction={ArrowLeft:[-30,0],ArrowRight:[30,0],ArrowUp:[0,-30],ArrowDown:[0,30]}[e.key];if(!direction||e.repeat)return;e.preventDefault();e.stopPropagation();
-  if(mode==='turn'&&picked&&ready()){const move=stickMoveFor(picked,...direction);if(move&&B.canRotate(state,move.face)){userMove(move.face,move.dir);picked=null;clearGuide();cancel.hidden=true;status.textContent='1手回転 · パネルを選んで続けられます'}}
+  if(mode==='turn'&&picked&&ready()){const move=stickMoveFor(picked,...direction);if(move&&(!globalThis.ringAllowsMove||globalThis.ringAllowsMove(move))&&B.canRotate(state,move.face)){userMove(move.face,move.dir);picked=null;clearGuide();cancel.hidden=true;status.textContent='1手回転 · パネルを選んで続けられます'}}
  });
  // Keep selection honest when a skill, reset or challenge changes the board.
  let boardIdentity=JSON.stringify(state);const originalRefresh=refresh;
  refresh=function(){const next=JSON.stringify(state);if(next!==boardIdentity){boardIdentity=next;picked=null;cancel.hidden=true;clearGuide();if(mode==='turn')status.textContent='キューブのパネルをタップしてください'}originalRefresh()};
- canvas.setAttribute('aria-label','キューブのパネルをタップして列を選択。右のスティックで方向を指定して離すと回転。');
+ // UI adapter only. All turns still enter the existing userMove queue.
+ globalThis.ringControls={
+  selection:()=>picked,
+  ready:()=>ready()&&!press,
+  clear:()=>cancel.click(),
+  move(direction){
+   if(!picked||!ready()||press)return false;
+   const vector={up:[0,-30],down:[0,30],left:[-30,0],right:[30,0]}[direction];
+   if(!vector)return false;
+   const move=stickMoveFor(picked,...vector);if(!move||!B.canRotate(state,move.face))return false;
+   const count=queue.length;userMove(move.face,move.dir);if(queue.length===count)return false;
+   queue[queue.length-1].duration=matchMedia('(prefers-reduced-motion: reduce)').matches?1:280;
+   clearGuide();picked=null;ringTargets=[];cancel.hidden=true;return true;
+  }
+ };
+ canvas.setAttribute('aria-label','キューブのタイルをタップして選択。リングまたはトリガーで回転。');
  setMode('view');resize();updateView();
 })();

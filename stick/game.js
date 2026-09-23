@@ -229,7 +229,8 @@ function drawCube(angle){
   for(const s of state){
     const n=transform(s.n,s.p,angle);if(E.dot(n,camera)<=0)continue;
     const axis=s.n.findIndex(v=>v!==0),a=(axis+1)%3,b=(axis+2)%3,center=add(s.p,scale(s.n,.502));
-    const corners=[[-1,-1],[1,-1],[1,1],[-1,1]].map(([u,v])=>{const q=center.slice();q[a]+=u*.436;q[b]+=v*.436;return transform(q,s.p,angle)});
+    const tileInset=globalThis.ringInterface ? .456 : .436;
+    const corners=[[-1,-1],[1,-1],[1,1],[-1,1]].map(([u,v])=>{const q=center.slice();q[a]+=u*tileInset;q[b]+=v*tileInset;return transform(q,s.p,angle)});
     polygons.push({points:corners.map(cubePoint),depth:E.dot(transform(center,s.p,angle),camera)+.003,fill:challengeMode?'#354448':B.spirits[s.face].color,stroke:panelPick?.ids.has(s.id)?'#72efff':matched.has(s.id)?'#fff6ba':'#c8d0c477',normal:s.n,spirit:s.face,sticker:s});
   }
   polygons.sort((a,b)=>a.depth-b.depth);

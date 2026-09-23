@@ -21,6 +21,7 @@
  // Fit the existing canvas to the remaining viewport; never distort its aspect ratio.
  const shell=document.querySelector('.board-shell');
  function fit(){
+  if(document.getElementById('ringStage'))return; // Ring and canvas now share one responsive container.
   if(!matchMedia('(max-width:850px)').matches){canvas.style.removeProperty('width');return}
   if(orbitExpanded){canvas.style.setProperty('width',Math.max(40,shell.clientWidth-16)+'px','important');return}
   const others=[...shell.children].filter(n=>{const css=getComputedStyle(n);return n!==canvas&&css.display!=='none'&&!['absolute','fixed'].includes(css.position)});
