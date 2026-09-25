@@ -158,7 +158,6 @@ function faceSelectedTile(sticker){
   press.dx=dx;press.dy=dy;knob.style.transform=`translate(${dx}px,${dy}px)`;
   if(mode==='turn'){
    preview=picked&&ready()?stickMoveFor(picked,dx,dy):null;
-   if(preview&&globalThis.ringAllowsMove&&!globalThis.ringAllowsMove(preview))preview=null;
    selectedLayer=preview?.face||null;previewDir=preview?.dir||0;updateGuide();
    status.textContent=preview?(B.canRotate(state,preview.face)?'離すと回転':'固定中の列です · 別の方向を選んでください'):'中心に戻して離すとキャンセル';
   }
@@ -184,7 +183,7 @@ function faceSelectedTile(sticker){
  addEventListener('blur',()=>{boardPress=null;if(press)finish({pointerId:press.id},false)});
  pad.addEventListener('keydown',e=>{
   const direction={ArrowLeft:[-30,0],ArrowRight:[30,0],ArrowUp:[0,-30],ArrowDown:[0,30]}[e.key];if(!direction||e.repeat)return;e.preventDefault();e.stopPropagation();
-  if(mode==='turn'&&picked&&ready()){const move=stickMoveFor(picked,...direction);if(move&&(!globalThis.ringAllowsMove||globalThis.ringAllowsMove(move))&&B.canRotate(state,move.face)){userMove(move.face,move.dir);picked=null;clearGuide();cancel.hidden=true;status.textContent='1手回転 · パネルを選んで続けられます'}}
+  if(mode==='turn'&&picked&&ready()){const move=stickMoveFor(picked,...direction);if(move&&B.canRotate(state,move.face)){userMove(move.face,move.dir);picked=null;clearGuide();cancel.hidden=true;status.textContent='1手回転 · パネルを選んで続けられます'}}
  });
  // Keep selection honest when a skill, reset or challenge changes the board.
  let boardIdentity=JSON.stringify(state);const originalRefresh=refresh;

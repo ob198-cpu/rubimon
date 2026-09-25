@@ -9,7 +9,7 @@
  const pad=document.querySelector('.stick-pad');
  function show(step){
   lesson.step=step;byId('operationStep').textContent=step===4?'操作完了！':'操作 '+step+' / 3';
-  byId('operationPrompt').textContent=({1:'キューブをドラッグして見回してみよう',2:'回したいパネルをタップして選ぼう',3:globalThis.ringInterface?'行／列を選び、光るリングの矢印を押そう':'右のトリガーを上下・左右へ動かして離そう',4:'回転できました。「遊ぶ」で元の対戦へ戻れます'})[step];
+  byId('operationPrompt').textContent=({1:'キューブをドラッグして見回してみよう',2:'回したいパネルをタップして選ぼう',3:globalThis.ringInterface?'回したい方向のリングの矢印を押そう':'右のトリガーを上下・左右へ動かして離そう',4:'回転できました。「遊ぶ」で元の対戦へ戻れます'})[step];
   byId('operationExit').textContent=step===4?'遊ぶ':'終了する';
   canvas.classList.toggle('lesson-target',step<3);pad.classList.toggle('lesson-target',step===3);pad.inert=step!==3;
  }

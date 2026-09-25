@@ -1,6 +1,5 @@
 // Presentation layer: no board creation, permutation, scoring or history writes.
-function ringDirectionEnabled(axis,direction){return axis==='column'?['up','down'].includes(direction):axis==='row'?['left','right'].includes(direction):false}
-function ringSelectedMove(sticker,axis){return sticker&&axis?stickMoveFor(sticker,...(axis==='column'?[0,-30]:[-30,0])):null}
+function ringSelectedMove(sticker,direction){const vector={up:[0,-30],down:[0,30],left:[-30,0],right:[30,0]}[direction];return sticker&&vector?stickMoveFor(sticker,...vector):null}
 (()=>{
  const adapter=globalThis.ringControls;if(!adapter)return;
  const root=document.createElement('section');root.className='ring-layout';root.setAttribute('aria-label','行・列の回転操作');
@@ -8,36 +7,34 @@ function ringSelectedMove(sticker,axis){return sticker&&axis?stickMoveFor(sticke
  const marks=Array.from({length:48},(_,i)=>`<path transform="rotate(${i*7.5} 200 200)" d="M197 34 L200 29 L203 34 L200 39 Z M200 39 V43"/>`).join('');
  const art=`<svg viewBox="0 0 400 400" aria-hidden="true">${defs}<circle cx="200" cy="204" r="171" fill="none" stroke="#02070a" stroke-width="24"/><circle cx="200" cy="200" r="172" fill="none" stroke="url(#ringGold)" stroke-width="27"/><circle cx="200" cy="200" r="172" fill="none" stroke="url(#ringMetal)" stroke-width="22"/><circle cx="200" cy="200" r="181" fill="none" stroke="#fff0c0" stroke-opacity=".5"/><circle cx="200" cy="200" r="162" fill="none" stroke="#020d11" stroke-width="3"/><circle cx="200" cy="200" r="164" fill="none" stroke="#4be4dd" stroke-opacity=".6" stroke-width="2"/><circle cx="200" cy="200" r="176" fill="none" stroke="#498c91" stroke-opacity=".4"/><g fill="none" stroke="#65c9c6" stroke-opacity=".55" stroke-width="1">${marks}</g></svg>`;
  const arrow='<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M11 18 L20 9 L29 18 M11 28 L20 19 L29 28"/></svg>';
- root.innerHTML=`<div class="ring-axis" role="group" aria-label="選択するライン"><button type="button" data-axis="row" aria-pressed="true">行を選択</button><button type="button" data-axis="column" aria-pressed="false">列を選択</button></div><div id="ringStage" class="ring-stage"><div class="ring-back">${art}</div><div class="ring-front" aria-hidden="true"></div>${[['up','上'],['down','下'],['left','左'],['right','右']].map(([key,name])=>`<button type="button" class="ring-direction ring-${key}" data-direction="${key}" aria-label="選択した${key==='up'||key==='down'?'列':'行'}を${name}へ回転" disabled>${arrow}</button>`).join('')}</div><div class="ring-footer"><p class="ring-help">操作する行または列を選び、リングで回転</p><p class="ring-selection" role="status">回転させる行または列を選択</p><div class="ring-clear-slot"></div></div>`;
+ root.innerHTML=`<div id="ringStage" class="ring-stage"><div class="ring-back">${art}</div><div class="ring-front" aria-hidden="true"></div>${[['up','上'],['down','下'],['left','左'],['right','右']].map(([key,name])=>`<button type="button" class="ring-direction ring-${key}" data-direction="${key}" aria-label="選択した${key==='up'||key==='down'?'列':'行'}を${name}へ回転" disabled>${arrow}</button>`).join('')}</div><div class="ring-footer"><p class="ring-help">タイルを選び、リングで回転</p><p class="ring-selection" role="status">回転させるタイルを選択</p><div class="ring-clear-slot"></div></div>`;
  canvas.before(root);const stage=root.querySelector('#ringStage');stage.insertBefore(canvas,stage.querySelector('.ring-front'));canvas.style.removeProperty('width');
  // Reuse the same metal artwork in the foreground without duplicating SVG IDs.
  const front=stage.querySelector('.ring-front');front.innerHTML=art.replace(defs,'');
  const cancel=byId('stickCancel');root.querySelector('.ring-clear-slot').append(cancel);
  document.body.classList.add('ring-interface');globalThis.ringInterface=true;
- let axis='row',lastKey='',turnGlow=null;
- globalThis.ringAllowsMove=move=>{const selected=ringSelectedMove(adapter.selection(),axis);return !!selected&&move.face===selected.face};
- const buttons=[...root.querySelectorAll('[data-direction]')],axisButtons=[...root.querySelectorAll('[data-axis]')],label=root.querySelector('.ring-selection');
+ let lastKey='',turnGlow=null;
+ const buttons=[...root.querySelectorAll('[data-direction]')],label=root.querySelector('.ring-selection');
  function sync(){
   root.classList.toggle('is-perspective',Math.max(...camera.map(Math.abs))<.9999);
   const picked=adapter.selection(),can=adapter.ready()&&(!globalThis.stickLesson||globalThis.stickLesson.canSelect());
-  const move=ringSelectedMove(picked,axis);
-  const key=[picked?.id,axis,can,active?.face,phase,move&&B.canRotate(state,move.face)].join('|');
+  const moves=buttons.map(b=>ringSelectedMove(picked,b.dataset.direction));
+  const key=[picked?.id,can,active?.face,phase,...moves.map(move=>move&&B.canRotate(state,move.face))].join('|');
   if(key!==lastKey){lastKey=key;
-   for(const b of buttons)b.disabled=!(picked&&can&&ringDirectionEnabled(axis,b.dataset.direction)&&move&&B.canRotate(state,move.face));
-   for(const b of axisButtons){b.setAttribute('aria-pressed',String(b.dataset.axis===axis));b.disabled=!!active||!!queue.length}
-   label.textContent=picked?(move&&!B.canRotate(state,move.face)?'固定されたラインです':(axis==='row'?'行を選択中 · 左右で回転':'列を選択中 · 上下で回転')):'回転させる行または列を選択';
+   buttons.forEach((b,i)=>{const move=moves[i];b.disabled=!(picked&&can&&move&&B.canRotate(state,move.face))});
+   label.textContent=picked?'上下左右の方向を選んで回転':'回転させるタイルを選択';
    root.classList.toggle('has-selection',!!picked);root.classList.toggle('is-turning',!!active);cancel.hidden=!picked;
   }
-  return {picked,move};
+  return {picked};
  }
- for(const b of axisButtons)b.onclick=()=>{axis=b.dataset.axis;lastKey='';sync()};
- for(const b of buttons)b.onclick=()=>{const selection=sync();if(b.disabled||!ringDirectionEnabled(axis,b.dataset.direction))return;if(adapter.move(b.dataset.direction))turnGlow={...selection,until:performance.now()+300};lastKey='';sync()};
+ for(const b of buttons)b.onclick=()=>{const selection=sync();if(b.disabled)return;const move=ringSelectedMove(selection.picked,b.dataset.direction);if(adapter.move(b.dataset.direction))turnGlow={...selection,move,until:performance.now()+300};lastKey='';sync()};
  root.addEventListener('keydown',e=>{if(e.key.startsWith('Arrow'))e.stopPropagation()});
  const normalGuide=drawGuide;
  drawGuide=function(part='cube',drawingContext=ctx){
   normalGuide(part,drawingContext);if(part!=='cube')return;
   let {picked,move}=sync();const pulse=active&&turnGlow&&performance.now()<turnGlow.until&&!matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if(pulse)({picked,move}=turnGlow);if(!picked||!move||(active&&!pulse))return;
+  if(pulse)({picked,move}=turnGlow);if(!picked||(active&&!pulse))return;
+  if(!move){const panel=hitFaces.find(p=>p.sticker.id===picked.id);if(panel)drawSelectedPanel(drawingContext,panel,performance.now());return;}
   const slice=E.slices[move.face];
   for(const p of hitFaces){const s=p.sticker;if(s.p[slice.axis]!==slice.layer||!s.n.every((v,i)=>v===picked.n[i]))continue;
    drawingContext.save();drawingContext.beginPath();p.points.forEach((q,i)=>i?drawingContext.lineTo(...q):drawingContext.moveTo(...q));drawingContext.closePath();
