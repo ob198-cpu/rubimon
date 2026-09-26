@@ -69,14 +69,6 @@ function drawRotationRings(ctx,sticker,move,time=performance.now()){
  }
  return targets;
 }
-function normalizeReleasedView(){
- // Preserve the viewing direction, but restore upright camera axes on release.
- // Dragging itself remains unrestricted, including multiple full vertical turns.
- if(Math.cos(viewPitch)<0)viewYaw+=Math.PI;
- viewPitch=Math.asin(Math.sin(viewPitch));
- viewYaw=Math.atan2(Math.sin(viewYaw),Math.cos(viewYaw));
- updateView();
-}
 function faceSelectedTile(sticker){
  const n=sticker.n;
  if(n[1]===0)viewYaw=Math.atan2(n[0],n[2]);
@@ -121,7 +113,7 @@ function faceSelectedTile(sticker){
   const ring=!panelPick&&picked&&ready()&&ringTargets.find(r=>Math.hypot(p[0]-r.x,p[1]-r.y)<=17);
   if(ring){boardPress={id:e.pointerId,x:e.clientX,y:e.clientY,ring,board:JSON.stringify(state),moved:false};try{canvas.setPointerCapture(e.pointerId)}catch{boardPress=null}return}
   if(!hitFaces.some(h=>inside(p,h.points)))return;
-  boardPress={id:e.pointerId,x:e.clientX,y:e.clientY,yaw:viewYaw,pitch:viewPitch,moved:false};try{canvas.setPointerCapture(e.pointerId)}catch{boardPress=null}
+  boardPress={id:e.pointerId,x:e.clientX,y:e.clientY,yaw:viewYaw,pitch:viewPitch,horizontalSign:Math.cos(viewPitch)<0?-1:1,moved:false};try{canvas.setPointerCapture(e.pointerId)}catch{boardPress=null}
  },{capture:true});
  canvas.addEventListener('pointermove',e=>{
   e.stopImmediatePropagation();if(!boardPress||e.pointerId!==boardPress.id)return;
@@ -130,10 +122,10 @@ function faceSelectedTile(sticker){
   if(!boardPress.moved&&Math.hypot(dx,dy)<6)return;
   if(!boardPress.moved){picked=null;cancel.hidden=true;setMode('view')}
   boardPress.moved=true;
-  viewYaw=boardPress.yaw-dx*.009;viewPitch=boardPress.pitch+dy*.009;updateView();
+  viewYaw=boardPress.yaw-dx*.009*boardPress.horizontalSign;viewPitch=boardPress.pitch+dy*.009;updateView();
  },{capture:true});
  canvas.addEventListener('pointerup',e=>{
-  e.stopImmediatePropagation();const start=boardPress;if(!start||start.id!==e.pointerId)return;boardPress=null;if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);if(start.moved){if(!start.ring){normalizeReleasedView();globalThis.stickLesson?.viewed()}return}if(Math.hypot(start.x-e.clientX,start.y-e.clientY)>16)return;
+  e.stopImmediatePropagation();const start=boardPress;if(!start||start.id!==e.pointerId)return;boardPress=null;if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);if(start.moved){if(!start.ring)globalThis.stickLesson?.viewed();return}if(Math.hypot(start.x-e.clientX,start.y-e.clientY)>16)return;
   if(globalThis.stickLesson&&!globalThis.stickLesson.canSelect())return;
   if(start.ring){
    const p=boardPointer(e);if(compactBoard)p[1]-=30;
