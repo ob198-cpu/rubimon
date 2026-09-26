@@ -558,7 +558,9 @@ function drawBattleEffects(now){
  const board=canvas.getBoundingClientRect(),enemy=byId('monster').getBoundingClientRect(),player=byId('playerBar').getBoundingClientRect();
  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
  for(const e of battleEffects){
-  const age=now-e.start,impact=(age-950)/1400,color=e.counter?'#ff6883':B.spirits[e.key].color;
+  // Effects can start after this frame's RAF timestamp during battle/search work.
+  // Never pass a negative radius to Canvas: an exception here stops the frame loop.
+  const age=Math.max(0,now-e.start),impact=(age-950)/1400,color=e.counter?'#ff6883':B.spirits[e.key].color;
   const rect=e.heal||e.counter?player:enemy;
   const target=[clamp(rect.left+rect.width/2,45,w-45),clamp(rect.top+rect.height/2,70,h-70)];
   const size=e.skill?1.85:1;

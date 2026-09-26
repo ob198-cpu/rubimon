@@ -122,7 +122,12 @@ function tutorialBoard(E,full){
 function convert(state,from,to){let count=0;for(const s of state)if(s.face===from){s.face=to;count++}return count}
 function shuffle(state,random=Math.random){const movable=state.filter(s=>!s.locked&&s.face!=='J'),colors=movable.map(s=>s.face);for(let i=colors.length-1;i>0;i--){const j=Math.floor(random()*(i+1));[colors[i],colors[j]]=[colors[j],colors[i]]}movable.forEach((s,i)=>s.face=colors[i])}
 function hinder(state,kind,obstacles){
- if(kind==='lock'){const s=state.find(s=>s.n[2]===1&&s.p[0]===1&&s.p[1]===1);s.locked=2}
+ if(kind==='lock'){
+  // Even-sized cubes have half-integer coordinates; keep the existing odd-size target.
+  const edge=outer(state),front=state.filter(s=>s.n[2]===1);
+  const s=front.find(s=>s.p[0]===1&&s.p[1]===1)||front.find(s=>s.p[0]===edge&&s.p[1]===edge);
+  if(s)s.locked=2;
+ }
  if(kind==='jam'){const targets=state.filter(s=>s.n[2]===1&&s.face!=='J').slice(0,3);for(const s of targets)s.face='J'}
  if(kind==='seal')obstacles.seals=[{face:'F',axis:1,value:1,turns:2}];
  if(kind==='restrict')obstacles.restrict=2;
