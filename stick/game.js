@@ -234,7 +234,7 @@ function drawCube(angle){
     polygons.push({points:corners.map(cubePoint),depth:E.dot(transform(center,s.p,angle),camera)+.003,fill:challengeMode?'#354448':B.spirits[s.face].color,stroke:panelPick?.ids.has(s.id)?'#72efff':matched.has(s.id)?'#fff6ba':'#c8d0c477',normal:s.n,spirit:s.face,sticker:s});
   }
   polygons.sort((a,b)=>a.depth-b.depth);
-  for(const p of polygons){polygon(p.points,p.fill,p.stroke,.8);if(p.normal){hitFaces.push(p);const c=p.points.reduce((a,v)=>[a[0]+v[0]/4,a[1]+v[1]/4],[0,0]);drawPanelSpirit(p.sticker,c[0],c[1],11);drawBlockStatus(p.sticker,c,14)}}
+  for(const p of polygons){polygon(p.points,p.fill,p.stroke,.8);if(p.normal){hitFaces.push(p);const c=p.points.reduce((a,v)=>[a[0]+v[0]/4,a[1]+v[1]/4],[0,0]);drawPanelSpirit(p.sticker,c[0],c[1],18*3/E.size);drawBlockStatus(p.sticker,c,14)}}
 }
 function drawPanelSpirit(sticker,x,y,r,conceal=challengeMode,drawingContext=ctx){
  const ctx=drawingContext;

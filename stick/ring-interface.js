@@ -49,5 +49,19 @@ function ringSelectedMove(sticker,direction){const vector={up:[0,-30],down:[0,30
    ctx.save();ctx.beginPath();p.points.forEach((q,i)=>i?ctx.lineTo(...q):ctx.moveTo(...q));ctx.closePath();ctx.fillStyle=glow;ctx.fill();ctx.restore();
   }
  };
- resize();sync();
+ // Measure only layout: game state and pointer coordinates remain unchanged.
+ const shell=document.querySelector('.board-shell'),toolbar=document.querySelector('.orbit-toolbar'),actions=document.querySelector('.board-actions'),footer=root.querySelector('.ring-footer'),map=byId('mobileOrbit');
+ function fitControls(){
+  if(!matchMedia('(max-width:850px)').matches){root.style.removeProperty('--ring-size');return}
+  const available=Math.max(0,shell.clientHeight-toolbar.getBoundingClientRect().height-actions.getBoundingClientRect().height-footer.getBoundingClientRect().height-30);
+  const size=Math.max(1,Math.min(shell.clientWidth*(orbitExpanded?.49:.9),available));
+  root.style.setProperty('--ring-size',size+'px');
+  root.style.setProperty('--fit-row-height',available+'px');
+  shell.style.setProperty('--fit-toolbar-height',toolbar.getBoundingClientRect().height+'px');
+  if(map)map.style.setProperty('--fit-orbit-height',available+'px');
+ }
+ const fitObserver=new ResizeObserver(fitControls);for(const node of [shell,toolbar,actions,footer])fitObserver.observe(node);
+ new MutationObserver(fitControls).observe(byId('orbitToggle'),{attributes:true,attributeFilter:['aria-expanded']});
+ addEventListener('resize',fitControls);
+ resize();sync();fitControls();
 })();

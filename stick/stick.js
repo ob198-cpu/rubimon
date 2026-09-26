@@ -24,7 +24,7 @@ function drawSelectedPanel(ctx,panel,time=performance.now()){
  ctx.strokeStyle='#101b24';ctx.lineWidth=5;ctx.stroke();
  ctx.strokeStyle='#ffffff';ctx.lineWidth=2.2;ctx.stroke();ctx.restore();
  // Keep the attribute and status legible over the selected surface.
- drawPanelSpirit(panel.sticker,center[0],center[1],11);
+ drawPanelSpirit(panel.sticker,center[0],center[1],18*3/E.size);
  drawBlockStatus(panel.sticker,center,11);
 }
 function drawRingArrow(ctx,x,y,theta){

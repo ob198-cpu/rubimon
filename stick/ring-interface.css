@@ -42,3 +42,35 @@ body.ring-interface .board-shell::before{display:none}
  body.ring-interface .board-actions{order:5}
 }
 @media(prefers-reduced-motion:reduce){.ring-direction,.ring-direction svg{transition:none}}
+
+/* Keep the board and its trigger inside the available browser viewport. */
+@media(min-width:851px){
+ body.ring-interface,body.ring-interface main{height:100dvh;min-height:0}
+ body.ring-interface main{overflow:hidden}
+ .ring-layout{top:calc(29vh + 76px);--ring-size:min(36vw,calc(71dvh - 184px),460px)}
+}
+@media(max-width:850px){
+ body.ring-interface,body.ring-interface.stick-orbit-open{--fit-portrait-height:clamp(40px,10dvh,76px);height:100dvh;min-height:0;overflow:hidden}
+ body.ring-interface main,body.ring-interface.stick-orbit-open main{height:100%;min-height:0;overflow:hidden}
+ body.ring-interface .enemy-card{margin-top:var(--fit-portrait-height)!important}
+ body.ring-interface .monster{height:var(--fit-portrait-height)!important;background-size:auto calc(var(--fit-portrait-height)*4.9);background-position:center top}
+ body.ring-interface .board-shell,body.ring-interface.stick-orbit-open .board-shell{flex:1;min-height:0;overflow:hidden}
+ body.ring-interface .ring-layout{width:100%;max-width:100%;margin:0 auto;padding-top:14px;box-sizing:border-box;--ring-size:min(86vw,38dvh)}
+ body.ring-interface .ring-stage{width:var(--ring-size);max-width:100%;margin:0 auto}
+ body.ring-interface .ring-footer{min-height:92px;margin:0;padding:4px 106px 0 6px;gap:2px;align-content:center;box-sizing:border-box}
+ body.ring-interface .ring-clear-slot{min-height:36px;margin:0}
+ body.ring-interface .ring-help{font-size:11px;line-height:1.35}
+ body.ring-interface .ring-selection{font-size:10px;min-height:14px}
+ body.ring-interface .stick-controls,body.ring-interface:not(.operation-lesson):not(.stick-orbit-open) .stick-controls{position:absolute;right:12px;left:auto;bottom:calc(var(--action-panel-height,140px) + 10px)!important;width:86px;height:86px;min-height:86px;padding:0;margin:0!important;display:block;z-index:6}
+ body.ring-interface .stick-pad{width:82px;height:82px}
+ body.ring-interface .stick-instructions,body.ring-interface:not(.operation-lesson):not(.stick-orbit-open) .stick-instructions{position:absolute;right:96px;left:auto;bottom:0;width:calc(100vw - 130px);padding:0;transform:none}
+ body.ring-interface.operation-lesson .ring-footer>*{visibility:hidden}
+ body.ring-interface #mobileOrbit{width:auto;max-width:100%;height:var(--fit-orbit-height,140px);max-height:var(--fit-orbit-height,140px);object-fit:contain;align-self:center;margin:2px auto!important;padding:0}
+ body.ring-interface.stick-orbit-open #mobileOrbit{position:absolute;top:calc(var(--fit-toolbar-height,40px) + 20px);left:4px;width:48%!important;height:var(--fit-orbit-height);margin:0!important}
+ body.ring-interface.stick-orbit-open .ring-stage{margin-left:auto;margin-right:0;margin-top:calc((var(--fit-row-height) - var(--ring-size))/2);margin-bottom:calc((var(--fit-row-height) - var(--ring-size))/2)}
+ body.ring-interface .board-actions{margin-top:auto;flex:none}
+}
+@media(max-width:850px) and (max-height:700px){
+ body.ring-interface,body.ring-interface.stick-orbit-open{--fit-portrait-height:40px}
+ body.ring-interface #battleFeed #battleLog{min-height:14px;max-height:28px;line-height:1.25}
+}
