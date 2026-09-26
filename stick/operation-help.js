@@ -43,5 +43,9 @@
   function completed(){if(!lesson||current!==token)return;if(active||queue.length){requestAnimationFrame(completed);return}show(4)}
   requestAnimationFrame(completed);
  };
+ document.addEventListener('pointerdown',event=>{
+  if(lesson?.step!==4)return;
+  event.preventDefault();event.stopImmediatePropagation();end();
+ },true);
  button.onclick=start;byId('operationExit').onclick=end;start();
 })();
