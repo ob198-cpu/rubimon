@@ -119,9 +119,9 @@ function faceSelectedTile(sticker){
   e.stopImmediatePropagation();if(e.button!==0||tutorial||press)return;e.preventDefault();
   const p=boardPointer(e);if(compactBoard)p[1]-=30;
   const ring=!panelPick&&picked&&ready()&&ringTargets.find(r=>Math.hypot(p[0]-r.x,p[1]-r.y)<=17);
-  if(ring){boardPress={id:e.pointerId,x:e.clientX,y:e.clientY,ring,board:JSON.stringify(state),moved:false};canvas.setPointerCapture(e.pointerId);return}
+  if(ring){boardPress={id:e.pointerId,x:e.clientX,y:e.clientY,ring,board:JSON.stringify(state),moved:false};try{canvas.setPointerCapture(e.pointerId)}catch{boardPress=null}return}
   if(!hitFaces.some(h=>inside(p,h.points)))return;
-  boardPress={id:e.pointerId,x:e.clientX,y:e.clientY,yaw:viewYaw,pitch:viewPitch,moved:false};canvas.setPointerCapture(e.pointerId);
+  boardPress={id:e.pointerId,x:e.clientX,y:e.clientY,yaw:viewYaw,pitch:viewPitch,moved:false};try{canvas.setPointerCapture(e.pointerId)}catch{boardPress=null}
  },{capture:true});
  canvas.addEventListener('pointermove',e=>{
   e.stopImmediatePropagation();if(!boardPress||e.pointerId!==boardPress.id)return;
@@ -165,7 +165,10 @@ function faceSelectedTile(sticker){
  pad.addEventListener('pointerdown',e=>{
   if(e.button!==0||press)return;e.preventDefault();
   if(mode!=='turn'||!picked||!ready()){status.textContent=picked?'攻撃・補充が終わるまでお待ちください':'先にキューブのパネルをタップしてください';return}
-  press={id:e.pointerId,dx:0,dy:0,board:JSON.stringify(state),mode};pad.setPointerCapture(e.pointerId);movePad(e);
+  press={id:e.pointerId,pointerType:e.pointerType,dx:0,dy:0,board:JSON.stringify(state),mode};
+  // A rejected capture must not leave the shared input latch blocking every control.
+  try{pad.setPointerCapture(e.pointerId)}catch{press=null;knob.style.transform='';clearGuide();return}
+  movePad(e);
  });
  pad.addEventListener('pointermove',movePad);
  function finish(e,commit){
@@ -181,6 +184,15 @@ function faceSelectedTile(sticker){
  }
  pad.addEventListener('pointerup',e=>finish(e,true));pad.addEventListener('pointercancel',e=>finish(e,false));pad.addEventListener('lostpointercapture',e=>finish(e,false));
  addEventListener('blur',()=>{boardPress=null;if(press)finish({pointerId:press.id},false)});
+ // Some embedded browsers deliver release outside the pad when capture is lost.
+ // finish clears press first, so a normal pad release and this fallback cannot turn twice.
+ addEventListener('pointerup',e=>finish(e,true),true);
+ addEventListener('pointercancel',e=>finish(e,false),true);
+ // A fresh primary gesture of the same device cannot be the old held gesture.
+ // Recover if an embedded browser omitted every release notification; never replay it.
+ addEventListener('pointerdown',e=>{
+  if(press&&e.isPrimary===true&&e.button===0&&e.pointerType===press.pointerType)finish({pointerId:press.id},false);
+ },true);
  pad.addEventListener('keydown',e=>{
   const direction={ArrowLeft:[-30,0],ArrowRight:[30,0],ArrowUp:[0,-30],ArrowDown:[0,30]}[e.key];if(!direction||e.repeat)return;e.preventDefault();e.stopPropagation();
   if(mode==='turn'&&picked&&ready()){const move=stickMoveFor(picked,...direction);if(move&&B.canRotate(state,move.face)){userMove(move.face,move.dir);picked=null;clearGuide();cancel.hidden=true;status.textContent='1手回転 · パネルを選んで続けられます'}}
