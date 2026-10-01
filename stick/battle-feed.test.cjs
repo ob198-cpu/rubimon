@@ -6,3 +6,9 @@ assert.equal(c.battleActionText({attacks:[{element:'R',value:270}]}),'サラマ�
 assert.ok(c.battleActionText({attacks:[{element:'R',value:0,skill:true}]}).includes('面攻撃 → 炎竜に0ダメージ'));
 assert.equal(c.battleActionText({attacks:[{heal:true,value:50}]}),'味方：回復 50');
 console.log('PASS: actor names, resolved bonus damage, zero damage, face attack and healing text');
+const css=fs.readFileSync(__dirname+'/ring-interface.css','utf8');
+const logRules=[...css.matchAll(/body\.ring-interface #battleFeed #battleLog\{([^}]+)\}/g)];
+assert.equal(logRules.length,1,'short screens must not override log height with a clipped pixel limit');
+assert.match(logRules[0][1],/box-sizing:content-box/);
+assert.match(logRules[0][1],/min-height:2\.8em;max-height:4\.2em;line-height:1\.4/,'reserve whole text lines independently of padding');
+console.log('PASS: mobile log reserves two complete lines and caps at three complete lines');
